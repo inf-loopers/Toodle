@@ -60,9 +60,9 @@ cp .env.example .env
 Ensure `.env` has:
 ```ini
 VITE_API_URL=http://localhost:3000/api/v1
-VITE_AUTH0_DOMAIN=toodle-dev.uk.auth0.com
-VITE_AUTH0_CLIENT_ID=q5YvD8E1aGYgEXpDFuDnQyePBiaqY7d0
-VITE_AUTH0_AUDIENCE=https://api.toodle.com
+VITE_AUTH0_DOMAIN=...
+VITE_AUTH0_CLIENT_ID=...
+VITE_AUTH0_AUDIENCE=....
 VITE_AUTH0_CALLBACK_URL=http://localhost:5173
 ```
 
@@ -282,7 +282,7 @@ export default function CourseActions({ courseId }) {
 ### Branching Convention
 Create a branch for your task:
 ```bash
-git checkout -b feature/TDL-XX-short-description
+git checkout -b feature/short-description
 ```
 
 ### Commit Message Standard (Conventional Commits)
@@ -300,7 +300,7 @@ npm run build   # Vite build must succeed
 
 ### Pushing Code
 ```bash
-git push origin feature/TDL-XX-short-description
+git push origin feature/short-description
 ```
 *(Pushing to `origin` automatically syncs with both Wits Gitea for grading and GitHub for Vercel deployment).*
 
