@@ -1,0 +1,50 @@
+/**
+ * @file index.css
+ * @description Global stylesheet and TailwindCSS v4 theme tokens configuration.
+ *
+ * Responsibilities:
+ * - Loads TailwindCSS v4 with `@import "tailwindcss";`.
+ * - Configures Wits-inspired palette (`--color-primary`, `--color-accent`, `--color-wits-gold`).
+ * - Configures typography base (`Inter` font stack).
+ * - Custom scrollbar styles for clean cross-browser layout.
+ */
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #003B73;
+  --color-primary-hover: #002d59;
+  --color-primary-light: #0a5296;
+  --color-primary-subtle: #e8f0fe;
+  
+  --color-accent: #f59e0b;
+  --color-accent-hover: #d97706;
+  
+  --color-wits-gold: #c5a900;
+  --color-wits-gold-light: #e0c738;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+/* Custom scrollbar for clean UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
