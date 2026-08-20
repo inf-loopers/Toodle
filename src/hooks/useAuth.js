@@ -4,7 +4,7 @@
  *
  * Responsibilities:
  * - Wraps `@auth0/auth0-react` SDK methods and state.
- * - Extracts and normalizes the user's role from custom Auth0 claims (`https://toodle.com/roles`).
+ * - Extracts and normalizes the user's role from custom Auth0 claims (`{VITE_AUTH0_AUDIENCE}/roles`).
  * - Provides role boolean flags: `isOrganiser`, `isTutor`, `isStudent`.
  * - Provides permission checker: `hasRole(['organiser', 'tutor'])`.
  * - Provides token retrieval helper: `getToken()` for manual Bearer token requests.
@@ -61,7 +61,7 @@ export function useAuth() {
       return devUser.role.toLowerCase();
     }
 
-    // Auth0 custom namespace claims (e.g. https://toodle.com/roles)
+    // Auth0 custom namespace claims (e.g. https://api.toodle.com/roles)
     const namespaceRoles =
       user[`${AUTH0_NAMESPACE}`] ||
       user[`${AUTH0_NAMESPACE}/role`] ||
