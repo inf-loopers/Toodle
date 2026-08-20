@@ -12,6 +12,8 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
   --color-primary: #003B73;
   --color-primary-hover: #002d59;
   --color-primary-light: #0a5296;
@@ -22,12 +24,6 @@
   
   --color-wits-gold: #c5a900;
   --color-wits-gold-light: #e0c738;
-}
-
-@layer base {
-  html {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
 }
 
 /* Custom scrollbar for clean UI */
