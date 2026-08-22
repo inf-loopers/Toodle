@@ -4,7 +4,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { cn, formatTime, formatDay, getRoleBadgeStyle, getConstraintBadgeStyle } from '../src/utils/helpers';
+import {
+  cn,
+  formatTime,
+  formatDay,
+  getRoleBadgeStyle,
+  getConstraintBadgeStyle,
+} from '../src/utils/helpers';
 import { ROLES } from '../src/utils/constants';
 
 describe('Utility Helpers', () => {

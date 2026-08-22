@@ -11,8 +11,6 @@ describe('App Smoke Test', () => {
   it('renders base welcome screen without crashing', () => {
     render(<App />);
     expect(screen.getByText('Toodle')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Frontend Base Project Initialized Successfully/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Frontend Base Project Initialized Successfully/i)).toBeInTheDocument();
   });
 });

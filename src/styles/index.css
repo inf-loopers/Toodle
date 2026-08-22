@@ -9,24 +9,34 @@
  * - Custom scrollbar styles for clean cross-browser layout.
  */
 
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --color-primary: #003B73;
+  --color-primary: #003b73;
   --color-primary-hover: #002d59;
   --color-primary-light: #0a5296;
   --color-primary-subtle: #e8f0fe;
-  
+
   --color-accent: #f59e0b;
   --color-accent-hover: #d97706;
-  
+
   --color-wits-gold: #c5a900;
   --color-wits-gold-light: #e0c738;
 }
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      sans-serif;
   }
 }
 

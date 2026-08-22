@@ -48,11 +48,10 @@ function WelcomeScreen() {
         {/* Project Core Setup Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Core Tech Stack & Configurations
-            </h2>
+            <h2 className="text-lg font-bold text-slate-900">Core Tech Stack & Configurations</h2>
             <p className="text-xs text-slate-500 mt-1">
-              All dependencies, API service modules, hooks, utilities, and styling have been configured and verified.
+              All dependencies, API service modules, hooks, utilities, and styling have been
+              configured and verified.
             </p>
           </div>
 
@@ -83,22 +82,26 @@ function WelcomeScreen() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono text-slate-600">
               <div className="p-2 rounded bg-slate-100">
-                <span className="text-blue-700 font-bold">src/api/</span> — API endpoints & Axios client
+                <span className="text-blue-700 font-bold">src/api/</span> — API endpoints & Axios
+                client
               </div>
               <div className="p-2 rounded bg-slate-100">
                 <span className="text-blue-700 font-bold">src/hooks/</span> — useAuth & useApi hooks
               </div>
               <div className="p-2 rounded bg-slate-100">
-                <span className="text-blue-700 font-bold">src/utils/</span> — constants & helper utilities
+                <span className="text-blue-700 font-bold">src/utils/</span> — constants & helper
+                utilities
               </div>
               <div className="p-2 rounded bg-slate-100">
                 <span className="text-blue-700 font-bold">src/pages/</span> — route views
               </div>
               <div className="p-2 rounded bg-slate-100">
-                <span className="text-blue-700 font-bold">src/components/</span> — UI components & layout
+                <span className="text-blue-700 font-bold">src/components/</span> — UI components &
+                layout
               </div>
               <div className="p-2 rounded bg-slate-100">
-                <span className="text-blue-700 font-bold">src/routes/</span> — navigation definitions
+                <span className="text-blue-700 font-bold">src/routes/</span> — navigation
+                definitions
               </div>
             </div>
           </div>
@@ -113,9 +116,7 @@ function WelcomeScreen() {
         </div>
       </div>
 
-      <footer className="text-center text-xs text-slate-400 mt-8">
-        Toodle 2026 • v0.0.1
-      </footer>
+      <footer className="text-center text-xs text-slate-400 mt-8">Toodle 2026 • v0.0.1</footer>
     </div>
   );
 }
