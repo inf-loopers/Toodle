@@ -1,9 +1,9 @@
 import React from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { registerTokenGetter } from './api/client';
+import { usersApi } from './api/users';
 import { useAuth } from './hooks/useAuth';
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN;
@@ -37,7 +37,6 @@ export default function App() {
       <AuthBootstrap />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
         {/* Protected routes go here, e.g.: */}
         {/* <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} /> */}
       </Routes>
@@ -52,12 +51,36 @@ export default function App() {
  * api/client.js so every axios request carries a bearer token.
  */
 function AuthBootstrap() {
-  const { getToken } = useAuth();
- 
+  const { getToken, isAuthenticated, user } = useAuth();
+  const syncedRef = React.useRef(false);
+
   React.useEffect(() => {
     registerTokenGetter(getToken);
   }, [getToken]);
- 
+
+  // Sync the Auth0 profile to the local DB once per session.
+  React.useEffect(() => {
+    if (!isAuthenticated || syncedRef.current) return;
+
+    syncedRef.current = true;
+    usersApi.syncUser(user).catch((err) => {
+      syncedRef.current = false; // allow a retry on the next load
+
+      // Log the actual backend error message for debugging.
+      // A 500 here typically means the backend database is not migrated
+      // or the `/auth/callback` handler is crashing on the server side.
+      const serverError =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data;
+
+      console.warn(
+        'User sync with backend failed:',
+        serverError || err.message,
+      );
+    });
+  }, [isAuthenticated, user]);
+
   return null;
 }
 
