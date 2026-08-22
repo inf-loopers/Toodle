@@ -14,36 +14,36 @@
 
 const features = [
   {
-    icon: "▦",
-    title: "Smart Allocation Board",
+    icon: '▦',
+    title: 'Smart Allocation Board',
     description:
-      "Assign tutors to courses with automatic constraint checking for timetables, eligibility, and weekly hour limits.",
+      'Assign tutors to courses with automatic constraint checking for timetables, eligibility, and weekly hour limits.',
   },
   {
-    icon: "♙",
-    title: "Tutor Directory",
+    icon: '♙',
+    title: 'Tutor Directory',
     description:
-      "Browse, filter, and manage your full tutor roster — qualifications, availability, and assignment history in one place.",
+      'Browse, filter, and manage your full tutor roster — qualifications, availability, and assignment history in one place.',
   },
   {
-    icon: "◷",
-    title: "Timesheets & Hours",
+    icon: '◷',
+    title: 'Timesheets & Hours',
     description:
-      "Track allocated hours per tutor with real-time budget progress and overtime warnings before they happen.",
+      'Track allocated hours per tutor with real-time budget progress and overtime warnings before they happen.',
   },
   {
-    icon: "⚡",
-    title: "Instant Generation",
+    icon: '⚡',
+    title: 'Instant Generation',
     description:
-      "Generate optimal allocations in seconds using rule-based matching — no more manual spreadsheets.",
+      'Generate optimal allocations in seconds using rule-based matching — no more manual spreadsheets.',
   },
 ];
 
 const stats = [
-  { value: "1,200+", label: "Allocations made" },
-  { value: "98%", label: "Tutor satisfaction" },
-  { value: "24", label: "Active courses" },
-  { value: "4.8★", label: "Avg. rating" },
+  { value: '1,200+', label: 'Allocations made' },
+  { value: '98%', label: 'Tutor satisfaction' },
+  { value: '24', label: 'Active courses' },
+  { value: '4.8★', label: 'Avg. rating' },
 ];
 
 export default function LandingPage({ onEnter }) {
@@ -94,8 +94,8 @@ export default function LandingPage({ onEnter }) {
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
+              'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
           }}
         />
 
@@ -112,16 +112,15 @@ export default function LandingPage({ onEnter }) {
 
           {/* Headline */}
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
-            Tutor allocation,{" "}
+            Tutor allocation,{' '}
             <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
               done right.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
-            Toodle replaces spreadsheets and guesswork with a smart allocation
-            board — matching tutors to courses while respecting timetables,
-            eligibility, and hour budgets.
+            Toodle replaces spreadsheets and guesswork with a smart allocation board — matching
+            tutors to courses while respecting timetables, eligibility, and hour budgets.
           </p>
 
           {/* CTAs */}
@@ -153,26 +152,19 @@ export default function LandingPage({ onEnter }) {
 
               {/* Mini stat row */}
               <div className="grid grid-cols-4 gap-3">
-                {["24 Courses", "68 Tutors", "52 Assigned", "4 Alerts"].map(
-                  (stat) => (
-                    <div
-                      key={stat}
-                      className="rounded-lg bg-white/5 px-3 py-2 text-center"
-                    >
-                      <p className="text-xs font-semibold text-slate-300">
-                        {stat.split(" ")[0]}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">
-                        {stat.split(" ").slice(1).join(" ")}
-                      </p>
-                    </div>
-                  )
-                )}
+                {['24 Courses', '68 Tutors', '52 Assigned', '4 Alerts'].map((stat) => (
+                  <div key={stat} className="rounded-lg bg-white/5 px-3 py-2 text-center">
+                    <p className="text-xs font-semibold text-slate-300">{stat.split(' ')[0]}</p>
+                    <p className="mt-0.5 text-[10px] text-slate-500">
+                      {stat.split(' ').slice(1).join(' ')}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               {/* Mini table rows */}
               <div className="mt-3 space-y-2">
-                {["COMS3011A · Thabo M.", "COMS3012A · Sarah N.", "COMS3014A · Unassigned"].map(
+                {['COMS3011A · Thabo M.', 'COMS3012A · Sarah N.', 'COMS3014A · Unassigned'].map(
                   (row) => (
                     <div
                       key={row}
@@ -181,12 +173,12 @@ export default function LandingPage({ onEnter }) {
                       <span>{row}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          row.includes("Unassigned")
-                            ? "bg-red-500/20 text-red-400"
-                            : "bg-emerald-500/20 text-emerald-400"
+                          row.includes('Unassigned')
+                            ? 'bg-red-500/20 text-red-400'
+                            : 'bg-emerald-500/20 text-emerald-400'
                         }`}
                       >
-                        {row.includes("Unassigned") ? "Open" : "Assigned"}
+                        {row.includes('Unassigned') ? 'Open' : 'Assigned'}
                       </span>
                     </div>
                   )
@@ -207,8 +199,8 @@ export default function LandingPage({ onEnter }) {
             Everything you need to manage tutors
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-slate-500">
-            From allocation to reporting — Toodle covers the full lifecycle of
-            academic tutor management.
+            From allocation to reporting — Toodle covers the full lifecycle of academic tutor
+            management.
           </p>
         </div>
 
@@ -225,12 +217,8 @@ export default function LandingPage({ onEnter }) {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-lg text-blue-700">
                   {feature.icon}
                 </span>
-                <h3 className="mt-4 text-base font-semibold text-slate-900">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                  {feature.description}
-                </p>
+                <h3 className="mt-4 text-base font-semibold text-slate-900">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">{feature.description}</p>
               </div>
             </div>
           ))}
@@ -238,19 +226,14 @@ export default function LandingPage({ onEnter }) {
       </section>
 
       {/* ── Stats bar ────────────────────────────────────────────────── */}
-      <section
-        id="stats"
-        className="border-y border-slate-200 bg-slate-50"
-      >
+      <section id="stats" className="border-y border-slate-200 bg-slate-50">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden sm:grid-cols-4">
           {stats.map((stat) => (
             <div
               key={stat.label}
               className="flex flex-col items-center bg-white px-6 py-10 text-center"
             >
-              <p className="text-3xl font-extrabold text-slate-900">
-                {stat.value}
-              </p>
+              <p className="text-3xl font-extrabold text-slate-900">{stat.value}</p>
               <p className="mt-1.5 text-xs font-medium uppercase tracking-wider text-slate-400">
                 {stat.label}
               </p>
@@ -266,8 +249,8 @@ export default function LandingPage({ onEnter }) {
             Ready to streamline tutor management?
           </h2>
           <p className="mx-auto mt-3 max-w-md text-sm text-slate-400">
-            Join the School of Computer Science and start allocating tutors in
-            minutes — no setup required.
+            Join the School of Computer Science and start allocating tutors in minutes — no setup
+            required.
           </p>
           <button
             onClick={onEnter}
@@ -285,12 +268,8 @@ export default function LandingPage({ onEnter }) {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-700 text-[10px] font-bold text-white">
               T
             </div>
-            <span className="text-sm font-semibold text-slate-700">
-              Toodle
-            </span>
-            <span className="text-xs text-slate-400">
-              © 2026 · Wits School of Computer Science
-            </span>
+            <span className="text-sm font-semibold text-slate-700">Toodle</span>
+            <span className="text-xs text-slate-400">© 2026 · Wits School of Computer Science</span>
           </div>
 
           <div className="flex gap-6 text-xs text-slate-400">

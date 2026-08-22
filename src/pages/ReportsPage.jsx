@@ -40,7 +40,13 @@ const workloadData = [
 ];
 
 const recentReports = [
-  { id: 1, name: 'Semester 1 Allocation Summary', date: 'Jun 30, 2026', type: 'PDF', size: '1.2 MB' },
+  {
+    id: 1,
+    name: 'Semester 1 Allocation Summary',
+    date: 'Jun 30, 2026',
+    type: 'PDF',
+    size: '1.2 MB',
+  },
   { id: 2, name: 'Tutor Hours Report — July', date: 'Aug 01, 2026', type: 'CSV', size: '340 KB' },
   { id: 3, name: 'Course Staffing Audit', date: 'Aug 12, 2026', type: 'PDF', size: '890 KB' },
   { id: 4, name: 'Swap Activity Log — July', date: 'Aug 02, 2026', type: 'PDF', size: '210 KB' },
@@ -49,7 +55,9 @@ const recentReports = [
 export default function ReportsPage() {
   const [period, setPeriod] = useState('This Semester');
 
-  const avgFill = Math.round(allocationData.reduce((sum, c) => sum + c.fillPct, 0) / allocationData.length);
+  const avgFill = Math.round(
+    allocationData.reduce((sum, c) => sum + c.fillPct, 0) / allocationData.length
+  );
   const fullyStaffed = allocationData.filter((c) => c.fillPct === 100).length;
   const unfilled = allocationData.filter((c) => c.fillPct === 0).length;
   const totalTutorHours = workloadData.reduce((sum, t) => sum + t.hours, 0);
@@ -62,7 +70,8 @@ export default function ReportsPage() {
           <p className="text-sm font-medium text-blue-600">Analytics</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">Reports</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Allocation metrics, workload distribution, and downloadable reports for the current academic period.
+            Allocation metrics, workload distribution, and downloadable reports for the current
+            academic period.
           </p>
         </div>
         <div className="flex gap-2">
@@ -85,12 +94,35 @@ export default function ReportsPage() {
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Allocation Rate', value: `${avgFill}%`, desc: 'Average course fill rate', accent: 'text-blue-700' },
-          { label: 'Fully Staffed', value: `${fullyStaffed}/${allocationData.length}`, desc: 'Courses at full capacity', accent: 'text-emerald-600' },
-          { label: 'Unfilled Courses', value: unfilled, desc: 'Courses with no tutor assigned', accent: 'text-red-600' },
-          { label: 'Total Tutor Hours', value: `${totalTutorHours}h`, desc: 'Across all active tutors', accent: 'text-violet-600' },
+          {
+            label: 'Allocation Rate',
+            value: `${avgFill}%`,
+            desc: 'Average course fill rate',
+            accent: 'text-blue-700',
+          },
+          {
+            label: 'Fully Staffed',
+            value: `${fullyStaffed}/${allocationData.length}`,
+            desc: 'Courses at full capacity',
+            accent: 'text-emerald-600',
+          },
+          {
+            label: 'Unfilled Courses',
+            value: unfilled,
+            desc: 'Courses with no tutor assigned',
+            accent: 'text-red-600',
+          },
+          {
+            label: 'Total Tutor Hours',
+            value: `${totalTutorHours}h`,
+            desc: 'Across all active tutors',
+            accent: 'text-violet-600',
+          },
         ].map((card) => (
-          <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div
+            key={card.label}
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
             <p className="text-sm font-medium text-slate-500">{card.label}</p>
             <p className={`mt-2 text-3xl font-bold ${card.accent}`}>{card.value}</p>
             <p className="mt-2 text-xs text-slate-400">{card.desc}</p>
@@ -103,7 +135,9 @@ export default function ReportsPage() {
         {/* Course fill rate */}
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="mb-1 text-sm font-semibold text-slate-800">Course Fill Rate</h2>
-          <p className="mb-4 text-xs text-slate-400">Percentage of required tutors assigned per course.</p>
+          <p className="mb-4 text-xs text-slate-400">
+            Percentage of required tutors assigned per course.
+          </p>
           <div className="space-y-2.5">
             {allocationData.map((c) => (
               <div key={c.course} className="flex items-center gap-3">
@@ -111,12 +145,18 @@ export default function ReportsPage() {
                 <div className="relative h-4 flex-1 overflow-hidden rounded bg-slate-100">
                   <div
                     className={`h-full rounded transition-all ${
-                      c.fillPct === 100 ? 'bg-emerald-500' : c.fillPct > 0 ? 'bg-amber-400' : 'bg-red-300'
+                      c.fillPct === 100
+                        ? 'bg-emerald-500'
+                        : c.fillPct > 0
+                          ? 'bg-amber-400'
+                          : 'bg-red-300'
                     }`}
                     style={{ width: `${c.fillPct}%` }}
                   />
                 </div>
-                <span className="w-10 text-right text-xs font-bold text-slate-600">{c.fillPct}%</span>
+                <span className="w-10 text-right text-xs font-bold text-slate-600">
+                  {c.fillPct}%
+                </span>
               </div>
             ))}
           </div>
@@ -125,7 +165,9 @@ export default function ReportsPage() {
         {/* Tutor workload */}
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="mb-1 text-sm font-semibold text-slate-800">Tutor Workload</h2>
-          <p className="mb-4 text-xs text-slate-400">Weekly hours used vs. maximum capacity per tutor.</p>
+          <p className="mb-4 text-xs text-slate-400">
+            Weekly hours used vs. maximum capacity per tutor.
+          </p>
           <div className="space-y-3">
             {workloadData.map((t) => {
               const pct = Math.round((t.hours / t.max) * 100);
@@ -155,7 +197,9 @@ export default function ReportsPage() {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-4">
           <h2 className="font-semibold text-slate-800">Recent Reports</h2>
-          <p className="mt-0.5 text-sm text-slate-400">Downloadable reports generated by the system.</p>
+          <p className="mt-0.5 text-sm text-slate-400">
+            Downloadable reports generated by the system.
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -171,15 +215,22 @@ export default function ReportsPage() {
             </thead>
             <tbody>
               {recentReports.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                <tr
+                  key={r.id}
+                  className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
+                >
                   <td className="px-5 py-3">
                     <p className="text-sm font-medium text-slate-800">{r.name}</p>
                   </td>
                   <td className="px-5 py-3 text-sm text-slate-500">{r.date}</td>
                   <td className="px-5 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
-                      r.type === 'PDF' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-                    }`}>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                        r.type === 'PDF'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-emerald-50 text-emerald-700'
+                      }`}
+                    >
                       {r.type}
                     </span>
                   </td>

@@ -8,11 +8,9 @@ import { describe, it, expect } from 'vitest';
 import App from '../src/App';
 
 describe('App Smoke Test', () => {
-  it('renders base welcome screen without crashing', () => {
+  it('renders application without crashing', () => {
     render(<App />);
-    expect(screen.getByText('Toodle')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Frontend Base Project Initialized Successfully/i)
-    ).toBeInTheDocument();
+    expect(screen.getAllByText(/toodle/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/wits sdp/i)).toBeInTheDocument();
   });
 });

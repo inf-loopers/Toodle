@@ -40,7 +40,9 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const unreadCount = notifications.filter((n) => n.type === 'warning' || n.type === 'error').length;
+  const unreadCount = notifications.filter(
+    (n) => n.type === 'warning' || n.type === 'error'
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -106,8 +108,8 @@ export default function DashboardPage() {
                           n.type === 'error'
                             ? 'bg-red-500'
                             : n.type === 'warning'
-                            ? 'bg-amber-500'
-                            : 'bg-blue-500'
+                              ? 'bg-amber-500'
+                              : 'bg-blue-500'
                         }`}
                       />
                       <div>
@@ -131,10 +133,30 @@ export default function DashboardPage() {
 
       {/* Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Courses" value="24" description="Courses requiring tutors this term" accent="text-blue-700" />
-        <StatCard label="Active Tutors" value="68" description="Tutors available this semester" accent="text-emerald-600" />
-        <StatCard label="Allocated Slots" value="52" description="Assignments currently active" accent="text-violet-600" />
-        <StatCard label="Constraint Alerts" value="4" description="Issues needing your attention" accent="text-amber-600" />
+        <StatCard
+          label="Total Courses"
+          value="24"
+          description="Courses requiring tutors this term"
+          accent="text-blue-700"
+        />
+        <StatCard
+          label="Active Tutors"
+          value="68"
+          description="Tutors available this semester"
+          accent="text-emerald-600"
+        />
+        <StatCard
+          label="Allocated Slots"
+          value="52"
+          description="Assignments currently active"
+          accent="text-violet-600"
+        />
+        <StatCard
+          label="Constraint Alerts"
+          value="4"
+          description="Issues needing your attention"
+          accent="text-amber-600"
+        />
       </div>
 
       {/* Recent Activity */}
@@ -146,16 +168,19 @@ export default function DashboardPage() {
 
         <ul className="divide-y divide-slate-100">
           {recentActivity.map((item) => (
-            <li key={item.id} className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50/50">
+            <li
+              key={item.id}
+              className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50/50"
+            >
               <span
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                   item.action === 'Assigned'
                     ? 'bg-emerald-50 text-emerald-700'
                     : item.action === 'Updated'
-                    ? 'bg-blue-50 text-blue-700'
-                    : item.action === 'Removed'
-                    ? 'bg-red-50 text-red-700'
-                    : 'bg-violet-50 text-violet-700'
+                      ? 'bg-blue-50 text-blue-700'
+                      : item.action === 'Removed'
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-violet-50 text-violet-700'
                 }`}
               >
                 {item.action}

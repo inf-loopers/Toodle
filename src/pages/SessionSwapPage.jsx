@@ -26,10 +26,42 @@ const CURRENT_TUTOR = {
 };
 
 const mySessions = [
-  { id: 's1', course: 'COMS3011A', name: 'Data Structures', day: 'Monday', time: '10:00–12:00', hours: 2, venue: 'CB204' },
-  { id: 's2', course: 'COMS3022A', name: 'Algorithms', day: 'Wednesday', time: '14:00–16:00', hours: 2, venue: 'CB301' },
-  { id: 's3', course: 'COMS3040A', name: 'Machine Learning', day: 'Friday', time: '08:00–10:00', hours: 2, venue: 'CB101' },
-  { id: 's4', course: 'COMS3055A', name: 'Web Development', day: 'Friday', time: '12:00–14:00', hours: 2, venue: 'CB202' },
+  {
+    id: 's1',
+    course: 'COMS3011A',
+    name: 'Data Structures',
+    day: 'Monday',
+    time: '10:00–12:00',
+    hours: 2,
+    venue: 'CB204',
+  },
+  {
+    id: 's2',
+    course: 'COMS3022A',
+    name: 'Algorithms',
+    day: 'Wednesday',
+    time: '14:00–16:00',
+    hours: 2,
+    venue: 'CB301',
+  },
+  {
+    id: 's3',
+    course: 'COMS3040A',
+    name: 'Machine Learning',
+    day: 'Friday',
+    time: '08:00–10:00',
+    hours: 2,
+    venue: 'CB101',
+  },
+  {
+    id: 's4',
+    course: 'COMS3055A',
+    name: 'Web Development',
+    day: 'Friday',
+    time: '12:00–14:00',
+    hours: 2,
+    venue: 'CB202',
+  },
 ];
 
 const otherTutors = [
@@ -40,8 +72,24 @@ const otherTutors = [
     weeklyHoursMax: 12,
     weeklyHoursUsed: 10,
     sessions: [
-      { id: 's5', course: 'COMS3012A', name: 'Database Systems', day: 'Tuesday', time: '12:00–14:00', hours: 2, venue: 'CB205' },
-      { id: 's6', course: 'COMS3033A', name: 'Computer Graphics', day: 'Thursday', time: '10:00–12:00', hours: 2, venue: 'CB110' },
+      {
+        id: 's5',
+        course: 'COMS3012A',
+        name: 'Database Systems',
+        day: 'Tuesday',
+        time: '12:00–14:00',
+        hours: 2,
+        venue: 'CB205',
+      },
+      {
+        id: 's6',
+        course: 'COMS3033A',
+        name: 'Computer Graphics',
+        day: 'Thursday',
+        time: '10:00–12:00',
+        hours: 2,
+        venue: 'CB110',
+      },
     ],
   },
   {
@@ -51,9 +99,33 @@ const otherTutors = [
     weeklyHoursMax: 10,
     weeklyHoursUsed: 6,
     sessions: [
-      { id: 's7', course: 'COMS3013A', name: 'Operating Systems', day: 'Wednesday', time: '09:00–11:00', hours: 2, venue: 'CB302' },
-      { id: 's8', course: 'COMS3044A', name: 'Distributed Systems', day: 'Thursday', time: '14:00–16:00', hours: 2, venue: 'CB204' },
-      { id: 's9', course: 'COMS3060A', name: 'Cybersecurity', day: 'Monday', time: '14:00–16:00', hours: 2, venue: 'CB101' },
+      {
+        id: 's7',
+        course: 'COMS3013A',
+        name: 'Operating Systems',
+        day: 'Wednesday',
+        time: '09:00–11:00',
+        hours: 2,
+        venue: 'CB302',
+      },
+      {
+        id: 's8',
+        course: 'COMS3044A',
+        name: 'Distributed Systems',
+        day: 'Thursday',
+        time: '14:00–16:00',
+        hours: 2,
+        venue: 'CB204',
+      },
+      {
+        id: 's9',
+        course: 'COMS3060A',
+        name: 'Cybersecurity',
+        day: 'Monday',
+        time: '14:00–16:00',
+        hours: 2,
+        venue: 'CB101',
+      },
     ],
   },
   {
@@ -63,8 +135,24 @@ const otherTutors = [
     weeklyHoursMax: 14,
     weeklyHoursUsed: 8,
     sessions: [
-      { id: 's10', course: 'COMS3015A', name: 'Software Engineering', day: 'Friday', time: '10:00–12:00', hours: 2, venue: 'CB301' },
-      { id: 's11', course: 'COMS3050A', name: 'HCI', day: 'Tuesday', time: '08:00–10:00', hours: 2, venue: 'CB204' },
+      {
+        id: 's10',
+        course: 'COMS3015A',
+        name: 'Software Engineering',
+        day: 'Friday',
+        time: '10:00–12:00',
+        hours: 2,
+        venue: 'CB301',
+      },
+      {
+        id: 's11',
+        course: 'COMS3050A',
+        name: 'HCI',
+        day: 'Tuesday',
+        time: '08:00–10:00',
+        hours: 2,
+        venue: 'CB204',
+      },
     ],
   },
 ];
@@ -73,8 +161,18 @@ const initialIncoming = [
   {
     id: 'req1',
     fromTutor: { name: 'Sarah Nkosi', initials: 'SN' },
-    theirSession: { course: 'COMS3012A', name: 'Database Systems', day: 'Tuesday', time: '12:00–14:00' },
-    yourSession: { course: 'COMS3011A', name: 'Data Structures', day: 'Monday', time: '10:00–12:00' },
+    theirSession: {
+      course: 'COMS3012A',
+      name: 'Database Systems',
+      day: 'Tuesday',
+      time: '12:00–14:00',
+    },
+    yourSession: {
+      course: 'COMS3011A',
+      name: 'Data Structures',
+      day: 'Monday',
+      time: '10:00–12:00',
+    },
     status: 'pending',
     submittedAt: '2 hours ago',
   },
@@ -85,7 +183,12 @@ const initialOutgoing = [
     id: 'req2',
     toTutor: { name: 'Liam Smith', initials: 'LS' },
     yourSession: { course: 'COMS3022A', name: 'Algorithms', day: 'Wednesday', time: '14:00–16:00' },
-    theirSession: { course: 'COMS3060A', name: 'Cybersecurity', day: 'Monday', time: '14:00–16:00' },
+    theirSession: {
+      course: 'COMS3060A',
+      name: 'Cybersecurity',
+      day: 'Monday',
+      time: '14:00–16:00',
+    },
     status: 'pending',
     submittedAt: '1 day ago',
   },
@@ -105,25 +208,39 @@ function checkConstraints(mySession, partnerSession, partner) {
   const myNewDays = myDays.filter((d) => d !== `${mySession.day}|${mySession.time}`);
   const myNewSlot = `${partnerSession.day}|${partnerSession.time}`;
   if (myNewDays.includes(myNewSlot)) {
-    issues.push({ type: 'clash', message: `You already have a session on ${partnerSession.day} at ${partnerSession.time}.` });
+    issues.push({
+      type: 'clash',
+      message: `You already have a session on ${partnerSession.day} at ${partnerSession.time}.`,
+    });
   }
 
   // Partner's new schedule = partner.sessions - partnerSession + mySession
-  const partnerNewDays = partnerDays.filter((d) => d !== `${partnerSession.day}|${partnerSession.time}`);
+  const partnerNewDays = partnerDays.filter(
+    (d) => d !== `${partnerSession.day}|${partnerSession.time}`
+  );
   const partnerNewSlot = `${mySession.day}|${mySession.time}`;
   if (partnerNewDays.includes(partnerNewSlot)) {
-    issues.push({ type: 'clash', message: `${partner.name} already has a session on ${mySession.day} at ${mySession.time}.` });
+    issues.push({
+      type: 'clash',
+      message: `${partner.name} already has a session on ${mySession.day} at ${mySession.time}.`,
+    });
   }
 
   // Weekly hours check
   const myNewHours = CURRENT_TUTOR.weeklyHoursUsed - mySession.hours + partnerSession.hours;
   if (myNewHours > CURRENT_TUTOR.weeklyHoursMax) {
-    issues.push({ type: 'hours', message: `Swap would push you to ${myNewHours}h/${CURRENT_TUTOR.weeklyHoursMax}h weekly limit.` });
+    issues.push({
+      type: 'hours',
+      message: `Swap would push you to ${myNewHours}h/${CURRENT_TUTOR.weeklyHoursMax}h weekly limit.`,
+    });
   }
 
   const partnerNewHours = partner.weeklyHoursUsed - partnerSession.hours + mySession.hours;
   if (partnerNewHours > partner.weeklyHoursMax) {
-    issues.push({ type: 'hours', message: `Swap would push ${partner.name} to ${partnerNewHours}h/${partner.weeklyHoursMax}h weekly limit.` });
+    issues.push({
+      type: 'hours',
+      message: `Swap would push ${partner.name} to ${partnerNewHours}h/${partner.weeklyHoursMax}h weekly limit.`,
+    });
   }
 
   return { valid: issues.length === 0, issues };
@@ -138,9 +255,7 @@ function SwapModal({ session, onClose }) {
 
   const partner = otherTutors.find((t) => t.id === selectedTutor);
   const constraints =
-    partner && selectedSession
-      ? checkConstraints(session, selectedSession, partner)
-      : null;
+    partner && selectedSession ? checkConstraints(session, selectedSession, partner) : null;
 
   if (submitted) {
     return (
@@ -151,8 +266,8 @@ function SwapModal({ session, onClose }) {
           </div>
           <h3 className="mt-4 text-lg font-bold text-slate-900">Swap request submitted!</h3>
           <p className="mt-2 text-sm text-slate-500">
-            Your swap proposal has been sent to the Organiser for approval.
-            You&apos;ll be notified once a decision is made.
+            Your swap proposal has been sent to the Organiser for approval. You&apos;ll be notified
+            once a decision is made.
           </p>
           <button
             onClick={onClose}
@@ -172,9 +287,14 @@ function SwapModal({ session, onClose }) {
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div>
             <h3 className="text-base font-bold text-slate-900">Propose Session Swap</h3>
-            <p className="mt-0.5 text-xs text-slate-400">Trade one of your sessions with another tutor.</p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Trade one of your sessions with another tutor.
+            </p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
             &#10005;
           </button>
         </div>
@@ -182,13 +302,21 @@ function SwapModal({ session, onClose }) {
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
           {/* Your session */}
           <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">You are offering</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              You are offering
+            </p>
             <div className="mt-2 flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-slate-900">{session.course} — {session.name}</p>
-                <p className="mt-0.5 text-xs text-slate-500">{session.day} · {session.time} · {session.venue}</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {session.course} — {session.name}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {session.day} · {session.time} · {session.venue}
+                </p>
               </div>
-              <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">{session.hours}h</span>
+              <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                {session.hours}h
+              </span>
             </div>
           </div>
 
@@ -201,7 +329,10 @@ function SwapModal({ session, onClose }) {
               {otherTutors.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { setSelectedTutor(t.id); setSelectedSession(null); }}
+                  onClick={() => {
+                    setSelectedTutor(t.id);
+                    setSelectedSession(null);
+                  }}
                   className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
                     selectedTutor === t.id
                       ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-200'
@@ -213,7 +344,9 @@ function SwapModal({ session, onClose }) {
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-800">{t.name}</p>
-                    <p className="text-[11px] text-slate-400">{t.weeklyHoursUsed}/{t.weeklyHoursMax}h used</p>
+                    <p className="text-[11px] text-slate-400">
+                      {t.weeklyHoursUsed}/{t.weeklyHoursMax}h used
+                    </p>
                   </div>
                 </button>
               ))}
@@ -238,10 +371,16 @@ function SwapModal({ session, onClose }) {
                     }`}
                   >
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{ps.course} — {ps.name}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{ps.day} · {ps.time} · {ps.venue}</p>
+                      <p className="text-sm font-semibold text-slate-800">
+                        {ps.course} — {ps.name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {ps.day} · {ps.time} · {ps.venue}
+                      </p>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{ps.hours}h</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                      {ps.hours}h
+                    </span>
                   </button>
                 ))}
               </div>
@@ -250,12 +389,18 @@ function SwapModal({ session, onClose }) {
 
           {/* Constraint checks */}
           {constraints && (
-            <div className={`rounded-xl border p-4 ${constraints.valid ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+            <div
+              className={`rounded-xl border p-4 ${constraints.valid ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}
+            >
               <div className="flex items-center gap-2">
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${constraints.valid ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${constraints.valid ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                >
                   {constraints.valid ? '&#10003;' : '!'}
                 </span>
-                <p className={`text-sm font-semibold ${constraints.valid ? 'text-emerald-800' : 'text-amber-800'}`}>
+                <p
+                  className={`text-sm font-semibold ${constraints.valid ? 'text-emerald-800' : 'text-amber-800'}`}
+                >
                   {constraints.valid ? 'All constraints passed' : 'Constraint issues detected'}
                 </p>
               </div>
@@ -310,7 +455,9 @@ function StatusBadge({ status }) {
     rejected: 'bg-red-50 text-red-700 border-red-200',
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${styles[status] || styles.pending}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${styles[status] || styles.pending}`}
+    >
       {status === 'pending' && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
       {status === 'approved' && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
       {status === 'rejected' && <span className="h-1.5 w-1.5 rounded-full bg-red-500" />}
@@ -329,15 +476,11 @@ export default function SessionSwapPage() {
   const hoursRemaining = CURRENT_TUTOR.weeklyHoursMax - CURRENT_TUTOR.weeklyHoursUsed;
 
   function handleAccept(reqId) {
-    setIncoming((prev) =>
-      prev.map((r) => (r.id === reqId ? { ...r, status: 'approved' } : r))
-    );
+    setIncoming((prev) => prev.map((r) => (r.id === reqId ? { ...r, status: 'approved' } : r)));
   }
 
   function handleDecline(reqId) {
-    setIncoming((prev) =>
-      prev.map((r) => (r.id === reqId ? { ...r, status: 'rejected' } : r))
-    );
+    setIncoming((prev) => prev.map((r) => (r.id === reqId ? { ...r, status: 'rejected' } : r)));
   }
 
   return (
@@ -348,8 +491,8 @@ export default function SessionSwapPage() {
           <p className="text-sm font-medium text-blue-600">Session Trading</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">Swap Sessions</h1>
           <p className="mt-2 max-w-lg text-sm text-slate-500">
-            Trade sessions with other tutors. Every swap is validated against timetable
-            clashes and weekly hour limits, then routed to the Organiser for approval.
+            Trade sessions with other tutors. Every swap is validated against timetable clashes and
+            weekly hour limits, then routed to the Organiser for approval.
           </p>
         </div>
 
@@ -363,10 +506,14 @@ export default function SessionSwapPage() {
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
             <div
               className={`h-full rounded-full transition-all ${hoursRemaining <= 2 ? 'bg-amber-500' : 'bg-blue-600'}`}
-              style={{ width: `${(CURRENT_TUTOR.weeklyHoursUsed / CURRENT_TUTOR.weeklyHoursMax) * 100}%` }}
+              style={{
+                width: `${(CURRENT_TUTOR.weeklyHoursUsed / CURRENT_TUTOR.weeklyHoursMax) * 100}%`,
+              }}
             />
           </div>
-          <p className={`mt-1.5 text-xs font-medium ${hoursRemaining <= 2 ? 'text-amber-600' : 'text-emerald-600'}`}>
+          <p
+            className={`mt-1.5 text-xs font-medium ${hoursRemaining <= 2 ? 'text-amber-600' : 'text-emerald-600'}`}
+          >
             {hoursRemaining}h remaining
           </p>
         </div>
@@ -376,7 +523,9 @@ export default function SessionSwapPage() {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-4">
           <h2 className="font-semibold text-slate-800">Your Sessions</h2>
-          <p className="mt-1 text-sm text-slate-400">Click "Propose Swap" on any session to start a trade.</p>
+          <p className="mt-1 text-sm text-slate-400">
+            Click "Propose Swap" on any session to start a trade.
+          </p>
         </div>
 
         <div className="grid gap-3 p-5 sm:grid-cols-2">
@@ -446,14 +595,22 @@ export default function SessionSwapPage() {
                 <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 p-3">
                   <div className="flex-1 text-center">
                     <p className="text-[10px] font-semibold uppercase text-slate-400">They give</p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-700">{req.theirSession.course}</p>
-                    <p className="text-[11px] text-slate-400">{req.theirSession.day} · {req.theirSession.time}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                      {req.theirSession.course}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {req.theirSession.day} · {req.theirSession.time}
+                    </p>
                   </div>
                   <span className="text-slate-300">&#8644;</span>
                   <div className="flex-1 text-center">
                     <p className="text-[10px] font-semibold uppercase text-slate-400">You give</p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-700">{req.yourSession.course}</p>
-                    <p className="text-[11px] text-slate-400">{req.yourSession.day} · {req.yourSession.time}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                      {req.yourSession.course}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {req.yourSession.day} · {req.yourSession.time}
+                    </p>
                   </div>
                 </div>
 
@@ -482,7 +639,9 @@ export default function SessionSwapPage() {
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-5 py-4">
             <h2 className="font-semibold text-slate-800">Outgoing Requests</h2>
-            <p className="mt-1 text-sm text-slate-400">Swaps you&apos;ve proposed, awaiting Organiser approval.</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Swaps you&apos;ve proposed, awaiting Organiser approval.
+            </p>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -507,14 +666,22 @@ export default function SessionSwapPage() {
                 <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 p-3">
                   <div className="flex-1 text-center">
                     <p className="text-[10px] font-semibold uppercase text-slate-400">You give</p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-700">{req.yourSession.course}</p>
-                    <p className="text-[11px] text-slate-400">{req.yourSession.day} · {req.yourSession.time}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                      {req.yourSession.course}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {req.yourSession.day} · {req.yourSession.time}
+                    </p>
                   </div>
                   <span className="text-slate-300">&#8644;</span>
                   <div className="flex-1 text-center">
                     <p className="text-[10px] font-semibold uppercase text-slate-400">You get</p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-700">{req.theirSession.course}</p>
-                    <p className="text-[11px] text-slate-400">{req.theirSession.day} · {req.theirSession.time}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                      {req.theirSession.course}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {req.theirSession.day} · {req.theirSession.time}
+                    </p>
                   </div>
                 </div>
 
@@ -532,10 +699,22 @@ export default function SessionSwapPage() {
         <h2 className="font-semibold text-slate-800">How Session Swaps Work</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-4">
           {[
-            { step: '1', title: 'Propose', desc: 'Select your session and pick a tutor to trade with.' },
-            { step: '2', title: 'Validate', desc: 'The platform checks for timetable clashes and hour-limit violations.' },
+            {
+              step: '1',
+              title: 'Propose',
+              desc: 'Select your session and pick a tutor to trade with.',
+            },
+            {
+              step: '2',
+              title: 'Validate',
+              desc: 'The platform checks for timetable clashes and hour-limit violations.',
+            },
             { step: '3', title: 'Mutual Agree', desc: 'Both tutors must accept the swap terms.' },
-            { step: '4', title: 'Approval', desc: 'The Organiser reviews and gives final approval.' },
+            {
+              step: '4',
+              title: 'Approval',
+              desc: 'The Organiser reviews and gives final approval.',
+            },
           ].map((item) => (
             <div key={item.step} className="flex gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-sm font-bold text-white">
@@ -551,9 +730,7 @@ export default function SessionSwapPage() {
       </section>
 
       {/* Modal */}
-      {swapSession && (
-        <SwapModal session={swapSession} onClose={() => setSwapSession(null)} />
-      )}
+      {swapSession && <SwapModal session={swapSession} onClose={() => setSwapSession(null)} />}
     </div>
   );
 }

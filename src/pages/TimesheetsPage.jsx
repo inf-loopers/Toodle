@@ -16,18 +16,89 @@ import { useState } from 'react';
 const weekLabel = 'Aug 18 – Aug 22, 2026';
 
 const timesheetEntries = [
-  { id: 1, tutor: 'Thabo Mokoena', initials: 'TM', course: 'COMS3011A', session: 'Data Structures Tutorial', day: 'Monday', date: 'Aug 18', time: '10:00–12:00', hours: 2, status: 'approved' },
-  { id: 2, tutor: 'Sarah Nkosi', initials: 'SN', course: 'COMS3012A', session: 'Database Systems Lab', day: 'Tuesday', date: 'Aug 19', time: '12:00–14:00', hours: 2, status: 'approved' },
-  { id: 3, tutor: 'Liam Smith', initials: 'LS', course: 'COMS3013A', session: 'Operating Systems Tutorial', day: 'Wednesday', date: 'Aug 20', time: '09:00–11:00', hours: 2, status: 'submitted' },
-  { id: 4, tutor: 'Thabo Mokoena', initials: 'TM', course: 'COMS3022A', session: 'Algorithms Lab', day: 'Wednesday', date: 'Aug 20', time: '14:00–16:00', hours: 2, status: 'submitted' },
-  { id: 5, tutor: 'Ayesha Khan', initials: 'AK', course: 'COMS3015A', session: 'Software Engineering Tutorial', day: 'Friday', date: 'Aug 22', time: '10:00–12:00', hours: 2, status: 'draft' },
-  { id: 6, tutor: 'Thabo Mokoena', initials: 'TM', course: 'COMS3040A', session: 'Machine Learning Lab', day: 'Friday', date: 'Aug 22', time: '08:00–10:00', hours: 2, status: 'draft' },
+  {
+    id: 1,
+    tutor: 'Thabo Mokoena',
+    initials: 'TM',
+    course: 'COMS3011A',
+    session: 'Data Structures Tutorial',
+    day: 'Monday',
+    date: 'Aug 18',
+    time: '10:00–12:00',
+    hours: 2,
+    status: 'approved',
+  },
+  {
+    id: 2,
+    tutor: 'Sarah Nkosi',
+    initials: 'SN',
+    course: 'COMS3012A',
+    session: 'Database Systems Lab',
+    day: 'Tuesday',
+    date: 'Aug 19',
+    time: '12:00–14:00',
+    hours: 2,
+    status: 'approved',
+  },
+  {
+    id: 3,
+    tutor: 'Liam Smith',
+    initials: 'LS',
+    course: 'COMS3013A',
+    session: 'Operating Systems Tutorial',
+    day: 'Wednesday',
+    date: 'Aug 20',
+    time: '09:00–11:00',
+    hours: 2,
+    status: 'submitted',
+  },
+  {
+    id: 4,
+    tutor: 'Thabo Mokoena',
+    initials: 'TM',
+    course: 'COMS3022A',
+    session: 'Algorithms Lab',
+    day: 'Wednesday',
+    date: 'Aug 20',
+    time: '14:00–16:00',
+    hours: 2,
+    status: 'submitted',
+  },
+  {
+    id: 5,
+    tutor: 'Ayesha Khan',
+    initials: 'AK',
+    course: 'COMS3015A',
+    session: 'Software Engineering Tutorial',
+    day: 'Friday',
+    date: 'Aug 22',
+    time: '10:00–12:00',
+    hours: 2,
+    status: 'draft',
+  },
+  {
+    id: 6,
+    tutor: 'Thabo Mokoena',
+    initials: 'TM',
+    course: 'COMS3040A',
+    session: 'Machine Learning Lab',
+    day: 'Friday',
+    date: 'Aug 22',
+    time: '08:00–10:00',
+    hours: 2,
+    status: 'draft',
+  },
 ];
 
 const statusConfig = {
-  approved:  { label: 'Approved',  bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  submitted: { label: 'Submitted', bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500' },
-  draft:     { label: 'Draft',     bg: 'bg-slate-100',  text: 'text-slate-600',   dot: 'bg-slate-400' },
+  approved: {
+    label: 'Approved',
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    dot: 'bg-emerald-500',
+  },
+  submitted: { label: 'Submitted', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500' },
+  draft: { label: 'Draft', bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' },
 };
 
 const dayTotals = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => ({
@@ -38,9 +109,12 @@ const dayTotals = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((
 export default function TimesheetsPage() {
   const [filter, setFilter] = useState('all');
 
-  const filtered = filter === 'all' ? timesheetEntries : timesheetEntries.filter((e) => e.status === filter);
+  const filtered =
+    filter === 'all' ? timesheetEntries : timesheetEntries.filter((e) => e.status === filter);
   const totalHours = timesheetEntries.reduce((sum, e) => sum + e.hours, 0);
-  const approvedHours = timesheetEntries.filter((e) => e.status === 'approved').reduce((sum, e) => sum + e.hours, 0);
+  const approvedHours = timesheetEntries
+    .filter((e) => e.status === 'approved')
+    .reduce((sum, e) => sum + e.hours, 0);
 
   return (
     <div className="space-y-8">
@@ -101,7 +175,9 @@ export default function TimesheetsPage() {
         <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 lg:flex-row lg:items-center">
           <div>
             <h2 className="font-semibold text-slate-800">Session Entries</h2>
-            <p className="mt-0.5 text-sm text-slate-400">Individual timesheet line items for this week.</p>
+            <p className="mt-0.5 text-sm text-slate-400">
+              Individual timesheet line items for this week.
+            </p>
           </div>
           <div className="flex gap-2">
             {['all', 'draft', 'submitted', 'approved'].map((f) => (
@@ -136,7 +212,10 @@ export default function TimesheetsPage() {
               {filtered.map((entry) => {
                 const s = statusConfig[entry.status];
                 return (
-                  <tr key={entry.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                  <tr
+                    key={entry.id}
+                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
+                  >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
@@ -149,11 +228,18 @@ export default function TimesheetsPage() {
                       <p className="text-sm font-semibold text-slate-800">{entry.course}</p>
                       <p className="text-xs text-slate-400">{entry.session}</p>
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-600">{entry.day}<span className="ml-1 text-xs text-slate-400">({entry.date})</span></td>
+                    <td className="px-5 py-3 text-sm text-slate-600">
+                      {entry.day}
+                      <span className="ml-1 text-xs text-slate-400">({entry.date})</span>
+                    </td>
                     <td className="px-5 py-3 text-sm text-slate-600">{entry.time}</td>
-                    <td className="px-5 py-3 text-sm font-semibold text-slate-800">{entry.hours}h</td>
+                    <td className="px-5 py-3 text-sm font-semibold text-slate-800">
+                      {entry.hours}h
+                    </td>
                     <td className="px-5 py-3">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${s.bg} ${s.text}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${s.bg} ${s.text}`}
+                      >
                         <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
                         {s.label}
                       </span>
@@ -166,7 +252,9 @@ export default function TimesheetsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">No entries match the selected filter.</p>
+          <p className="py-8 text-center text-sm text-slate-400">
+            No entries match the selected filter.
+          </p>
         )}
       </section>
     </div>

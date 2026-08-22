@@ -17,57 +17,92 @@ import { useState } from 'react';
 
 const tutors = [
   {
-    id: 't1', name: 'Thabo Mokoena', initials: 'TM', studentNo: '218045631',
+    id: 't1',
+    name: 'Thabo Mokoena',
+    initials: 'TM',
+    studentNo: '218045631',
     email: 'thabo.mokoena@students.wits.ac.za',
-    hoursUsed: 8, hoursMax: 12,
+    hoursUsed: 8,
+    hoursMax: 12,
     days: ['Mon', 'Wed', 'Fri'],
     marks: [
-      { course: 'COMS3011A', mark: 85 }, { course: 'COMS3022A', mark: 78 }, { course: 'COMS2001A', mark: 92 },
+      { course: 'COMS3011A', mark: 85 },
+      { course: 'COMS3022A', mark: 78 },
+      { course: 'COMS2001A', mark: 92 },
     ],
   },
   {
-    id: 't2', name: 'Sarah Nkosi', initials: 'SN', studentNo: '219012847',
+    id: 't2',
+    name: 'Sarah Nkosi',
+    initials: 'SN',
+    studentNo: '219012847',
     email: 'sarah.nkosi@students.wits.ac.za',
-    hoursUsed: 10, hoursMax: 12,
+    hoursUsed: 10,
+    hoursMax: 12,
     days: ['Tue', 'Thu', 'Fri'],
     marks: [
-      { course: 'COMS3012A', mark: 90 }, { course: 'COMS3033A', mark: 82 }, { course: 'COMS2001A', mark: 88 },
+      { course: 'COMS3012A', mark: 90 },
+      { course: 'COMS3033A', mark: 82 },
+      { course: 'COMS2001A', mark: 88 },
     ],
   },
   {
-    id: 't3', name: 'Liam Smith', initials: 'LS', studentNo: '220067493',
+    id: 't3',
+    name: 'Liam Smith',
+    initials: 'LS',
+    studentNo: '220067493',
     email: 'liam.smith@students.wits.ac.za',
-    hoursUsed: 6, hoursMax: 10,
+    hoursUsed: 6,
+    hoursMax: 10,
     days: ['Mon', 'Wed', 'Thu'],
     marks: [
-      { course: 'COMS3013A', mark: 76 }, { course: 'COMS3044A', mark: 81 }, { course: 'COMS3060A', mark: 74 },
+      { course: 'COMS3013A', mark: 76 },
+      { course: 'COMS3044A', mark: 81 },
+      { course: 'COMS3060A', mark: 74 },
     ],
   },
   {
-    id: 't4', name: 'Ayesha Khan', initials: 'AK', studentNo: '217089124',
+    id: 't4',
+    name: 'Ayesha Khan',
+    initials: 'AK',
+    studentNo: '217089124',
     email: 'ayesha.khan@students.wits.ac.za',
-    hoursUsed: 8, hoursMax: 14,
+    hoursUsed: 8,
+    hoursMax: 14,
     days: ['Tue', 'Wed', 'Fri'],
     marks: [
-      { course: 'COMS3015A', mark: 94 }, { course: 'COMS3050A', mark: 88 }, { course: 'COMS2001A', mark: 91 },
+      { course: 'COMS3015A', mark: 94 },
+      { course: 'COMS3050A', mark: 88 },
+      { course: 'COMS2001A', mark: 91 },
     ],
   },
   {
-    id: 't5', name: 'Priya Dlamini', initials: 'PD', studentNo: '221034519',
+    id: 't5',
+    name: 'Priya Dlamini',
+    initials: 'PD',
+    studentNo: '221034519',
     email: 'priya.dlamini@students.wits.ac.za',
-    hoursUsed: 4, hoursMax: 10,
+    hoursUsed: 4,
+    hoursMax: 10,
     days: ['Mon', 'Tue', 'Thu'],
     marks: [
-      { course: 'COMS1015A', mark: 87 }, { course: 'COMS2001A', mark: 79 },
+      { course: 'COMS1015A', mark: 87 },
+      { course: 'COMS2001A', mark: 79 },
     ],
   },
   {
-    id: 't6', name: 'James van Wyk', initials: 'JV', studentNo: '219055672',
+    id: 't6',
+    name: 'James van Wyk',
+    initials: 'JV',
+    studentNo: '219055672',
     email: 'james.vanwyk@students.wits.ac.za',
-    hoursUsed: 10, hoursMax: 12,
+    hoursUsed: 10,
+    hoursMax: 12,
     days: ['Wed', 'Thu', 'Fri'],
     marks: [
-      { course: 'COMS3011A', mark: 80 }, { course: 'COMS3022A', mark: 83 }, { course: 'COMS3013A', mark: 77 },
+      { course: 'COMS3011A', mark: 80 },
+      { course: 'COMS3022A', mark: 83 },
+      { course: 'COMS3013A', mark: 77 },
     ],
   },
 ];
@@ -109,9 +144,13 @@ export default function TutorsPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+          ⌕
+        </span>
         <input
-          type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, student number, or email..."
           className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
         />
@@ -124,7 +163,10 @@ export default function TutorsPage() {
           const hoursCritical = hoursPct >= 80;
 
           return (
-            <div key={t.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+            <div
+              key={t.id}
+              className="rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+            >
               {/* Card header */}
               <div className="flex items-center gap-3 border-b border-slate-100 p-5">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
@@ -144,7 +186,9 @@ export default function TutorsPage() {
                 <div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium text-slate-500">Weekly hours</span>
-                    <span className={`font-bold ${hoursCritical ? 'text-amber-600' : 'text-slate-700'}`}>
+                    <span
+                      className={`font-bold ${hoursCritical ? 'text-amber-600' : 'text-slate-700'}`}
+                    >
                       {t.hoursUsed}/{t.hoursMax}h
                     </span>
                   </div>
@@ -180,7 +224,10 @@ export default function TutorsPage() {
                   <p className="mb-1.5 text-xs font-medium text-slate-500">Course marks</p>
                   <div className="flex flex-wrap gap-1.5">
                     {t.marks.map((m) => (
-                      <span key={m.course} className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${markColor(m.mark)}`}>
+                      <span
+                        key={m.course}
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${markColor(m.mark)}`}
+                      >
                         {m.course}: {m.mark}%
                       </span>
                     ))}
