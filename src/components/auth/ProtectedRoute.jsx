@@ -1,22 +1,30 @@
 /**
- * @file ProtectedRoute.jsx
- * @description Route guard component ensuring only authenticated users can access child routes.
+ * ProtectedRoute.jsx
  *
- * Responsibilities:
- * - Checks `isAuthenticated` and `isLoading` from `useAuth()`.
- * - Shows an accessible loading spinner while authentication state is verified.
- * - Redirects unauthenticated visitors to `/login` with the current location saved in state.
- * - Renders `<Outlet />` or `children` when authentication succeeds.
+ * Wrap any route element that requires a logged-in user.
  *
- * Expected Usage:
- * ```jsx
- * <Route element={<ProtectedRoute><PageLayout /></ProtectedRoute>}>
- *   <Route path="/dashboard" element={<DashboardPage />} />
- * </Route>
- * ```
+ * Usage (React Router v7):
+ *   <Route
+ *     path="/dashboard"
+ *     element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
+ *   />
  */
 
-export default function ProtectedRoute() {
-  // TODO: Implement authentication guard & loading spinner
-  return null;
+import React from 'react';
+import { useAuth } from '../../hooks/useAuth';
+
+export default function ProtectedRoute({ children }) {
+  const { isAuthenticated, isLoading, login } = useAuth();
+  
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading…</div>;
+  }
+
+  if (!isAuthenticated) {
+    login(); // kicks off the Auth0 redirect
+    return null;
+  }
+
+  return children;
 }
