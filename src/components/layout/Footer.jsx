@@ -19,8 +19,12 @@ export function Footer() {
           University of the Witwatersrand
         </div>
         <div className="flex items-center gap-5">
-          <a href="#" className="hover:text-slate-700">Contact Support</a>
-          <a href="#" className="hover:text-slate-700">Privacy Policy</a>
+          <a href="#" className="hover:text-slate-700">
+            Contact Support
+          </a>
+          <a href="#" className="hover:text-slate-700">
+            Privacy Policy
+          </a>
         </div>
         <p>© {new Date().getFullYear()} Wits University. All rights reserved.</p>
       </div>
@@ -29,4 +33,3 @@ export function Footer() {
 }
 
 export default Footer;
-

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 /**
  * Button
@@ -10,30 +10,25 @@ import React from "react";
  */
 export default function Button({
   children,
-  variant = "primary",
+  variant = 'primary',
   icon: Icon,
   onClick,
-  className = "",
+  className = '',
   ...props
 }) {
   const base =
-    "inline-flex items-center justify-center gap-2 font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-500";
+    'inline-flex items-center justify-center gap-2 font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-500';
 
   const variants = {
     primary:
-      "bg-slate-900 hover:bg-slate-800 text-white text-sm md:text-base rounded-xl px-6 py-3.5 shadow-sm",
-    ghost:
-      "text-slate-500 hover:text-slate-800 text-sm font-normal gap-1.5",
+      'bg-slate-900 hover:bg-slate-800 text-white text-sm md:text-base rounded-xl px-6 py-3.5 shadow-sm',
+    ghost: 'text-slate-500 hover:text-slate-800 text-sm font-normal gap-1.5',
   };
 
   return (
-    <button
-      onClick={onClick}
-      className={`${base} ${variants[variant]} ${className}`}
-      {...props}
-    >
+    <button onClick={onClick} className={`${base} ${variants[variant]} ${className}`} {...props}>
       {children}
-      {Icon && <Icon size={variant === "primary" ? 18 : 15} strokeWidth={4} />}
+      {Icon && <Icon size={variant === 'primary' ? 18 : 15} strokeWidth={4} />}
     </button>
   );
 }

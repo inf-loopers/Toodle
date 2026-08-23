@@ -38,8 +38,7 @@ export function useAuth() {
 
   const login = () => loginWithRedirect();
 
-  const logout = () =>
-    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  const logout = () => auth0Logout({ logoutParams: { returnTo: window.location.origin } });
 
   /** Get a bearer token to attach to API requests (see api/client.js) */
   const getToken = () => getAccessTokenSilently();

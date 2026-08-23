@@ -77,11 +77,16 @@ function Welcome({ name, tagline }) {
 // ── Organiser ────────────────────────────────────────────────────────────
 
 function OrganiserDashboard({ user }) {
-  const { data: courses, loading: coursesLoading, error: coursesError } = useApi(coursesApi.getCourses);
+  const {
+    data: courses,
+    loading: coursesLoading,
+    error: coursesError,
+  } = useApi(coursesApi.getCourses);
   const { data: tutors, loading: tutorsLoading } = useApi(tutorsApi.getTutors);
   const { data: allocations, loading: allocLoading } = useApi(allocationsApi.getAllocations);
 
-  if (coursesLoading || tutorsLoading || allocLoading) return <Spinner fullPage label="Loading your dashboard…" />;
+  if (coursesLoading || tutorsLoading || allocLoading)
+    return <Spinner fullPage label="Loading your dashboard…" />;
   if (coursesError) {
     return (
       <ErrorState
@@ -89,7 +94,9 @@ function OrganiserDashboard({ user }) {
         description={coursesError}
         action={
           <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+            <Button variant="secondary" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
             <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
           </div>
         }
@@ -101,7 +108,9 @@ function OrganiserDashboard({ user }) {
   const tutorList = tutors?.data ?? tutors ?? [];
   const allocationList = allocations?.data ?? allocations ?? [];
 
-  const activeAllocations = allocationList.filter((a) => a.status === 'ACTIVE' || a.status === 'PENDING');
+  const activeAllocations = allocationList.filter(
+    (a) => a.status === 'ACTIVE' || a.status === 'PENDING'
+  );
   const unfilled = courseList.filter(
     (c) => allocationList.filter((a) => a.courseId === c.id).length < (c.requiredTutors ?? 1)
   );
@@ -114,8 +123,19 @@ function OrganiserDashboard({ user }) {
       />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={BookOpen} label="Courses" value={courseList.length} description="Courses this semester" />
-        <StatCard icon={Users} label="Tutors" value={tutorList.length} tone="emerald" description="Registered tutors" />
+        <StatCard
+          icon={BookOpen}
+          label="Courses"
+          value={courseList.length}
+          description="Courses this semester"
+        />
+        <StatCard
+          icon={Users}
+          label="Tutors"
+          value={tutorList.length}
+          tone="emerald"
+          description="Registered tutors"
+        />
         <StatCard
           icon={CheckCircle2}
           label="Allocations"
@@ -147,11 +167,16 @@ function OrganiserDashboard({ user }) {
           />
           <CardBody>
             {unfilled.length === 0 ? (
-              <p className="text-sm text-slate-400">Every course has at least one tutor. Nice work.</p>
+              <p className="text-sm text-slate-400">
+                Every course has at least one tutor. Nice work.
+              </p>
             ) : (
               <div className="space-y-3">
                 {unfilled.slice(0, 5).map((course) => (
-                  <div key={course.id} className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/50 p-3">
+                  <div
+                    key={course.id}
+                    className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/50 p-3"
+                  >
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{course.code}</p>
                       <p className="text-xs text-slate-500">{course.name}</p>
@@ -165,27 +190,36 @@ function OrganiserDashboard({ user }) {
         </Card>
 
         <Card>
-          <CardHeader
-            title="Quick actions"
-            description="Jump back into the day-to-day."
-          />
+          <CardHeader title="Quick actions" description="Jump back into the day-to-day." />
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <Link to="/allocations" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+            <Link
+              to="/allocations"
+              className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle"
+            >
               <Sparkles className="h-4 w-4 text-primary" />
               <p className="mt-2 text-sm font-semibold text-slate-800">Generate allocation</p>
               <p className="mt-0.5 text-xs text-slate-400">Let Toodle propose assignments</p>
             </Link>
-            <Link to="/timesheets" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+            <Link
+              to="/timesheets"
+              className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle"
+            >
               <Clock className="h-4 w-4 text-primary" />
               <p className="mt-2 text-sm font-semibold text-slate-800">Review timesheets</p>
               <p className="mt-0.5 text-xs text-slate-400">Approve submitted hours</p>
             </Link>
-            <Link to="/volunteers" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+            <Link
+              to="/volunteers"
+              className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle"
+            >
               <HandHeart className="h-4 w-4 text-primary" />
               <p className="mt-2 text-sm font-semibold text-slate-800">Post overflow work</p>
               <p className="mt-0.5 text-xs text-slate-400">Open work for volunteers</p>
             </Link>
-            <Link to="/reports" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+            <Link
+              to="/reports"
+              className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle"
+            >
               <Users className="h-4 w-4 text-primary" />
               <p className="mt-2 text-sm font-semibold text-slate-800">View reports</p>
               <p className="mt-0.5 text-xs text-slate-400">Hours, budget & spread</p>
@@ -200,11 +234,20 @@ function OrganiserDashboard({ user }) {
 // ── Tutor ────────────────────────────────────────────────────────────────
 
 function TutorDashboard({ user }) {
-  const { data: allocations, loading: allocLoading, error: allocError } = useApi(allocationsApi.getAllocations);
-  const { data: timesheets, loading: tsLoading, error: tsError } = useApi(timesheetsApi.getTimesheets);
+  const {
+    data: allocations,
+    loading: allocLoading,
+    error: allocError,
+  } = useApi(allocationsApi.getAllocations);
+  const {
+    data: timesheets,
+    loading: tsLoading,
+    error: tsError,
+  } = useApi(timesheetsApi.getTimesheets);
   const { data: swaps, loading: swapsLoading, error: swapsError } = useApi(swapsApi.getSwaps);
 
-  if (allocLoading || tsLoading || swapsLoading) return <Spinner fullPage label="Loading your dashboard…" />;
+  if (allocLoading || tsLoading || swapsLoading)
+    return <Spinner fullPage label="Loading your dashboard…" />;
   const dashError = allocError || tsError || swapsError;
   if (dashError) {
     return (
@@ -213,7 +256,9 @@ function TutorDashboard({ user }) {
         description={dashError}
         action={
           <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+            <Button variant="secondary" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
             <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
           </div>
         }
@@ -228,7 +273,9 @@ function TutorDashboard({ user }) {
   const totalHours = allocationList.reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
   const maxHours = user?.maxHoursPerWeek ?? 10;
   const pendingSwaps = swapList.filter((s) => s.status === 'PENDING').length;
-  const draftTimesheets = timesheetList.filter((t) => t.status === 'DRAFT' || t.status === 'DISPUTED').length;
+  const draftTimesheets = timesheetList.filter(
+    (t) => t.status === 'DRAFT' || t.status === 'DISPUTED'
+  ).length;
 
   return (
     <>
@@ -282,9 +329,14 @@ function TutorDashboard({ user }) {
           ) : (
             <div className="space-y-3">
               {allocationList.map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3">
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                >
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{a.course?.code || a.courseId}</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {a.course?.code || a.courseId}
+                    </p>
                     <p className="text-xs text-slate-400">{a.course?.name}</p>
                   </div>
                   <Badge tone="primary">{formatHours(a.hoursPerWeek)} / week</Badge>
@@ -301,7 +353,11 @@ function TutorDashboard({ user }) {
 // ── Student ──────────────────────────────────────────────────────────────
 
 function StudentDashboard({ user }) {
-  const { data: posts, loading, error: postsError } = useApi(overflowApi.getPosts, { params: [{ status: 'OPEN' }] });
+  const {
+    data: posts,
+    loading,
+    error: postsError,
+  } = useApi(overflowApi.getPosts, { params: [{ status: 'OPEN' }] });
 
   if (loading) return <Spinner fullPage label="Loading opportunities…" />;
   if (postsError) {
@@ -311,7 +367,9 @@ function StudentDashboard({ user }) {
         description={postsError}
         action={
           <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+            <Button variant="secondary" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
             <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
           </div>
         }
@@ -325,8 +383,19 @@ function StudentDashboard({ user }) {
       <Welcome name={user?.name} tagline="Overflow work nobody has claimed yet is listed below." />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
-        <StatCard icon={HandHeart} label="Open Opportunities" value={postList.length} description="Ready to claim" />
-        <StatCard icon={Clock} label="Weekly Cap" value={`${user?.maxHoursPerWeek ?? 10}h`} tone="emerald" description="Your maximum hours" />
+        <StatCard
+          icon={HandHeart}
+          label="Open Opportunities"
+          value={postList.length}
+          description="Ready to claim"
+        />
+        <StatCard
+          icon={Clock}
+          label="Weekly Cap"
+          value={`${user?.maxHoursPerWeek ?? 10}h`}
+          tone="emerald"
+          description="Your maximum hours"
+        />
       </div>
 
       <Card>
@@ -343,14 +412,23 @@ function StudentDashboard({ user }) {
         />
         <CardBody>
           {postList.length === 0 ? (
-            <p className="text-sm text-slate-400">No overflow work is open right now — check back soon.</p>
+            <p className="text-sm text-slate-400">
+              No overflow work is open right now — check back soon.
+            </p>
           ) : (
             <div className="space-y-3">
               {postList.slice(0, 5).map((post) => (
-                <div key={post.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3">
+                <div
+                  key={post.id}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                >
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{post.course?.code || post.courseId}</p>
-                    <p className="text-xs text-slate-400">{post.description || `${post.hoursPerWeek}h per week`}</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {post.course?.code || post.courseId}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {post.description || `${post.hoursPerWeek}h per week`}
+                    </p>
                   </div>
                   <Badge tone="info">{formatHours(post.hoursPerWeek)}</Badge>
                 </div>

@@ -66,10 +66,12 @@ Toodle/
 ## ⚙️ Getting Started
 
 ### 1. Prerequisites
+
 - **Node.js**: v20+ or v24+
 - **npm**: v10+
 
 ### 2. Installation
+
 ```bash
 git clone <repo-url>
 cd Toodle
@@ -77,12 +79,15 @@ npm install
 ```
 
 ### 3. Environment Setup
+
 Copy `.env.example` to `.env`:
+
 ```bash
 cp .env.example .env
 ```
 
 Configure your Auth0 tenant variables in `.env`:
+
 ```ini
 VITE_API_URL=http://localhost:3000/api/v1
 VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
@@ -92,9 +97,11 @@ VITE_AUTH0_CALLBACK_URL=http://localhost:5173
 ```
 
 ### 4. Run Development Server
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
@@ -123,8 +130,8 @@ npm run preview
 
 ## 👥 Roles & Permissions
 
-| Role | Access Permissions |
-|---|---|
+| Role          | Access Permissions                                                          |
+| ------------- | --------------------------------------------------------------------------- |
 | **ORGANISER** | Full access to Allocation Board, Course Management, Tutor Marks & Directory |
-| **TUTOR** | View assigned courses, manage weekly availability matrix and hour capacity |
-| **STUDENT** | Browse course directory and tutorial schedules |
+| **TUTOR**     | View assigned courses, manage weekly availability matrix and hour capacity  |
+| **STUDENT**   | Browse course directory and tutorial schedules                              |

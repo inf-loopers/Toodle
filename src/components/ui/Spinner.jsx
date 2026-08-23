@@ -19,7 +19,9 @@ export function Spinner({ size = 'md', label = 'Loading…', className, fullPage
   const sizes = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-9 w-9' };
 
   const content = (
-    <div className={cn('flex flex-col items-center justify-center gap-3 text-slate-400', className)}>
+    <div
+      className={cn('flex flex-col items-center justify-center gap-3 text-slate-400', className)}
+    >
       <Loader2 className={cn(sizes[size], 'animate-spin text-primary')} aria-hidden="true" />
       {label && <p className="text-sm">{label}</p>}
     </div>

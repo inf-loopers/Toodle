@@ -1,10 +1,8 @@
-import React from "react";
-import { ArrowRight } from "lucide-react";
-import Badge from "./Badge";
-import Button from "./Button";
+import React from 'react';
+import { ArrowRight } from 'lucide-react';
+import Badge from './Badge';
+import Button from './Button';
 import { useAuth } from '../../hooks/useAuth';
-
- 
 
 export default function Hero() {
   const { isAuthenticated, isLoading, login } = useAuth();
@@ -27,20 +25,19 @@ export default function Hero() {
       />
       {/* Navy gradient overlay to match the mock */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-800/90 via-blue-900/70 to-white" />
- 
+
       <div className="relative z-20 max-w-5xl mx-auto px-6 pt-20 pb-32 flex flex-col items-center text-center">
         <Badge>Academic Precision System</Badge>
- 
+
         <h1 className="mt-8 text-4xl md:text-5xl font-extrabold text-white leading-tight max-w-3xl">
           Empowering Academic Excellence through Efficient Tutor Management
         </h1>
- 
+
         <p className="mt-6 text-lg text-blue-50/90 max-w-2xl leading-relaxed">
-          A unified platform for organisers, tutors, and volunteers to
-          streamline allocations, track hours, and ensure seamless academic
-          support across the university.
+          A unified platform for organisers, tutors, and volunteers to streamline allocations, track
+          hours, and ensure seamless academic support across the university.
         </p>
- 
+
         <Button
           variant="primary"
           icon={ArrowRight}

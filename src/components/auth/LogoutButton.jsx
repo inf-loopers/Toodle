@@ -19,7 +19,14 @@ import { LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../utils/helpers';
 
-export function LogoutButton({ className, children, showIcon = true, showLabel = true, onClick: externalOnClick, ...rest }) {
+export function LogoutButton({
+  className,
+  children,
+  showIcon = true,
+  showLabel = true,
+  onClick: externalOnClick,
+  ...rest
+}) {
   const { logout } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -58,4 +65,3 @@ export function LogoutButton({ className, children, showIcon = true, showLabel =
 }
 
 export default LogoutButton;
-

@@ -36,7 +36,9 @@ export function Card({ className, children, padded = true, ...props }) {
 
 export function CardHeader({ className, title, description, action, children }) {
   return (
-    <div className={cn('flex flex-col justify-between gap-4 sm:flex-row sm:items-center', className)}>
+    <div
+      className={cn('flex flex-col justify-between gap-4 sm:flex-row sm:items-center', className)}
+    >
       <div>
         {title && <h2 className="font-semibold text-slate-900">{title}</h2>}
         {description && <p className="mt-1 text-sm text-slate-400">{description}</p>}

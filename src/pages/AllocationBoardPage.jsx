@@ -93,7 +93,9 @@ function AssignTutorModal({ open, onClose, course, tutors, onAssigned }) {
       onAssigned();
       onClose();
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || err.message || 'Could not create the allocation.');
+      setSubmitError(
+        err?.response?.data?.message || err.message || 'Could not create the allocation.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +109,9 @@ function AssignTutorModal({ open, onClose, course, tutors, onAssigned }) {
       description={course?.name}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={handleSubmit} loading={submitting} disabled={!tutorId}>
             Confirm assignment
           </Button>
@@ -162,9 +166,17 @@ function AssignTutorModal({ open, onClose, course, tutors, onAssigned }) {
 }
 
 export function AllocationBoardPage() {
-  const { data: courses, loading: coursesLoading, error: coursesError } = useApi(coursesApi.getCourses);
+  const {
+    data: courses,
+    loading: coursesLoading,
+    error: coursesError,
+  } = useApi(coursesApi.getCourses);
   const { data: tutors, loading: tutorsLoading } = useApi(tutorsApi.getTutors);
-  const { data: allocations, loading: allocLoading, refetch: refetchAllocations } = useApi(allocationsApi.getAllocations);
+  const {
+    data: allocations,
+    loading: allocLoading,
+    refetch: refetchAllocations,
+  } = useApi(allocationsApi.getAllocations);
 
   const [assignTarget, setAssignTarget] = useState(null);
 
@@ -180,7 +192,9 @@ export function AllocationBoardPage() {
     }));
   }, [courseList, allocationList]);
 
-  const unfilledCount = rows.filter((r) => r.allocations.length < (r.course.requiredTutors ?? 1)).length;
+  const unfilledCount = rows.filter(
+    (r) => r.allocations.length < (r.course.requiredTutors ?? 1)
+  ).length;
 
   const handleToggleLock = async (allocation) => {
     await allocationsApi.updateAllocation(allocation.id, { isLocked: !allocation.isLocked });
@@ -193,14 +207,17 @@ export function AllocationBoardPage() {
   };
 
   if (loading) return <Spinner fullPage label="Loading the allocation board…" />;
-  if (coursesError) return <ErrorState title="Couldn't load the board" description={coursesError} />;
+  if (coursesError)
+    return <ErrorState title="Couldn't load the board" description={coursesError} />;
 
   return (
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <p className="text-sm font-medium text-primary">2026 Academic Year</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">Allocation Board</h1>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+            Allocation Board
+          </h1>
           <p className="mt-2 text-sm text-slate-500">
             Assign tutors to courses while checking marks, availability and weekly hours.
           </p>
@@ -232,7 +249,11 @@ export function AllocationBoardPage() {
         </div>
 
         {rows.length === 0 ? (
-          <EmptyState className="border-0" title="No courses yet" description="Add a course to start building the board." />
+          <EmptyState
+            className="border-0"
+            title="No courses yet"
+            description="Add a course to start building the board."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px]">
@@ -249,7 +270,10 @@ export function AllocationBoardPage() {
                 {rows.map(({ course, allocations: courseAllocs }) => {
                   const filled = courseAllocs.length >= (course.requiredTutors ?? 1);
                   return (
-                    <tr key={course.id} className="border-b border-slate-100 last:border-0 align-top hover:bg-slate-50/50">
+                    <tr
+                      key={course.id}
+                      className="border-b border-slate-100 last:border-0 align-top hover:bg-slate-50/50"
+                    >
                       <td className="px-5 py-4">
                         <p className="font-semibold text-slate-900">{course.code}</p>
                         <p className="mt-1 text-xs text-slate-400">{course.name}</p>
@@ -263,10 +287,16 @@ export function AllocationBoardPage() {
                                 {getInitials(a.user?.name)}
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-slate-800">{a.user?.name || a.userId}</p>
-                                <p className="text-xs text-slate-400">{formatHours(a.hoursPerWeek)} / week</p>
+                                <p className="text-sm font-medium text-slate-800">
+                                  {a.user?.name || a.userId}
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  {formatHours(a.hoursPerWeek)} / week
+                                </p>
                               </div>
-                              {a.isLocked && <Lock className="h-3.5 w-3.5 text-slate-400" title="Locked" />}
+                              {a.isLocked && (
+                                <Lock className="h-3.5 w-3.5 text-slate-400" title="Locked" />
+                              )}
                             </div>
                           ))}
 
@@ -284,7 +314,9 @@ export function AllocationBoardPage() {
                       </td>
 
                       <td className="px-5 py-4">
-                        <Badge tone={filled ? 'success' : 'danger'}>{filled ? 'Filled' : 'Needs tutor'}</Badge>
+                        <Badge tone={filled ? 'success' : 'danger'}>
+                          {filled ? 'Filled' : 'Needs tutor'}
+                        </Badge>
                       </td>
 
                       <td className="px-5 py-4">
@@ -301,7 +333,11 @@ export function AllocationBoardPage() {
                                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                                 title={a.isLocked ? 'Unlock' : 'Lock'}
                               >
-                                {a.isLocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                                {a.isLocked ? (
+                                  <Unlock className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Lock className="h-3.5 w-3.5" />
+                                )}
                               </button>
                               <button
                                 onClick={() => handleRemove(a)}

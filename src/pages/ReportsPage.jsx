@@ -28,7 +28,10 @@ function Bar({ label, value, max, suffix = '', tone = 'bg-primary' }) {
     <div>
       <div className="mb-1 flex items-center justify-between text-xs">
         <span className="font-medium text-slate-600">{label}</span>
-        <span className="text-slate-400">{value}{suffix}</span>
+        <span className="text-slate-400">
+          {value}
+          {suffix}
+        </span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
@@ -51,7 +54,9 @@ export function ReportsPage() {
     return courseList
       .map((c) => ({
         course: c,
-        hours: allocationList.filter((a) => a.courseId === c.id).reduce((s, a) => s + Number(a.hoursPerWeek || 0), 0),
+        hours: allocationList
+          .filter((a) => a.courseId === c.id)
+          .reduce((s, a) => s + Number(a.hoursPerWeek || 0), 0),
       }))
       .sort((a, b) => b.hours - a.hours);
   }, [courseList, allocationList]);
@@ -62,7 +67,9 @@ export function ReportsPage() {
     return tutorList
       .map((t) => ({
         tutor: t,
-        hours: allocationList.filter((a) => a.userId === t.id).reduce((s, a) => s + Number(a.hoursPerWeek || 0), 0),
+        hours: allocationList
+          .filter((a) => a.userId === t.id)
+          .reduce((s, a) => s + Number(a.hoursPerWeek || 0), 0),
       }))
       .sort((a, b) => b.hours - a.hours);
   }, [tutorList, allocationList]);
@@ -80,7 +87,9 @@ export function ReportsPage() {
     <>
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Reports</h1>
-        <p className="mt-2 text-sm text-slate-500">Hours per course, budget spend, and how the work is spread across tutors.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          Hours per course, budget spend, and how the work is spread across tutors.
+        </p>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -91,27 +100,47 @@ export function ReportsPage() {
           </p>
         </Card>
         <Card>
-          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500"><Wallet className="h-3.5 w-3.5" /> Budget spent</p>
+          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+            <Wallet className="h-3.5 w-3.5" /> Budget spent
+          </p>
           <p className="mt-2 text-3xl font-bold text-slate-900">
-            R{totalSpent.toLocaleString()} <span className="text-sm font-normal text-slate-400">/ R{totalAmount.toLocaleString()}</span>
+            R{totalSpent.toLocaleString()}{' '}
+            <span className="text-sm font-normal text-slate-400">
+              / R{totalAmount.toLocaleString()}
+            </span>
           </p>
         </Card>
         <Card>
-          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500"><Users className="h-3.5 w-3.5" /> Active tutors</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{workloadPerTutor.filter((t) => t.hours > 0).length}</p>
+          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+            <Users className="h-3.5 w-3.5" /> Active tutors
+          </p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">
+            {workloadPerTutor.filter((t) => t.hours > 0).length}
+          </p>
         </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Hours per course" description="Weekly tutor hours allocated, by course." />
+          <CardHeader
+            title="Hours per course"
+            description="Weekly tutor hours allocated, by course."
+          />
           <CardBody className="space-y-4">
             {hoursPerCourse.length === 0 ? (
               <p className="text-sm text-slate-400">No allocations yet.</p>
             ) : (
-              hoursPerCourse.slice(0, 8).map(({ course, hours }) => (
-                <Bar key={course.id} label={course.code} value={hours} max={maxHours} suffix="h" />
-              ))
+              hoursPerCourse
+                .slice(0, 8)
+                .map(({ course, hours }) => (
+                  <Bar
+                    key={course.id}
+                    label={course.code}
+                    value={hours}
+                    max={maxHours}
+                    suffix="h"
+                  />
+                ))
             )}
           </CardBody>
         </Card>
@@ -126,7 +155,14 @@ export function ReportsPage() {
                 .filter((t) => t.hours > 0)
                 .slice(0, 8)
                 .map(({ tutor, hours }) => (
-                  <Bar key={tutor.id} label={tutor.name} value={hours} max={maxTutorHours} suffix="h" tone="bg-accent" />
+                  <Bar
+                    key={tutor.id}
+                    label={tutor.name}
+                    value={hours}
+                    max={maxTutorHours}
+                    suffix="h"
+                    tone="bg-accent"
+                  />
                 ))
             )}
           </CardBody>

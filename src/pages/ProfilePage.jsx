@@ -34,7 +34,9 @@ export function ProfilePage() {
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
   const [maxHours, setMaxHours] = useState(10);
   const [saving, setSaving] = useState(false);
-  const [slots, setSlots] = useState([{ dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' }]);
+  const [slots, setSlots] = useState([
+    { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' },
+  ]);
   const [savingAvailability, setSavingAvailability] = useState(false);
 
   const profile = currentUser?.data ?? currentUser;
@@ -42,7 +44,13 @@ export function ProfilePage() {
   useEffect(() => {
     if (profile?.maxHoursPerWeek) setMaxHours(profile.maxHoursPerWeek);
     if (profile?.availability?.length) {
-      setSlots(profile.availability.map((a) => ({ dayOfWeek: a.dayOfWeek, startTime: a.startTime, endTime: a.endTime })));
+      setSlots(
+        profile.availability.map((a) => ({
+          dayOfWeek: a.dayOfWeek,
+          startTime: a.startTime,
+          endTime: a.endTime,
+        }))
+      );
     }
   }, [profile]);
 
@@ -63,7 +71,8 @@ export function ProfilePage() {
     setSlots((s) => s.map((slot, i) => (i === idx ? { ...slot, [key]: value } : slot)));
   };
 
-  const addSlot = () => setSlots((s) => [...s, { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' }]);
+  const addSlot = () =>
+    setSlots((s) => [...s, { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' }]);
   const removeSlot = (idx) => setSlots((s) => s.filter((_, i) => i !== idx));
 
   const handleSaveAvailability = async () => {
@@ -91,7 +100,9 @@ export function ProfilePage() {
             </div>
             <h2 className="mt-4 text-lg font-bold text-slate-900">{profile?.name || user?.name}</h2>
             <p className="text-sm text-slate-400">{profile?.email || user?.email}</p>
-            <Badge tone="primary" className="mt-3">{ROLE_LABELS[role]}</Badge>
+            <Badge tone="primary" className="mt-3">
+              {ROLE_LABELS[role]}
+            </Badge>
             {profile?.studentNumber && (
               <p className="mt-4 text-xs text-slate-400">Student number: {profile.studentNumber}</p>
             )}
@@ -100,9 +111,19 @@ export function ProfilePage() {
 
         <div className="space-y-6 lg:col-span-2">
           <Card>
-            <CardHeader title="Weekly hours cap" description="The maximum hours you can be allocated per week." />
+            <CardHeader
+              title="Weekly hours cap"
+              description="The maximum hours you can be allocated per week."
+            />
             <CardBody className="flex items-end gap-3">
-              <Input type="number" min={1} max={40} value={maxHours} onChange={(e) => setMaxHours(e.target.value)} className="max-w-32" />
+              <Input
+                type="number"
+                min={1}
+                max={40}
+                value={maxHours}
+                onChange={(e) => setMaxHours(e.target.value)}
+                className="max-w-32"
+              />
               <Button onClick={handleSaveHours} loading={saving}>
                 <Save className="h-4 w-4" /> Save
               </Button>
@@ -123,19 +144,42 @@ export function ProfilePage() {
               <CardBody className="space-y-3">
                 {slots.map((slot, idx) => (
                   <div key={idx} className="flex items-end gap-2">
-                    <Select label={idx === 0 ? 'Day' : undefined} value={slot.dayOfWeek} onChange={(e) => updateSlot(idx, 'dayOfWeek', e.target.value)}>
+                    <Select
+                      label={idx === 0 ? 'Day' : undefined}
+                      value={slot.dayOfWeek}
+                      onChange={(e) => updateSlot(idx, 'dayOfWeek', e.target.value)}
+                    >
                       {DAYS_OF_WEEK.map((d) => (
-                        <option key={d} value={d}>{formatDay(d)}</option>
+                        <option key={d} value={d}>
+                          {formatDay(d)}
+                        </option>
                       ))}
                     </Select>
-                    <Input label={idx === 0 ? 'Start' : undefined} type="time" value={slot.startTime} onChange={(e) => updateSlot(idx, 'startTime', e.target.value)} />
-                    <Input label={idx === 0 ? 'End' : undefined} type="time" value={slot.endTime} onChange={(e) => updateSlot(idx, 'endTime', e.target.value)} />
-                    <button onClick={() => removeSlot(idx)} className="mb-0.5 rounded-lg p-2.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                    <Input
+                      label={idx === 0 ? 'Start' : undefined}
+                      type="time"
+                      value={slot.startTime}
+                      onChange={(e) => updateSlot(idx, 'startTime', e.target.value)}
+                    />
+                    <Input
+                      label={idx === 0 ? 'End' : undefined}
+                      type="time"
+                      value={slot.endTime}
+                      onChange={(e) => updateSlot(idx, 'endTime', e.target.value)}
+                    />
+                    <button
+                      onClick={() => removeSlot(idx)}
+                      className="mb-0.5 rounded-lg p-2.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
-                <Button onClick={handleSaveAvailability} loading={savingAvailability} variant="secondary">
+                <Button
+                  onClick={handleSaveAvailability}
+                  loading={savingAvailability}
+                  variant="secondary"
+                >
                   <Save className="h-4 w-4" /> Save availability
                 </Button>
               </CardBody>

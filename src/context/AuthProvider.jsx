@@ -16,7 +16,13 @@ import { AuthContext } from './AuthContext';
 import { usersApi } from '../api/users';
 
 export default function AuthProvider({ children }) {
-  const { isAuthenticated, isLoading: auth0Loading, getAccessTokenSilently, user: auth0User, error: auth0Error } = useAuth0();
+  const {
+    isAuthenticated,
+    isLoading: auth0Loading,
+    getAccessTokenSilently,
+    user: auth0User,
+    error: auth0Error,
+  } = useAuth0();
   const [dbUser, setDbUser] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
@@ -57,7 +63,11 @@ export default function AuthProvider({ children }) {
         if (cancelled) return;
 
         const profile = me.data ?? me;
-        console.log('[Auth] Profile loaded:', { id: profile.id, role: profile.role, email: profile.email });
+        console.log('[Auth] Profile loaded:', {
+          id: profile.id,
+          role: profile.role,
+          email: profile.email,
+        });
         setDbUser({ ...profile, role: (profile.role ?? 'student').toLowerCase() });
       } catch (err) {
         console.error('[Auth] Backend sync failed:', {
@@ -68,9 +78,9 @@ export default function AuthProvider({ children }) {
         if (!cancelled) {
           setSyncError(
             err?.response?.data?.message ||
-            err?.response?.data?.error ||
-            err?.message ||
-            'Could not reach the server'
+              err?.response?.data?.error ||
+              err?.message ||
+              'Could not reach the server'
           );
         }
       } finally {
@@ -85,8 +95,6 @@ export default function AuthProvider({ children }) {
   }, [isAuthenticated, auth0Loading, getAccessTokenSilently]);
 
   return (
-    <AuthContext.Provider value={{ dbUser, isSyncing, syncError }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ dbUser, isSyncing, syncError }}>{children}</AuthContext.Provider>
   );
 }

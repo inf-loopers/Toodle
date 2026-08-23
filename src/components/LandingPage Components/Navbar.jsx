@@ -1,5 +1,5 @@
-import React from "react";
-import { GraduationCap } from "lucide-react";
+import React from 'react';
+import { GraduationCap } from 'lucide-react';
 
 export default function Navbar() {
   return (
@@ -12,9 +12,7 @@ export default function Navbar() {
           </span>
         </div>
 
-        <span className="font-mono text-xs text-slate-400 tracking-wide">
-          Version 2.1.0
-        </span>
+        <span className="font-mono text-xs text-slate-400 tracking-wide">Version 2.1.0</span>
       </div>
     </header>
   );

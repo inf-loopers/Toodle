@@ -58,7 +58,12 @@ export function useApi(apiFn, { immediate = true, initialData = null, params = [
           if (status === 404) {
             setData([]);
           } else {
-            setError(err?.response?.data?.message || err?.response?.data?.error || err?.message || 'An unexpected error occurred');
+            setError(
+              err?.response?.data?.message ||
+                err?.response?.data?.error ||
+                err?.message ||
+                'An unexpected error occurred'
+            );
           }
           setLoading(false);
         }

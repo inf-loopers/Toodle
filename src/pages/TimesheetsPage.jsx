@@ -30,7 +30,10 @@ import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 function NewTimesheetModal({ open, onClose, courses, onCreated }) {
   const today = new Date();
   const monday = new Date(today.setDate(today.getDate() - ((today.getDay() + 6) % 7)));
-  const [form, setForm] = useState({ courseId: '', weekStarting: monday.toISOString().slice(0, 10) });
+  const [form, setForm] = useState({
+    courseId: '',
+    weekStarting: monday.toISOString().slice(0, 10),
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -52,16 +55,26 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
       title="Start a timesheet"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={submitting} disabled={!form.courseId}>Create</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={submitting} disabled={!form.courseId}>
+            Create
+          </Button>
         </>
       }
     >
       <div className="space-y-4">
-        <Select label="Course" value={form.courseId} onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}>
+        <Select
+          label="Course"
+          value={form.courseId}
+          onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}
+        >
           <option value="">Choose a course…</option>
           {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.code}</option>
+            <option key={c.id} value={c.id}>
+              {c.code}
+            </option>
           ))}
         </Select>
         <Input
@@ -101,15 +114,35 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
       description={timesheet.course?.code}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={submitting} disabled={!form.date}>Log entry</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={submitting} disabled={!form.date}>
+            Log entry
+          </Button>
         </>
       }
     >
       <div className="space-y-4">
-        <Input label="Date" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
-        <Input label="Hours" type="number" min={0.25} step={0.25} value={form.hours} onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))} />
-        <Textarea label="What did you work on?" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+        <Input
+          label="Date"
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+        />
+        <Input
+          label="Hours"
+          type="number"
+          min={0.25}
+          step={0.25}
+          value={form.hours}
+          onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))}
+        />
+        <Textarea
+          label="What did you work on?"
+          value={form.description}
+          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+        />
       </div>
     </Modal>
   );
@@ -142,12 +175,21 @@ function DisputeModal({ timesheet, open, onClose, onDisputed }) {
       description={`${timesheet.user?.name || ''} · ${timesheet.course?.code || ''}`}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="danger" onClick={handleSubmit} loading={submitting} disabled={!note}>Send back</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleSubmit} loading={submitting} disabled={!note}>
+            Send back
+          </Button>
         </>
       }
     >
-      <Textarea label="What needs to change?" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Hours on Tuesday don't match the session length." />
+      <Textarea
+        label="What needs to change?"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="e.g. Hours on Tuesday don't match the session length."
+      />
     </Modal>
   );
 }
@@ -193,7 +235,9 @@ export function TimesheetsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Timesheets</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser ? 'Approve, dispute or track submitted hours.' : 'Log your hours and submit them for approval.'}
+            {isOrganiser
+              ? 'Approve, dispute or track submitted hours.'
+              : 'Log your hours and submit them for approval.'}
           </p>
         </div>
         {!isOrganiser && (
@@ -204,19 +248,34 @@ export function TimesheetsPage() {
       </div>
 
       {timesheets.length === 0 ? (
-        <EmptyState icon={Clock} title="No timesheets yet" description={isOrganiser ? 'Nothing has been submitted yet.' : 'Start one to log your hours for the week.'} />
+        <EmptyState
+          icon={Clock}
+          title="No timesheets yet"
+          description={
+            isOrganiser
+              ? 'Nothing has been submitted yet.'
+              : 'Start one to log your hours for the week.'
+          }
+        />
       ) : (
         <Card padded={false}>
           <div className="divide-y divide-slate-100">
             {timesheets.map((ts) => (
-              <div key={ts.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={ts.id}
+                className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-800">{ts.course?.code || ts.courseId}</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {ts.course?.code || ts.courseId}
+                    </p>
                     <Badge tone={TIMESHEET_STATUS_TONE[ts.status] || 'neutral'}>{ts.status}</Badge>
                   </div>
                   <p className="mt-1 text-xs text-slate-400">
-                    Week of {formatShortDate(ts.weekStarting)} {isOrganiser && ts.user?.name ? `· ${ts.user.name}` : ''} · {Number(ts.totalHours || 0)}h logged
+                    Week of {formatShortDate(ts.weekStarting)}{' '}
+                    {isOrganiser && ts.user?.name ? `· ${ts.user.name}` : ''} ·{' '}
+                    {Number(ts.totalHours || 0)}h logged
                   </p>
                   {ts.disputeNote && ts.status === 'DISPUTED' && (
                     <p className="mt-1 text-xs text-amber-700">"{ts.disputeNote}"</p>
@@ -229,7 +288,11 @@ export function TimesheetsPage() {
                       <Button size="sm" variant="secondary" onClick={() => setLogTarget(ts)}>
                         <Plus className="h-3.5 w-3.5" /> Log hours
                       </Button>
-                      <Button size="sm" onClick={() => handleSubmitTimesheet(ts.id)} loading={busyId === ts.id}>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSubmitTimesheet(ts.id)}
+                        loading={busyId === ts.id}
+                      >
                         <Send className="h-3.5 w-3.5" /> Submit
                       </Button>
                     </>
@@ -240,7 +303,11 @@ export function TimesheetsPage() {
                       <Button size="sm" variant="secondary" onClick={() => setDisputeTarget(ts)}>
                         <XCircle className="h-3.5 w-3.5" /> Dispute
                       </Button>
-                      <Button size="sm" onClick={() => handleApprove(ts.id)} loading={busyId === ts.id}>
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(ts.id)}
+                        loading={busyId === ts.id}
+                      >
                         <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                       </Button>
                     </>
@@ -254,12 +321,27 @@ export function TimesheetsPage() {
 
       {!isOrganiser && (
         <>
-          <NewTimesheetModal open={newOpen} onClose={() => setNewOpen(false)} courses={courses} onCreated={refetch} />
-          <LogHoursModal timesheet={logTarget} open={Boolean(logTarget)} onClose={() => setLogTarget(null)} onLogged={refetch} />
+          <NewTimesheetModal
+            open={newOpen}
+            onClose={() => setNewOpen(false)}
+            courses={courses}
+            onCreated={refetch}
+          />
+          <LogHoursModal
+            timesheet={logTarget}
+            open={Boolean(logTarget)}
+            onClose={() => setLogTarget(null)}
+            onLogged={refetch}
+          />
         </>
       )}
       {isOrganiser && (
-        <DisputeModal timesheet={disputeTarget} open={Boolean(disputeTarget)} onClose={() => setDisputeTarget(null)} onDisputed={refetch} />
+        <DisputeModal
+          timesheet={disputeTarget}
+          open={Boolean(disputeTarget)}
+          onClose={() => setDisputeTarget(null)}
+          onDisputed={refetch}
+        />
       )}
     </>
   );

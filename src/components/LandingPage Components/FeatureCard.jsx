@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 /**
  * FeatureCard
@@ -14,9 +14,7 @@ export default function FeatureCard({ icon: Icon, iconBg, iconColor, title, desc
 
       <h3 className="mt-5 text-lg font-bold text-slate-900">{title}</h3>
 
-      <p className="mt-2.5 text-sm text-slate-500 leading-relaxed">
-        {description}
-      </p>
+      <p className="mt-2.5 text-sm text-slate-500 leading-relaxed">{description}</p>
     </div>
   );
 }

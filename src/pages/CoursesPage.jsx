@@ -27,7 +27,15 @@ import { Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
 function CreateCourseModal({ open, onClose, onCreated }) {
-  const [form, setForm] = useState({ code: '', name: '', description: '', year: 2026, semester: 1, requiredTutors: 1, minMarkRequired: 50 });
+  const [form, setForm] = useState({
+    code: '',
+    name: '',
+    description: '',
+    year: 2026,
+    semester: 1,
+    requiredTutors: 1,
+    minMarkRequired: 50,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,22 +73,56 @@ function CreateCourseModal({ open, onClose, onCreated }) {
       description="Add a course for organisers to allocate tutors against."
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={submitting}>Create course</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={submitting}>
+            Create course
+          </Button>
         </>
       }
     >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Course code" placeholder="COMS3011A" value={form.code} onChange={update('code')} />
+          <Input
+            label="Course code"
+            placeholder="COMS3011A"
+            value={form.code}
+            onChange={update('code')}
+          />
           <Input label="Year" type="number" value={form.year} onChange={update('year')} />
         </div>
-        <Input label="Course name" placeholder="Data Structures" value={form.name} onChange={update('name')} />
+        <Input
+          label="Course name"
+          placeholder="Data Structures"
+          value={form.name}
+          onChange={update('name')}
+        />
         <Textarea label="Description" value={form.description} onChange={update('description')} />
         <div className="grid grid-cols-3 gap-4">
-          <Input label="Semester" type="number" min={1} max={2} value={form.semester} onChange={update('semester')} />
-          <Input label="Tutors needed" type="number" min={1} value={form.requiredTutors} onChange={update('requiredTutors')} />
-          <Input label="Min. mark %" type="number" min={0} max={100} value={form.minMarkRequired} onChange={update('minMarkRequired')} />
+          <Input
+            label="Semester"
+            type="number"
+            min={1}
+            max={2}
+            value={form.semester}
+            onChange={update('semester')}
+          />
+          <Input
+            label="Tutors needed"
+            type="number"
+            min={1}
+            value={form.requiredTutors}
+            onChange={update('requiredTutors')}
+          />
+          <Input
+            label="Min. mark %"
+            type="number"
+            min={0}
+            max={100}
+            value={form.minMarkRequired}
+            onChange={update('minMarkRequired')}
+          />
         </div>
         {error && <p className="text-xs text-rose-600">{error}</p>}
       </div>
@@ -102,7 +144,14 @@ export function CoursesPage() {
   );
 
   if (loading) return <Spinner fullPage label="Loading courses…" />;
-  if (error) return <ErrorState title="Couldn't load courses" description={error} action={<Button onClick={refetch}>Try again</Button>} />;
+  if (error)
+    return (
+      <ErrorState
+        title="Couldn't load courses"
+        description={error}
+        action={<Button onClick={refetch}>Try again</Button>}
+      />
+    );
 
   return (
     <>
@@ -110,7 +159,9 @@ export function CoursesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Courses</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser ? 'Everything the school is running this semester.' : 'The courses you tutor for.'}
+            {isOrganiser
+              ? 'Everything the school is running this semester.'
+              : 'The courses you tutor for.'}
           </p>
         </div>
         <div className="flex gap-3">
@@ -135,7 +186,9 @@ export function CoursesPage() {
         <EmptyState
           icon={BookOpen}
           title="No courses found"
-          description={search ? 'Try a different search term.' : 'Courses will appear here once added.'}
+          description={
+            search ? 'Try a different search term.' : 'Courses will appear here once added.'
+          }
         />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -146,7 +199,9 @@ export function CoursesPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
                     <BookOpen className="h-5 w-5" />
                   </div>
-                  <Badge tone="neutral">Sem {course.semester} · {course.year}</Badge>
+                  <Badge tone="neutral">
+                    Sem {course.semester} · {course.year}
+                  </Badge>
                 </div>
                 <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
                 <p className="text-sm text-slate-500">{course.name}</p>
@@ -154,7 +209,9 @@ export function CoursesPage() {
                   <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
                 )}
                 <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className="text-xs text-slate-400">{course.requiredTutors ?? 1} tutor(s) needed</span>
+                  <span className="text-xs text-slate-400">
+                    {course.requiredTutors ?? 1} tutor(s) needed
+                  </span>
                   <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                     Details <ArrowRight className="h-3 w-3" />
                   </span>
@@ -166,7 +223,11 @@ export function CoursesPage() {
       )}
 
       {isOrganiser && (
-        <CreateCourseModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={refetch} />
+        <CreateCourseModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={refetch}
+        />
       )}
     </>
   );

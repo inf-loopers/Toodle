@@ -26,7 +26,13 @@ import Modal from '../components/ui/Modal';
 import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
-const STATUS_TONE = { OPEN: 'info', CLAIMED: 'warning', APPROVED: 'success', CLOSED: 'neutral', CANCELLED: 'danger' };
+const STATUS_TONE = {
+  OPEN: 'info',
+  CLAIMED: 'warning',
+  APPROVED: 'success',
+  CLOSED: 'neutral',
+  CANCELLED: 'danger',
+};
 
 function PostWorkModal({ open, onClose, courses, onCreated }) {
   const [form, setForm] = useState({ courseId: '', hoursPerWeek: 2, description: '' });
@@ -53,8 +59,12 @@ function PostWorkModal({ open, onClose, courses, onCreated }) {
       description="Open a slot for tutors or students to volunteer for."
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={submitting} disabled={!form.courseId}>Post work</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={submitting} disabled={!form.courseId}>
+            Post work
+          </Button>
         </>
       }
     >
@@ -62,11 +72,24 @@ function PostWorkModal({ open, onClose, courses, onCreated }) {
         <Select label="Course" value={form.courseId} onChange={update('courseId')}>
           <option value="">Choose a course…</option>
           {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+            <option key={c.id} value={c.id}>
+              {c.code} — {c.name}
+            </option>
           ))}
         </Select>
-        <Input label="Hours per week" type="number" min={1} value={form.hoursPerWeek} onChange={update('hoursPerWeek')} />
-        <Textarea label="Description" placeholder="What does this work involve?" value={form.description} onChange={update('description')} />
+        <Input
+          label="Hours per week"
+          type="number"
+          min={1}
+          value={form.hoursPerWeek}
+          onChange={update('hoursPerWeek')}
+        />
+        <Textarea
+          label="Description"
+          placeholder="What does this work involve?"
+          value={form.description}
+          onChange={update('description')}
+        />
       </div>
     </Modal>
   );
@@ -111,7 +134,9 @@ export function VolunteersPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Volunteer Overflow</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser ? 'Post work nobody is allocated to and approve claims.' : 'Claim overflow work nobody has taken yet.'}
+            {isOrganiser
+              ? 'Post work nobody is allocated to and approve claims.'
+              : 'Claim overflow work nobody has taken yet.'}
           </p>
         </div>
         {isOrganiser && (
@@ -122,7 +147,11 @@ export function VolunteersPage() {
       </div>
 
       {posts.length === 0 ? (
-        <EmptyState icon={HandHeart} title="No overflow work right now" description="Check back soon, or post new work if you're an organiser." />
+        <EmptyState
+          icon={HandHeart}
+          title="No overflow work right now"
+          description="Check back soon, or post new work if you're an organiser."
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {posts.map((post) => (
@@ -133,25 +162,38 @@ export function VolunteersPage() {
                 </div>
                 <Badge tone={STATUS_TONE[post.status] || 'neutral'}>{post.status}</Badge>
               </div>
-              <h3 className="mt-4 font-bold text-slate-900">{post.course?.code || post.courseId}</h3>
+              <h3 className="mt-4 font-bold text-slate-900">
+                {post.course?.code || post.courseId}
+              </h3>
               <p className="text-sm text-slate-500">{post.course?.name}</p>
-              <p className="mt-2 text-xs text-slate-400">{post.description || 'No description provided.'}</p>
+              <p className="mt-2 text-xs text-slate-400">
+                {post.description || 'No description provided.'}
+              </p>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
                 <Badge tone="primary">{formatHours(post.hoursPerWeek)} / week</Badge>
 
                 {!isOrganiser && post.status === 'OPEN' && (
-                  <Button size="sm" onClick={() => handleClaim(post.id)} loading={busyId === post.id}>
+                  <Button
+                    size="sm"
+                    onClick={() => handleClaim(post.id)}
+                    loading={busyId === post.id}
+                  >
                     Claim
                   </Button>
                 )}
 
                 {isOrganiser && post.claims?.length > 0 && (
                   <div className="w-full">
-                    <p className="mt-1 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Claims</p>
+                    <p className="mt-1 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Claims
+                    </p>
                     <div className="space-y-2">
                       {post.claims.map((claim) => (
-                        <div key={claim.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-2.5 py-1.5">
+                        <div
+                          key={claim.id}
+                          className="flex items-center justify-between rounded-lg border border-slate-100 px-2.5 py-1.5"
+                        >
                           <div className="flex items-center gap-2">
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                               {getInitials(claim.user?.name)}
@@ -159,7 +201,12 @@ export function VolunteersPage() {
                             <span className="text-xs text-slate-600">{claim.user?.name}</span>
                           </div>
                           {claim.status === 'CLAIMED' ? (
-                            <Button size="sm" variant="ghost" onClick={() => handleApproveClaim(claim.id)} loading={busyId === claim.id}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleApproveClaim(claim.id)}
+                              loading={busyId === claim.id}
+                            >
                               <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                             </Button>
                           ) : (
@@ -177,7 +224,12 @@ export function VolunteersPage() {
       )}
 
       {isOrganiser && (
-        <PostWorkModal open={postModalOpen} onClose={() => setPostModalOpen(false)} courses={courses} onCreated={refetch} />
+        <PostWorkModal
+          open={postModalOpen}
+          onClose={() => setPostModalOpen(false)}
+          courses={courses}
+          onCreated={refetch}
+        />
       )}
     </>
   );

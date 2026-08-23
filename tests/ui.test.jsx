@@ -31,8 +31,6 @@ describe('App Smoke Test', () => {
       </MemoryRouter>
     );
     expect(screen.getByText('Toodle - Wits Tutor Management')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Empowering Academic Excellence/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Empowering Academic Excellence/i)).toBeInTheDocument();
   });
 });

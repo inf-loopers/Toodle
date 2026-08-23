@@ -51,11 +51,18 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
     <Modal open={open} onClose={onClose} title={tutor.name} description={tutor.email} size="lg">
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Marks on record</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Marks on record
+          </p>
           <div className="space-y-2">
-            {(tutor.tutorMarks ?? []).length === 0 && <p className="text-sm text-slate-400">No marks recorded yet.</p>}
+            {(tutor.tutorMarks ?? []).length === 0 && (
+              <p className="text-sm text-slate-400">No marks recorded yet.</p>
+            )}
             {(tutor.tutorMarks ?? []).map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm">
+              <div
+                key={m.id}
+                className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm"
+              >
                 <span className="text-slate-600">{m.course?.code || m.courseId}</span>
                 <Badge tone={m.mark >= 50 ? 'success' : 'danger'}>{m.mark}%</Badge>
               </div>
@@ -63,32 +70,56 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
           </div>
 
           <div className="mt-4 space-y-3 rounded-xl border border-slate-100 p-3">
-            <Select label="Add / update a mark" value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+            <Select
+              label="Add / update a mark"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+            >
               <option value="">Choose a course…</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>{c.code}</option>
+                <option key={c.id} value={c.id}>
+                  {c.code}
+                </option>
               ))}
             </Select>
-            <Input label="Mark (%)" type="number" min={0} max={100} value={mark} onChange={(e) => setMark(e.target.value)} />
-            <Button size="sm" onClick={handleAddMark} loading={submitting} disabled={!courseId || mark === ''} className="w-full justify-center">
+            <Input
+              label="Mark (%)"
+              type="number"
+              min={0}
+              max={100}
+              value={mark}
+              onChange={(e) => setMark(e.target.value)}
+            />
+            <Button
+              size="sm"
+              onClick={handleAddMark}
+              loading={submitting}
+              disabled={!courseId || mark === ''}
+              className="w-full justify-center"
+            >
               Save mark
             </Button>
           </div>
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Weekly availability</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Weekly availability
+          </p>
           <div className="space-y-2">
-            {(tutor.availability ?? []).length === 0 && <p className="text-sm text-slate-400">No availability submitted yet.</p>}
+            {(tutor.availability ?? []).length === 0 && (
+              <p className="text-sm text-slate-400">No availability submitted yet.</p>
+            )}
             {(tutor.availability ?? []).map((a) => (
-              <div key={a.id} className="rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-600">
+              <div
+                key={a.id}
+                className="rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-600"
+              >
                 {formatDay(a.dayOfWeek)} · {formatTime(a.startTime)}–{formatTime(a.endTime)}
               </div>
             ))}
           </div>
-          <p className="mt-4 text-xs text-slate-400">
-            Max {tutor.maxHoursPerWeek ?? 10}h / week
-          </p>
+          <p className="mt-4 text-xs text-slate-400">Max {tutor.maxHoursPerWeek ?? 10}h / week</p>
         </div>
       </div>
     </Modal>
@@ -103,7 +134,11 @@ export function TutorsPage() {
 
   const tutors = data?.data ?? data ?? [];
   const courses = coursesData?.data ?? coursesData ?? [];
-  const filtered = tutors.filter((t) => (t.name || '').toLowerCase().includes(search.toLowerCase()) || (t.email || '').toLowerCase().includes(search.toLowerCase()));
+  const filtered = tutors.filter(
+    (t) =>
+      (t.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (t.email || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   if (loading) return <Spinner fullPage label="Loading tutors…" />;
   if (error) return <ErrorState title="Couldn't load tutors" description={error} />;
@@ -113,7 +148,9 @@ export function TutorsPage() {
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tutors</h1>
-          <p className="mt-2 text-sm text-slate-500">Marks, availability and weekly hours for every tutor.</p>
+          <p className="mt-2 text-sm text-slate-500">
+            Marks, availability and weekly hours for every tutor.
+          </p>
         </div>
         <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
           <Search className="mr-2 h-4 w-4 text-slate-400" />
@@ -127,7 +164,11 @@ export function TutorsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Users} title="No tutors found" description="Tutors will appear here once registered." />
+        <EmptyState
+          icon={Users}
+          title="No tutors found"
+          description="Tutors will appear here once registered."
+        />
       ) : (
         <Card padded={false}>
           <div className="divide-y divide-slate-100">

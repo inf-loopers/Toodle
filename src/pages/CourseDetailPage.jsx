@@ -31,7 +31,13 @@ import { Select, Input } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
 function AddSessionModal({ open, onClose, courseId, onCreated }) {
-  const [form, setForm] = useState({ dayOfWeek: 'MONDAY', startTime: '10:00', endTime: '12:00', venue: '', sessionType: 'TUTORIAL' });
+  const [form, setForm] = useState({
+    dayOfWeek: 'MONDAY',
+    startTime: '10:00',
+    endTime: '12:00',
+    venue: '',
+    sessionType: 'TUTORIAL',
+  });
   const [submitting, setSubmitting] = useState(false);
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -53,25 +59,43 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
       title="Add a session"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={submitting}>Add session</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={submitting}>
+            Add session
+          </Button>
         </>
       }
     >
       <div className="space-y-4">
         <Select label="Day" value={form.dayOfWeek} onChange={update('dayOfWeek')}>
           {DAYS_OF_WEEK.map((d) => (
-            <option key={d} value={d}>{formatDay(d)}</option>
+            <option key={d} value={d}>
+              {formatDay(d)}
+            </option>
           ))}
         </Select>
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Start time" type="time" value={form.startTime} onChange={update('startTime')} />
+          <Input
+            label="Start time"
+            type="time"
+            value={form.startTime}
+            onChange={update('startTime')}
+          />
           <Input label="End time" type="time" value={form.endTime} onChange={update('endTime')} />
         </div>
-        <Input label="Venue" placeholder="e.g. CompLab 3" value={form.venue} onChange={update('venue')} />
+        <Input
+          label="Venue"
+          placeholder="e.g. CompLab 3"
+          value={form.venue}
+          onChange={update('venue')}
+        />
         <Select label="Session type" value={form.sessionType} onChange={update('sessionType')}>
           {Object.values(SESSION_TYPES).map((t) => (
-            <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>
+            <option key={t} value={t}>
+              {t.charAt(0) + t.slice(1).toLowerCase()}
+            </option>
           ))}
         </Select>
       </div>
@@ -83,8 +107,12 @@ export function CourseDetailPage() {
   const { id } = useParams();
   const { isOrganiser } = useAuth();
   const { data: course, loading, error } = useApi(coursesApi.getCourse, { params: [id] });
-  const { data: sessions, refetch: refetchSessions } = useApi(coursesApi.getCourseSessions, { params: [id] });
-  const { data: allocations } = useApi(allocationsApi.getAllocations, { params: [{ courseId: id }] });
+  const { data: sessions, refetch: refetchSessions } = useApi(coursesApi.getCourseSessions, {
+    params: [id],
+  });
+  const { data: allocations } = useApi(allocationsApi.getAllocations, {
+    params: [{ courseId: id }],
+  });
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
 
   if (loading) return <Spinner fullPage label="Loading course…" />;
@@ -97,7 +125,10 @@ export function CourseDetailPage() {
 
   return (
     <>
-      <Link to="/courses" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary">
+      <Link
+        to="/courses"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to courses
       </Link>
 
@@ -105,10 +136,14 @@ export function CourseDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">{courseData?.code}</h1>
-            <Badge tone="neutral">Sem {courseData?.semester} · {courseData?.year}</Badge>
+            <Badge tone="neutral">
+              Sem {courseData?.semester} · {courseData?.year}
+            </Badge>
           </div>
           <p className="mt-1 text-lg text-slate-600">{courseData?.name}</p>
-          {courseData?.description && <p className="mt-2 max-w-2xl text-sm text-slate-500">{courseData.description}</p>}
+          {courseData?.description && (
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">{courseData.description}</p>
+          )}
         </div>
 
         {isOrganiser && (
@@ -121,11 +156,15 @@ export function CourseDetailPage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Card>
           <p className="text-sm font-medium text-slate-500">Tutors needed</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{allocationList.length} / {courseData?.requiredTutors ?? 1}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">
+            {allocationList.length} / {courseData?.requiredTutors ?? 1}
+          </p>
         </Card>
         <Card>
           <p className="text-sm font-medium text-slate-500">Min. mark required</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{courseData?.minMarkRequired ?? 50}%</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">
+            {courseData?.minMarkRequired ?? 50}%
+          </p>
         </Card>
         <Card>
           <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
@@ -133,7 +172,10 @@ export function CourseDetailPage() {
           </p>
           {budget ? (
             <p className="mt-2 text-2xl font-bold text-slate-900">
-              R{Number(budget.spent).toLocaleString()} <span className="text-sm font-normal text-slate-400">/ R{Number(budget.amount).toLocaleString()}</span>
+              R{Number(budget.spent).toLocaleString()}{' '}
+              <span className="text-sm font-normal text-slate-400">
+                / R{Number(budget.amount).toLocaleString()}
+              </span>
             </p>
           ) : (
             <p className="mt-2 text-sm text-slate-400">No budget set</p>
@@ -183,7 +225,10 @@ export function CourseDetailPage() {
 
         <Card padded={false}>
           <div className="p-5">
-            <CardHeader title="Assigned tutors" description="Who's currently allocated to this course." />
+            <CardHeader
+              title="Assigned tutors"
+              description="Who's currently allocated to this course."
+            />
           </div>
           {allocationList.length === 0 ? (
             <EmptyState className="border-0" title="No tutor assigned yet" />

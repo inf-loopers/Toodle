@@ -58,9 +58,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
         </div>
 
         {/* Page title (desktop) */}
-        {title && (
-          <h2 className="hidden text-lg font-semibold text-slate-900 md:block">{title}</h2>
-        )}
+        {title && <h2 className="hidden text-lg font-semibold text-slate-900 md:block">{title}</h2>}
       </div>
 
       {/* Right section: user info */}
@@ -79,11 +77,15 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                 <p className="text-sm font-medium leading-tight text-slate-700">
                   {user.name || user.email}
                 </p>
-                <span className={`inline-block rounded px-1.5 text-[10px] font-semibold leading-tight ${getRoleBadgeStyle(role)}`}>
+                <span
+                  className={`inline-block rounded px-1.5 text-[10px] font-semibold leading-tight ${getRoleBadgeStyle(role)}`}
+                >
                   {ROLE_LABELS[role] || 'User'}
                 </span>
               </div>
-              <ChevronDown className={`hidden h-4 w-4 text-slate-400 transition-transform lg:block ${menuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`hidden h-4 w-4 text-slate-400 transition-transform lg:block ${menuOpen ? 'rotate-180' : ''}`}
+              />
             </button>
 
             {/* Dropdown menu */}
@@ -95,7 +97,9 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                   {user.email && user.name && (
                     <p className="mt-0.5 truncate text-xs text-slate-400">{user.email}</p>
                   )}
-                  <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${getRoleBadgeStyle(role)}`}>
+                  <span
+                    className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${getRoleBadgeStyle(role)}`}
+                  >
                     {ROLE_LABELS[role] || 'User'}
                   </span>
                 </div>
@@ -115,4 +119,3 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
     </header>
   );
 }
-

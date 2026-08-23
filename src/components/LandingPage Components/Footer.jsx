@@ -1,6 +1,6 @@
-import React from "react";
-import { LifeBuoy, Lock } from "lucide-react";
-import Button from "./Button";
+import React from 'react';
+import { LifeBuoy, Lock } from 'lucide-react';
+import Button from './Button';
 
 export default function Footer() {
   return (

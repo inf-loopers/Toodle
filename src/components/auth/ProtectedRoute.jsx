@@ -51,7 +51,9 @@ export function ProtectedRoute({ allowedRoles }) {
           <p className="mt-1 text-sm text-slate-500">{error}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            Try again
+          </Button>
           <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
         </div>
       </div>
@@ -71,7 +73,9 @@ export function ProtectedRoute({ allowedRoles }) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={() => window.history.back()}>Go back</Button>
+          <Button variant="secondary" onClick={() => window.history.back()}>
+            Go back
+          </Button>
           <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
         </div>
       </div>

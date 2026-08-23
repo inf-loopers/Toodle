@@ -20,7 +20,9 @@ export function NotFoundPage() {
         <Compass className="h-6 w-6" />
       </div>
       <h1 className="mt-6 text-4xl font-bold text-slate-900">404</h1>
-      <p className="mt-2 text-sm text-slate-500">This page doesn't exist, or you don't have access to it.</p>
+      <p className="mt-2 text-sm text-slate-500">
+        This page doesn't exist, or you don't have access to it.
+      </p>
       <Link to="/dashboard" className="mt-6">
         <Button>Back to dashboard</Button>
       </Link>
@@ -29,4 +31,3 @@ export function NotFoundPage() {
 }
 
 export default NotFoundPage;
-

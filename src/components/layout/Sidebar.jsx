@@ -61,66 +61,66 @@ export function Sidebar({ pendingSwaps = 0, isOpen = false, onClose }) {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-      <div className="flex h-20 items-center gap-3 border-b border-slate-100 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
-          T
-        </div>
-        <div>
-          <h1 className="text-lg font-bold text-slate-900">Toodle</h1>
-          <p className="text-xs text-slate-400">Tutor Management</p>
-        </div>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-3 py-6">
-        {sections.map((section) => (
-          <div key={section.heading} className="sidebar-section">
-            <p className="sidebar-heading">{section.heading}</p>
-
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const Icon = ICONS[item.icon] || Home;
-                const badge = item.name === 'Swaps' && pendingSwaps > 0 ? pendingSwaps : null;
-
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    onClick={onClose}
-                    className={({ isActive }) => `sidebar-nav-item${isActive ? ' active' : ''}`}
-                  >
-                    <span className="icon-box">
-                      <Icon className="h-4 w-4" strokeWidth={2} />
-                    </span>
-                    {item.name}
-                    {badge && <span className="sidebar-badge">{badge}</span>}
-                  </NavLink>
-                );
-              })}
-            </div>
+        <div className="flex h-20 items-center gap-3 border-b border-slate-100 px-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
+            T
           </div>
-        ))}
-      </nav>
-
-      <div className="border-t border-slate-100 p-4">
-        <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-          Signed in as
-        </p>
-        <div className="rounded-xl bg-slate-50 p-3">
-          <p className="text-xs font-medium text-slate-600">{ROLE_LABELS[role] || 'Guest'}</p>
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-emerald-600">
-              <Wifi className="h-3 w-3" />
-              Connected
-            </div>
-            <LogoutButton
-              showLabel={false}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
-              title="Sign out"
-            />
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Toodle</h1>
+            <p className="text-xs text-slate-400">Tutor Management</p>
           </div>
         </div>
-      </div>
-    </aside>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-6">
+          {sections.map((section) => (
+            <div key={section.heading} className="sidebar-section">
+              <p className="sidebar-heading">{section.heading}</p>
+
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const Icon = ICONS[item.icon] || Home;
+                  const badge = item.name === 'Swaps' && pendingSwaps > 0 ? pendingSwaps : null;
+
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      onClick={onClose}
+                      className={({ isActive }) => `sidebar-nav-item${isActive ? ' active' : ''}`}
+                    >
+                      <span className="icon-box">
+                        <Icon className="h-4 w-4" strokeWidth={2} />
+                      </span>
+                      {item.name}
+                      {badge && <span className="sidebar-badge">{badge}</span>}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="border-t border-slate-100 p-4">
+          <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Signed in as
+          </p>
+          <div className="rounded-xl bg-slate-50 p-3">
+            <p className="text-xs font-medium text-slate-600">{ROLE_LABELS[role] || 'Guest'}</p>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-emerald-600">
+                <Wifi className="h-3 w-3" />
+                Connected
+              </div>
+              <LogoutButton
+                showLabel={false}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+                title="Sign out"
+              />
+            </div>
+          </div>
+        </div>
+      </aside>
     </>
   );
 }

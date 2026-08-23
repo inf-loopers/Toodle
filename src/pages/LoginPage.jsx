@@ -44,8 +44,8 @@ export function LoginPage() {
           <div className="flex items-start gap-3 rounded-xl bg-primary-subtle p-4">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <p className="text-xs leading-relaxed text-primary">
-              Authentication is handled securely by Auth0. Your role is read from
-              the database and determines what you can see.
+              Authentication is handled securely by Auth0. Your role is read from the database and
+              determines what you can see.
             </p>
           </div>
 

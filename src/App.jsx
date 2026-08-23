@@ -11,9 +11,8 @@ const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
 
 export default function App() {
+  const navigate = useNavigate();
 
- const navigate = useNavigate();
- 
   // After Auth0 redirects back from login, send the user to wherever
   // they were headed (appState.returnTo) instead of always landing on "/".
   // This relies on App already being inside <BrowserRouter> (in main.jsx),
@@ -21,7 +20,7 @@ export default function App() {
   const onRedirectCallback = (appState) => {
     navigate(appState?.returnTo || '/', { replace: true });
   };
- 
+
   return (
     <Auth0Provider
       domain={domain}
@@ -43,7 +42,7 @@ export default function App() {
     </Auth0Provider>
   );
 }
- 
+
 /**
  * AuthBootstrap
  * Registers the Auth0 token getter with the API client once, on mount.
@@ -70,17 +69,11 @@ function AuthBootstrap() {
       // A 500 here typically means the backend database is not migrated
       // or the `/auth/callback` handler is crashing on the server side.
       const serverError =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.response?.data;
+        err.response?.data?.message || err.response?.data?.error || err.response?.data;
 
-      console.warn(
-        'User sync with backend failed:',
-        serverError || err.message,
-      );
+      console.warn('User sync with backend failed:', serverError || err.message);
     });
   }, [isAuthenticated, user]);
 
   return null;
 }
-
