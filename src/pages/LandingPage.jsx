@@ -7,25 +7,12 @@ import Footer from "../components/LandingPage Components/Footer";
 import { useAuth } from '../hooks/useAuth';
 
 export default function LandingPage() {
-  const { isAuthenticated, isLoading, login } = useAuth();
 
-  useEffect(() => {
-    document.title = 'Toodle · Tutor Management';
-  }, []);
-
-  // Already signed in → go straight to dashboard
-  if (!isLoading && isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const handleSignIn = () => {
-    login();
-  };
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white">
       <Navbar />
-      <Hero onSignIn={handleSignIn} />
+      <Hero />
       <FeatureSection />
       <div className="flex-1" />
       <Footer />
