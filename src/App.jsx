@@ -84,4 +84,3 @@ function AuthBootstrap() {
   return null;
 }
 
-export default App;

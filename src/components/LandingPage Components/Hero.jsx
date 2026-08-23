@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 
  
 
-export default function Hero({ onSignIn }) {
+export default function Hero() {
   const { isAuthenticated, isLoading, login } = useAuth();
 
   const handleClick = () => {

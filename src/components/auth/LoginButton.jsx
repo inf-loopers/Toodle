@@ -30,4 +30,3 @@ export default function LoginButton() {
   );
 }
 
-export default LoginButton;
