@@ -41,6 +41,45 @@ export function formatDay(day) {
   if (!day) return '';
   return day.charAt(0).toUpperCase() + day.slice(1).toLowerCase();
 }
+/**
+ * Format a status enum (e.g. IN_PROGRESS) into a readable label (In Progress)
+ */
+export function formatStatus(status) {
+  if (!status) return '';
+  return status
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+}
+/**
+ * Get initials from a display name, e.g. "Thabo Mokoena" -> "TM"
+ */
+export function getInitials(name) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join('');
+}
+/**
+ * Format a Decimal/number of hours as "2h" or "2.5h"
+ */
+export function formatHours(hours) {
+  const n = Number(hours);
+  if (Number.isNaN(n)) return '0h';
+  return `${Number.isInteger(n) ? n : n.toFixed(1)}h`;
+}
+/**
+ * Format an ISO date string as a short readable date, e.g. "12 Aug"
+ */
+export function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+}
 
 /**
  * Get visual badge colors based on user role

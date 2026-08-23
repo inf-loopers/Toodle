@@ -1,19 +1,31 @@
-/**
- * @file LoginButton.jsx
- * @description Button component that triggers the Auth0 Universal Login flow.
- *
- * Responsibilities:
- * - Invokes `login()` / `loginWithRedirect()` from the `useAuth()` hook.
- * - Handles loading state while Auth0 initializes.
- * - Accepts customizable variant, size, and label props.
- *
- * Expected Usage:
- * ```jsx
- * <LoginButton size="lg" className="w-full" />
- * ```
- */
+import React from 'react';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function LoginButton() {
-  // TODO: Implement Auth0 login trigger
-  return null;
+  const { isAuthenticated, isLoading, user, login, logout } = useAuth();
+
+  if (isLoading) return null;
+
+  if (isAuthenticated) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-slate-500">{user?.name}</span>
+        <button
+          onClick={logout}
+          className="text-sm font-semibold text-slate-700 hover:text-slate-900"
+        >
+          Log out
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={login}
+      className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl px-5 py-2.5"
+    >
+      Sign In to Portal
+    </button>
+  );
 }

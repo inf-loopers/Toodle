@@ -1,66 +1,45 @@
 /**
- * @file client.js
- * @description Central Axios HTTP client instance for communicating with the Toodle Express backend REST API.
+ * client.js
  *
- * Responsibilities:
- * - Base URL configuration reading `VITE_API_URL` (default: http://localhost:3000/api/v1).
- * - Request Interceptor: Automatically acquires Auth0 JWT tokens via `getAccessTokenSilently` and injects `Authorization: Bearer <token>`.
- * - Response Interceptor: Catches HTTP 401 (Unauthorized) and 403 (Forbidden) response codes.
- * - Standardized JSON content headers and request timeouts.
+ * Axios instance that automatically attaches the Auth0 access token
+ * to every outgoing request. Since getAccessTokenSilently() is a
+ * React hook function, we can't call it here directly — instead we
+ * expose a setter that App.jsx (or a top-level auth effect) calls
+ * once auth0 is ready, and every subsequent request uses it.
+ *
+ * Usage in a component:
+ *   import { useAuth } from '../hooks/useAuth';
+ *   import { registerTokenGetter } from '../api/client';
+ *
+ *   const { getToken } = useAuth();
+ *   useEffect(() => { registerTokenGetter(getToken); }, [getToken]);
  */
 
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-
-export const apiClient = axios.create({
-  baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000,
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
-let getAccessTokenSilentlyFn = null;
+let tokenGetter = null;
 
-/**
- * Configure the Auth0 token provider callback for Axios requests
- * @param {Function} getTokenSilently - Auth0 SDK getAccessTokenSilently function
- */
-export const setupAuthInterceptor = (getTokenSilently) => {
-  getAccessTokenSilentlyFn = getTokenSilently;
-};
+export function registerTokenGetter(fn) {
+  tokenGetter = fn;
+}
 
-// Request interceptor: inject Auth0 JWT token
-apiClient.interceptors.request.use(
-  async (config) => {
-    if (getAccessTokenSilentlyFn) {
-      try {
-        const token = await getAccessTokenSilentlyFn();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      } catch (error) {
-        // Token retrieval failure (e.g. user not logged in)
-        console.debug('No access token available for request:', error.message);
-      }
+apiClient.interceptors.request.use(async (config) => {
+  if (tokenGetter) {
+    try {
+      const token = await tokenGetter();
+      config.headers.Authorization = `Bearer ${token}`;
+    } catch (err) {
+      // getAccessTokenSilently throws if the session has expired;
+      // let the request go through unauthenticated and let the
+      // backend return 401 rather than blocking the app here.
+      console.warn('Could not attach auth token:', err.message);
     }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor: handle common HTTP error statuses
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      console.warn('Unauthorized request - session may have expired.');
-    } else if (error.response?.status === 403) {
-      console.warn('Forbidden request - insufficient role permissions.');
-    }
-    return Promise.reject(error);
   }
-);
+  return config;
+});
 
 export default apiClient;

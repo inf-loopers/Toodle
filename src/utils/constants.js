@@ -54,3 +54,103 @@ export const ROLE_LABELS = {
   [ROLES.TUTOR]: 'Tutor',
   [ROLES.STUDENT]: 'Student',
 };
+
+// ── Timesheets ────────────────────────────────────────────────────────────
+
+export const TIMESHEET_STATUS = {
+  DRAFT: 'DRAFT',
+  SUBMITTED: 'SUBMITTED',
+  APPROVED: 'APPROVED',
+  DISPUTED: 'DISPUTED',
+  REJECTED: 'REJECTED',
+  PAID: 'PAID',
+};
+
+export const TIMESHEET_STATUS_TONE = {
+  DRAFT: 'neutral',
+  SUBMITTED: 'info',
+  APPROVED: 'success',
+  DISPUTED: 'warning',
+  REJECTED: 'danger',
+  PAID: 'primary',
+};
+
+// ── Overflow / Excusals / Swaps ─────────────────────────────────────────────
+
+export const OVERFLOW_STATUS = {
+  OPEN: 'OPEN',
+  CLAIMED: 'CLAIMED',
+  APPROVED: 'APPROVED',
+  CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
+};
+
+export const EXCUSAL_STATUS_TONE = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  DECLINED: 'danger',
+};
+
+export const SWAP_STATUS_TONE = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  CANCELLED: 'neutral',
+};
+
+// ── Navigation ───────────────────────────────────────────────────────────
+
+// icon values reference lucide-react component names, resolved in Sidebar.jsx
+export const NAV_SECTIONS = {
+  [ROLES.ORGANISER]: [
+    {
+      heading: 'Overview',
+      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+    },
+    {
+      heading: 'Manage',
+      items: [
+        { name: 'Allocation Board', path: '/allocations', icon: 'LayoutGrid' },
+        { name: 'Tutors', path: '/tutors', icon: 'Users' },
+        { name: 'Courses', path: '/courses', icon: 'BookOpen' },
+      ],
+    },
+    {
+      heading: 'Workflow',
+      items: [
+        { name: 'Timesheets', path: '/timesheets', icon: 'Clock' },
+        { name: 'Swaps', path: '/swaps', icon: 'ArrowLeftRight' },
+        { name: 'Volunteers', path: '/volunteers', icon: 'HandHeart' },
+      ],
+    },
+    {
+      heading: 'Admin',
+      items: [{ name: 'Reports', path: '/reports', icon: 'BarChart3' }],
+    },
+  ],
+  [ROLES.TUTOR]: [
+    {
+      heading: 'Overview',
+      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+    },
+    {
+      heading: 'My Work',
+      items: [
+        { name: 'My Courses', path: '/courses', icon: 'BookOpen' },
+        { name: 'Timesheets', path: '/timesheets', icon: 'Clock' },
+        { name: 'Swaps', path: '/swaps', icon: 'ArrowLeftRight' },
+        { name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' },
+      ],
+    },
+  ],
+  [ROLES.STUDENT]: [
+    {
+      heading: 'Overview',
+      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+    },
+    {
+      heading: 'Opportunities',
+      items: [{ name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' }],
+    },
+  ],
+};
