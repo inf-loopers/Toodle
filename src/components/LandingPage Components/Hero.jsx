@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import Badge from './Badge';
 import Button from './Button';
@@ -6,12 +7,14 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function Hero() {
   const { isAuthenticated, isLoading, login } = useAuth();
+  const navigate = useNavigate();
 
   const handleClick = () => {
-    if (!isAuthenticated) {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
       login();
     }
-    // else: navigate('/dashboard') once that route exists
   };
   return (
     <section className="relative overflow-hidden">
