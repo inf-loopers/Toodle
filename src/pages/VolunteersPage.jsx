@@ -12,213 +12,227 @@
  */
 
 import { useState } from 'react';
+import { Plus, HandHeart, CheckCircle2 } from 'lucide-react';
+import { useApi } from '../hooks/useApi';
+import { overflowApi } from '../api/overflow';
+import { coursesApi } from '../api/courses';
+import { useAuth } from '../hooks/useAuth';
+import { formatHours, getInitials } from '../utils/helpers';
+import Card, { CardHeader, CardBody } from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
+import Modal from '../components/ui/Modal';
+import { Select, Input, Textarea } from '../components/ui/Input';
+import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
-const volunteers = [
-  {
-    id: 1,
-    name: 'Naledi Moyo',
-    initials: 'NM',
-    studentNo: '222041789',
-    email: 'naledi.moyo@students.wits.ac.za',
-    phone: '+27 72 123 4567',
-    courses: ['COMS1015A', 'COMS2001A'],
-    status: 'active',
-    registeredAt: 'Jan 15, 2026',
-  },
-  {
-    id: 2,
-    name: 'Ryan Pillay',
-    initials: 'RP',
-    studentNo: '221078234',
-    email: 'ryan.pillay@students.wits.ac.za',
-    phone: '+27 83 456 7890',
-    courses: ['COMS3011A', 'COMS3022A'],
-    status: 'active',
-    registeredAt: 'Feb 02, 2026',
-  },
-  {
-    id: 3,
-    name: 'Zanele Khumalo',
-    initials: 'ZK',
-    studentNo: '220056321',
-    email: 'zanele.khumalo@students.wits.ac.za',
-    phone: '+27 61 789 0123',
-    courses: ['COMS3012A', 'COMS3033A'],
-    status: 'pending',
-    registeredAt: 'Aug 10, 2026',
-  },
-  {
-    id: 4,
-    name: 'David Chen',
-    initials: 'DC',
-    studentNo: '219023876',
-    email: 'david.chen@students.wits.ac.za',
-    phone: '+27 82 345 6789',
-    courses: ['COMS3060A'],
-    status: 'pending',
-    registeredAt: 'Aug 15, 2026',
-  },
-  {
-    id: 5,
-    name: 'Amara Okonkwo',
-    initials: 'AO',
-    studentNo: '221094512',
-    email: 'amara.okonkwo@students.wits.ac.za',
-    phone: '+27 76 234 5678',
-    courses: ['COMS3013A', 'COMS3044A'],
-    status: 'active',
-    registeredAt: 'Mar 20, 2026',
-  },
-  {
-    id: 6,
-    name: 'Sipho Ndlovu',
-    initials: 'SN',
-    studentNo: '220067891',
-    email: 'sipho.ndlovu@students.wits.ac.za',
-    phone: '+27 79 876 5432',
-    courses: ['COMS1015A'],
-    status: 'inactive',
-    registeredAt: 'Jan 05, 2026',
-  },
-];
-
-const statusConfig = {
-  active: { label: 'Active', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  pending: {
-    label: 'Pending Review',
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    dot: 'bg-amber-500',
-  },
-  inactive: { label: 'Inactive', bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-400' },
+const STATUS_TONE = {
+  OPEN: 'info',
+  CLAIMED: 'warning',
+  APPROVED: 'success',
+  CLOSED: 'neutral',
+  CANCELLED: 'danger',
 };
 
-export default function VolunteersPage() {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
+function PostWorkModal({ open, onClose, courses, onCreated }) {
+  const [form, setForm] = useState({ courseId: '', hoursPerWeek: 2, description: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const filtered = volunteers.filter((v) => {
-    const matchesSearch =
-      v.name.toLowerCase().includes(search.toLowerCase()) || v.studentNo.includes(search);
-    const matchesFilter = filter === 'all' || v.status === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const handleSubmit = async () => {
+    if (!form.courseId) return;
+    setSubmitting(true);
+    try {
+      await overflowApi.createPost({ ...form, hoursPerWeek: Number(form.hoursPerWeek) });
+      onCreated();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Heading */}
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-        <div>
-          <p className="text-sm font-medium text-blue-600">Volunteers</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Volunteer Directory</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Manage student volunteers — approve registrations, track interests, and contact
-            candidates.
-          </p>
-        </div>
-        <button className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
-          + Register Volunteer
-        </button>
-      </div>
-
-      {/* Search + filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-md flex-1">
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-            ⌕
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or student number..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
-          />
-        </div>
-        <div className="flex gap-2">
-          {['all', 'active', 'pending', 'inactive'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                filter === f
-                  ? 'bg-blue-700 text-white'
-                  : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Post overflow work"
+      description="Open a slot for tutors or students to volunteer for."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={submitting} disabled={!form.courseId}>
+            Post work
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Select label="Course" value={form.courseId} onChange={update('courseId')}>
+          <option value="">Choose a course…</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.code} — {c.name}
+            </option>
           ))}
-        </div>
+        </Select>
+        <Input
+          label="Hours per week"
+          type="number"
+          min={1}
+          value={form.hoursPerWeek}
+          onChange={update('hoursPerWeek')}
+        />
+        <Textarea
+          label="Description"
+          placeholder="What does this work involve?"
+          value={form.description}
+          onChange={update('description')}
+        />
       </div>
-
-      {/* Volunteer cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((v) => {
-          const s = statusConfig[v.status];
-          return (
-            <div
-              key={v.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700">
-                    {v.initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{v.name}</p>
-                    <p className="text-xs text-slate-400">{v.studentNo}</p>
-                  </div>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${s.bg} ${s.text}`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                  {s.label}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-2 text-xs text-slate-500">
-                <p>{v.email}</p>
-                <p>{v.phone}</p>
-                <p className="text-slate-400">Registered: {v.registeredAt}</p>
-              </div>
-
-              <div className="mt-4">
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                  Interested in
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {v.courses.map((c) => (
-                    <span
-                      key={c}
-                      className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-semibold text-blue-700"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {v.status === 'pending' && (
-                <div className="mt-4 flex gap-2">
-                  <button className="flex-1 rounded-lg bg-emerald-600 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700">
-                    Approve
-                  </button>
-                  <button className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
-                    Archive
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 && (
-        <p className="py-12 text-center text-sm text-slate-400">No volunteers match your search.</p>
-      )}
-    </div>
+    </Modal>
   );
 }
+
+export function VolunteersPage() {
+  const { isOrganiser } = useAuth();
+  const { data, loading, error, refetch } = useApi(overflowApi.getPosts);
+  const { data: coursesData } = useApi(coursesApi.getCourses, { immediate: isOrganiser });
+  const [postModalOpen, setPostModalOpen] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+
+  const posts = data?.data ?? data ?? [];
+  const courses = coursesData?.data ?? coursesData ?? [];
+
+  const handleClaim = async (postId) => {
+    setBusyId(postId);
+    try {
+      await overflowApi.claimPost(postId);
+      refetch();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleApproveClaim = async (claimId) => {
+    setBusyId(claimId);
+    try {
+      await overflowApi.approveClaim(claimId);
+      refetch();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading) return <Spinner fullPage label="Loading overflow work…" />;
+  if (error) return <ErrorState title="Couldn't load overflow work" description={error} />;
+
+  return (
+    <>
+      <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Volunteer Overflow</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {isOrganiser
+              ? 'Post work nobody is allocated to and approve claims.'
+              : 'Claim overflow work nobody has taken yet.'}
+          </p>
+        </div>
+        {isOrganiser && (
+          <Button onClick={() => setPostModalOpen(true)}>
+            <Plus className="h-4 w-4" /> Post work
+          </Button>
+        )}
+      </div>
+
+      {posts.length === 0 ? (
+        <EmptyState
+          icon={HandHeart}
+          title="No overflow work right now"
+          description="Check back soon, or post new work if you're an organiser."
+        />
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {posts.map((post) => (
+            <Card key={post.id}>
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                  <HandHeart className="h-5 w-5" />
+                </div>
+                <Badge tone={STATUS_TONE[post.status] || 'neutral'}>{post.status}</Badge>
+              </div>
+              <h3 className="mt-4 font-bold text-slate-900">
+                {post.course?.code || post.courseId}
+              </h3>
+              <p className="text-sm text-slate-500">{post.course?.name}</p>
+              <p className="mt-2 text-xs text-slate-400">
+                {post.description || 'No description provided.'}
+              </p>
+
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                <Badge tone="primary">{formatHours(post.hoursPerWeek)} / week</Badge>
+
+                {!isOrganiser && post.status === 'OPEN' && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleClaim(post.id)}
+                    loading={busyId === post.id}
+                  >
+                    Claim
+                  </Button>
+                )}
+
+                {isOrganiser && post.claims?.length > 0 && (
+                  <div className="w-full">
+                    <p className="mt-1 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Claims
+                    </p>
+                    <div className="space-y-2">
+                      {post.claims.map((claim) => (
+                        <div
+                          key={claim.id}
+                          className="flex items-center justify-between rounded-lg border border-slate-100 px-2.5 py-1.5"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
+                              {getInitials(claim.user?.name)}
+                            </div>
+                            <span className="text-xs text-slate-600">{claim.user?.name}</span>
+                          </div>
+                          {claim.status === 'CLAIMED' ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleApproveClaim(claim.id)}
+                              loading={busyId === claim.id}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                            </Button>
+                          ) : (
+                            <Badge tone="success">Approved</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {isOrganiser && (
+        <PostWorkModal
+          open={postModalOpen}
+          onClose={() => setPostModalOpen(false)}
+          courses={courses}
+          onCreated={refetch}
+        />
+      )}
+    </>
+  );
+}
+
+export default VolunteersPage;
