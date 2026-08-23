@@ -52,11 +52,18 @@ export function useApi(apiFn, { immediate = true, initialData = null, params = [
         }
         return result;
       } catch (err) {
+        // Treat 404 (endpoint not yet implemented) as empty data rather than an error
+        const status = err?.response?.status;
         if (isMountedRef.current) {
-          setError(err?.response?.data?.message || err?.message || 'An unexpected error occurred');
+          if (status === 404) {
+            setData([]);
+          } else {
+            setError(err?.response?.data?.message || err?.response?.data?.error || err?.message || 'An unexpected error occurred');
+          }
           setLoading(false);
         }
-        throw err;
+        if (status !== 404) throw err;
+        return [];
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

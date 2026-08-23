@@ -20,8 +20,19 @@
  * </RoleGate>
  * ```
  */
+import { useAuth } from '../../hooks/useAuth';
 
-export default function RoleGate() {
-  // TODO: Implement RBAC role verification logic
-  return null;
+/**
+ * Inline role-based rendering within a shared page, e.g. showing an
+ * organiser-only action button on an otherwise shared list view.
+ *
+ *   <RoleGate allow={['organiser']}>
+ *     <Button>Approve</Button>
+ *   </RoleGate>
+ */
+export function RoleGate({ allow = [], children, fallback = null }) {
+  const { hasRole } = useAuth();
+  return hasRole(allow) ? children : fallback;
 }
+
+export default RoleGate;

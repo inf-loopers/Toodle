@@ -4,18 +4,18 @@
  *
  * Responsibilities:
  * - Wraps `@auth0/auth0-react` SDK methods and state.
- * - Extracts and normalizes the user's role from custom Auth0 claims (`{VITE_AUTH0_AUDIENCE}/roles`).
+ * - Reads the user's canonical role from the Supabase database via `AuthContext`.
  * - Provides role boolean flags: `isOrganiser`, `isTutor`, `isStudent`.
  * - Provides permission checker: `hasRole(['organiser', 'tutor'])`.
  * - Provides token retrieval helper: `getToken()` for manual Bearer token requests.
  * - Includes offline local development bypass support (`loginAsDevRole`) for rapid testing.
  *
  * Returns:
- * - `user`: Authenticated user profile object.
- * - `role`: Active user role string (organiser | tutor | student).
+ * - `user`: Authenticated user profile object (DB profile preferred).
+ * - `role`: Active user role string from the database (organiser | tutor | student).
  * - `isAuthenticated`: Boolean authentication flag.
- * - `isLoading`: Boolean loading indicator.
- * - `error`: Any Auth0 initialization or authentication error.
+ * - `isLoading`: Boolean loading indicator (Auth0 SDK + DB sync).
+ * - `error`: Any Auth0 or backend sync error.
  * - `login()`: Triggers Auth0 redirect.
  * - `logout()`: Clears session.
  * - `getToken()`: Asynchronously retrieves JWT access token.
@@ -23,7 +23,8 @@
 
 import { useAuth0 } from '@auth0/auth0-react';
 import { useCallback, useMemo, useState } from 'react';
-import { AUTH0_NAMESPACE, ROLES } from '../utils/constants';
+import { ROLES } from '../utils/constants';
+import { useAuthContext } from '../context/AuthContext';
 
 const DEV_USER_STORAGE_KEY = 'toodle_dev_user';
 
@@ -39,6 +40,11 @@ export function useAuth() {
     getAccessTokenSilently,
   } = auth0;
 
+  // Database-backed user state from the AuthProvider context
+  const authContext = useAuthContext();
+  const dbUser = authContext?.dbUser ?? null;
+  const syncError = authContext?.syncError ?? null;
+
   // Local dev user state for quick-switch testing during development
   const [devUser, setDevUser] = useState(() => {
     try {
@@ -50,37 +56,19 @@ export function useAuth() {
   });
 
   const isAuthenticated = Boolean(auth0IsAuthenticated || devUser);
-  const isLoading = auth0IsLoading && !devUser;
-  const user = devUser || auth0User;
+  // Loading while Auth0 initialises OR while authenticated with no DB profile yet (and no error)
+  const isLoading =
+    (auth0IsLoading && !devUser) ||
+    (auth0IsAuthenticated && !dbUser && !devUser && !syncError);
+  // Prefer the DB profile; fall back to dev user, then Auth0 profile
+  const user = dbUser || devUser || auth0User;
 
-  // Extract role from Auth0 custom claim, metadata, or dev user
+  // Role: DB role is authoritative; dev user role for testing; null if unknown
   const role = useMemo(() => {
-    if (!user) return null;
-
-    if (devUser?.role) {
-      return devUser.role.toLowerCase();
-    }
-
-    // Auth0 custom namespace claims (e.g. https://api.toodle.com/roles)
-    const namespaceRoles =
-      user[`${AUTH0_NAMESPACE}`] ||
-      user[`${AUTH0_NAMESPACE}/role`] ||
-      user[`${AUTH0_NAMESPACE}/roles`];
-    if (Array.isArray(namespaceRoles) && namespaceRoles.length > 0) {
-      return namespaceRoles[0].toLowerCase();
-    }
-    if (typeof namespaceRoles === 'string') {
-      return namespaceRoles.toLowerCase();
-    }
-
-    // Direct role claim fallback
-    if (user.role) {
-      return Array.isArray(user.role) ? user.role[0].toLowerCase() : user.role.toLowerCase();
-    }
-
-    // Default fallback
-    return ROLES.ORGANISER;
-  }, [user, devUser]);
+    if (dbUser?.role) return dbUser.role.toLowerCase();
+    if (devUser?.role) return devUser.role.toLowerCase();
+    return null;
+  }, [dbUser, devUser]);
 
   const hasRole = useCallback(
     (allowedRoles) => {
@@ -135,16 +123,35 @@ export function useAuth() {
 
   const logout = useCallback(
     (options = {}) => {
+      // Always clear dev-mode state
       localStorage.removeItem(DEV_USER_STORAGE_KEY);
       setDevUser(null);
+
+      // Clear any cached Auth0 tokens from local storage
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('@@auth0') || key.startsWith('auth0'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+      } catch {
+        // Silently ignore storage access errors
+      }
+
       if (auth0IsAuthenticated) {
+        // Auth0 SDK logout — redirects to Auth0 then back to returnTo
         return auth0Logout({
           logoutParams: {
-            returnTo: window.location.origin,
-            ...options,
+            returnTo: options.returnTo || window.location.origin,
           },
         });
       }
+
+      // Dev-only user: redirect to landing page manually
+      window.location.href = options.returnTo || window.location.origin;
     },
     [auth0Logout, auth0IsAuthenticated]
   );
@@ -166,7 +173,7 @@ export function useAuth() {
     role,
     isAuthenticated,
     isLoading,
-    error: auth0Error,
+    error: auth0Error || syncError,
     isOrganiser: role === ROLES.ORGANISER,
     isTutor: role === ROLES.TUTOR,
     isStudent: role === ROLES.STUDENT,

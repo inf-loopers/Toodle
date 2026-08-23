@@ -14,187 +14,159 @@
  */
 
 import { useState } from 'react';
+import { Search, Users, Clock, Award, Plus } from 'lucide-react';
+import { useApi } from '../hooks/useApi';
+import { tutorsApi } from '../api/tutors';
+import { coursesApi } from '../api/courses';
+import { getInitials, formatDay, formatTime } from '../utils/helpers';
+import Card, { CardHeader, CardBody } from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
+import Modal from '../components/ui/Modal';
+import { Select, Input } from '../components/ui/Input';
+import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
-const tutors = [
-  {
-    id: 't1', name: 'Thabo Mokoena', initials: 'TM', studentNo: '218045631',
-    email: 'thabo.mokoena@students.wits.ac.za',
-    hoursUsed: 8, hoursMax: 12,
-    days: ['Mon', 'Wed', 'Fri'],
-    marks: [
-      { course: 'COMS3011A', mark: 85 }, { course: 'COMS3022A', mark: 78 }, { course: 'COMS2001A', mark: 92 },
-    ],
-  },
-  {
-    id: 't2', name: 'Sarah Nkosi', initials: 'SN', studentNo: '219012847',
-    email: 'sarah.nkosi@students.wits.ac.za',
-    hoursUsed: 10, hoursMax: 12,
-    days: ['Tue', 'Thu', 'Fri'],
-    marks: [
-      { course: 'COMS3012A', mark: 90 }, { course: 'COMS3033A', mark: 82 }, { course: 'COMS2001A', mark: 88 },
-    ],
-  },
-  {
-    id: 't3', name: 'Liam Smith', initials: 'LS', studentNo: '220067493',
-    email: 'liam.smith@students.wits.ac.za',
-    hoursUsed: 6, hoursMax: 10,
-    days: ['Mon', 'Wed', 'Thu'],
-    marks: [
-      { course: 'COMS3013A', mark: 76 }, { course: 'COMS3044A', mark: 81 }, { course: 'COMS3060A', mark: 74 },
-    ],
-  },
-  {
-    id: 't4', name: 'Ayesha Khan', initials: 'AK', studentNo: '217089124',
-    email: 'ayesha.khan@students.wits.ac.za',
-    hoursUsed: 8, hoursMax: 14,
-    days: ['Tue', 'Wed', 'Fri'],
-    marks: [
-      { course: 'COMS3015A', mark: 94 }, { course: 'COMS3050A', mark: 88 }, { course: 'COMS2001A', mark: 91 },
-    ],
-  },
-  {
-    id: 't5', name: 'Priya Dlamini', initials: 'PD', studentNo: '221034519',
-    email: 'priya.dlamini@students.wits.ac.za',
-    hoursUsed: 4, hoursMax: 10,
-    days: ['Mon', 'Tue', 'Thu'],
-    marks: [
-      { course: 'COMS1015A', mark: 87 }, { course: 'COMS2001A', mark: 79 },
-    ],
-  },
-  {
-    id: 't6', name: 'James van Wyk', initials: 'JV', studentNo: '219055672',
-    email: 'james.vanwyk@students.wits.ac.za',
-    hoursUsed: 10, hoursMax: 12,
-    days: ['Wed', 'Thu', 'Fri'],
-    marks: [
-      { course: 'COMS3011A', mark: 80 }, { course: 'COMS3022A', mark: 83 }, { course: 'COMS3013A', mark: 77 },
-    ],
-  },
-];
+function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
+  const [courseId, setCourseId] = useState('');
+  const [mark, setMark] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-const allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  if (!tutor) return null;
 
-function markColor(mark) {
-  if (mark >= 85) return 'bg-emerald-50 text-emerald-700';
-  if (mark >= 75) return 'bg-blue-50 text-blue-700';
-  if (mark >= 65) return 'bg-amber-50 text-amber-700';
-  return 'bg-red-50 text-red-700';
-}
-
-export default function TutorsPage() {
-  const [search, setSearch] = useState('');
-
-  const filtered = tutors.filter(
-    (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.studentNo.includes(search) ||
-      t.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleAddMark = async () => {
+    if (!courseId || mark === '') return;
+    setSubmitting(true);
+    try {
+      await tutorsApi.addOrUpdateMark(tutor.id, { courseId, mark: Number(mark) });
+      onUpdated();
+      setCourseId('');
+      setMark('');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Heading */}
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+    <Modal open={open} onClose={onClose} title={tutor.name} description={tutor.email} size="lg">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div>
-          <p className="text-sm font-medium text-blue-600">Directory</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Tutors</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Browse registered tutors, inspect their course marks, and monitor weekly hour capacity.
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Marks on record</p>
+          <div className="space-y-2">
+            {(tutor.tutorMarks ?? []).length === 0 && <p className="text-sm text-slate-400">No marks recorded yet.</p>}
+            {(tutor.tutorMarks ?? []).map((m) => (
+              <div key={m.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm">
+                <span className="text-slate-600">{m.course?.code || m.courseId}</span>
+                <Badge tone={m.mark >= 50 ? 'success' : 'danger'}>{m.mark}%</Badge>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-3 rounded-xl border border-slate-100 p-3">
+            <Select label="Add / update a mark" value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+              <option value="">Choose a course…</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.code}</option>
+              ))}
+            </Select>
+            <Input label="Mark (%)" type="number" min={0} max={100} value={mark} onChange={(e) => setMark(e.target.value)} />
+            <Button size="sm" onClick={handleAddMark} loading={submitting} disabled={!courseId || mark === ''} className="w-full justify-center">
+              Save mark
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Weekly availability</p>
+          <div className="space-y-2">
+            {(tutor.availability ?? []).length === 0 && <p className="text-sm text-slate-400">No availability submitted yet.</p>}
+            {(tutor.availability ?? []).map((a) => (
+              <div key={a.id} className="rounded-lg border border-slate-100 px-3 py-2 text-sm text-slate-600">
+                {formatDay(a.dayOfWeek)} · {formatTime(a.startTime)}–{formatTime(a.endTime)}
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-slate-400">
+            Max {tutor.maxHoursPerWeek ?? 10}h / week
           </p>
         </div>
-        <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-          {tutors.length} registered
-        </span>
       </div>
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
-        <input
-          type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, student number, or email..."
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
-        />
-      </div>
-
-      {/* Tutor grid */}
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((t) => {
-          const hoursPct = Math.round((t.hoursUsed / t.hoursMax) * 100);
-          const hoursCritical = hoursPct >= 80;
-
-          return (
-            <div key={t.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-              {/* Card header */}
-              <div className="flex items-center gap-3 border-b border-slate-100 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
-                  {t.initials}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-900">{t.name}</p>
-                  <p className="text-xs text-slate-400">{t.studentNo}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 p-5">
-                {/* Email */}
-                <p className="truncate text-xs text-slate-500">{t.email}</p>
-
-                {/* Hours bar */}
-                <div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-500">Weekly hours</span>
-                    <span className={`font-bold ${hoursCritical ? 'text-amber-600' : 'text-slate-700'}`}>
-                      {t.hoursUsed}/{t.hoursMax}h
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={`h-full rounded-full transition-all ${hoursCritical ? 'bg-amber-500' : 'bg-blue-600'}`}
-                      style={{ width: `${hoursPct}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Available days */}
-                <div>
-                  <p className="mb-1.5 text-xs font-medium text-slate-500">Available</p>
-                  <div className="flex gap-1.5">
-                    {allDays.map((d) => (
-                      <span
-                        key={d}
-                        className={`rounded-md px-2 py-1 text-[10px] font-semibold ${
-                          t.days.includes(d)
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-slate-50 text-slate-300'
-                        }`}
-                      >
-                        {d}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Course marks */}
-                <div>
-                  <p className="mb-1.5 text-xs font-medium text-slate-500">Course marks</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {t.marks.map((m) => (
-                      <span key={m.course} className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${markColor(m.mark)}`}>
-                        {m.course}: {m.mark}%
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 && (
-        <p className="py-12 text-center text-sm text-slate-400">No tutors match your search.</p>
-      )}
-    </div>
+    </Modal>
   );
 }
+
+export function TutorsPage() {
+  const { data, loading, error, refetch } = useApi(tutorsApi.getTutors);
+  const { data: coursesData } = useApi(coursesApi.getCourses);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(null);
+
+  const tutors = data?.data ?? data ?? [];
+  const courses = coursesData?.data ?? coursesData ?? [];
+  const filtered = tutors.filter((t) => (t.name || '').toLowerCase().includes(search.toLowerCase()) || (t.email || '').toLowerCase().includes(search.toLowerCase()));
+
+  if (loading) return <Spinner fullPage label="Loading tutors…" />;
+  if (error) return <ErrorState title="Couldn't load tutors" description={error} />;
+
+  return (
+    <>
+      <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tutors</h1>
+          <p className="mt-2 text-sm text-slate-500">Marks, availability and weekly hours for every tutor.</p>
+        </div>
+        <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+          <Search className="mr-2 h-4 w-4 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tutors…"
+            className="w-48 bg-transparent text-sm outline-none placeholder:text-slate-400"
+          />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState icon={Users} title="No tutors found" description="Tutors will appear here once registered." />
+      ) : (
+        <Card padded={false}>
+          <div className="divide-y divide-slate-100">
+            {filtered.map((tutor) => (
+              <button
+                key={tutor.id}
+                onClick={() => setSelected(tutor)}
+                className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-slate-50"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-subtle text-sm font-semibold text-primary">
+                  {getInitials(tutor.name)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-800">{tutor.name}</p>
+                  <p className="text-xs text-slate-400">{tutor.email}</p>
+                </div>
+                <div className="hidden items-center gap-2 sm:flex">
+                  <Badge tone="neutral">
+                    <Award className="h-3 w-3" /> {(tutor.tutorMarks ?? []).length} marks
+                  </Badge>
+                  <Badge tone="neutral">
+                    <Clock className="h-3 w-3" /> {tutor.maxHoursPerWeek ?? 10}h cap
+                  </Badge>
+                </div>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <TutorDetailModal
+        tutor={selected}
+        courses={courses}
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        onUpdated={refetch}
+      />
+    </>
+  );
+}
+
+export default TutorsPage;

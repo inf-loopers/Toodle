@@ -10,164 +10,365 @@
  * Route: `/dashboard`
  */
 
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  BookOpen,
+  Users,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  ArrowLeftRight,
+  HandHeart,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useApi } from '../hooks/useApi';
+import { coursesApi } from '../api/courses';
+import { tutorsApi } from '../api/tutors';
+import { allocationsApi } from '../api/allocations';
+import { overflowApi } from '../api/overflow';
+import { timesheetsApi } from '../api/timesheets';
+import { swapsApi } from '../api/swaps';
+import { ROLES } from '../utils/constants';
+import { formatHours } from '../utils/helpers';
+import Card, { CardHeader, CardBody } from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
+import { ErrorState } from '../components/ui/EmptyState';
+import LogoutButton from '../components/auth/LogoutButton';
 
-const notifications = [
-  { id: 1, text: 'COMS3014A still needs a tutor assigned', type: 'warning', time: '5 min ago' },
-  { id: 2, text: 'Timetable clash detected for Wed 09:00', type: 'error', time: '1 hour ago' },
-  { id: 3, text: 'Sarah Nkosi is nearing weekly hour limit', type: 'info', time: '2 hours ago' },
-  { id: 4, text: 'New tutor application from Priya D.', type: 'info', time: 'Yesterday' },
-];
-
-const recentActivity = [
-  { id: 1, action: 'Assigned', detail: 'Thabo Mokoena → COMS3011A', time: '10 min ago' },
-  { id: 2, action: 'Updated', detail: 'COMS3012A session moved to Tuesday', time: '1 hour ago' },
-  { id: 3, action: 'Removed', detail: 'Liam Smith unassigned from COMS3050A', time: '3 hours ago' },
-  { id: 4, action: 'Added', detail: 'New course COMS3020A submitted', time: 'Yesterday' },
-];
-
-function StatCard({ label, value, description, accent }) {
+function StatCard({ icon: Icon, label, value, description, tone = 'primary' }) {
+  const tones = {
+    primary: 'bg-primary-subtle text-primary',
+    amber: 'bg-amber-50 text-amber-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    rose: 'bg-rose-50 text-rose-600',
+  };
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${accent || 'text-slate-900'}`}>{value}</p>
-      <p className="mt-2 text-xs text-slate-400">{description}</p>
+    <Card>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+        </div>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      {description && <p className="mt-3 text-xs text-slate-400">{description}</p>}
+    </Card>
+  );
+}
+
+function Welcome({ name, tagline }) {
+  return (
+    <div className="mb-8">
+      <p className="text-sm font-medium text-primary">2026 Academic Year</p>
+      <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+        Welcome back{name ? `, ${name.split(' ')[0]}` : ''}
+      </h1>
+      <p className="mt-2 text-sm text-slate-500">{tagline}</p>
     </div>
   );
 }
 
-export default function DashboardPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showNotifications, setShowNotifications] = useState(false);
+// ── Organiser ────────────────────────────────────────────────────────────
 
-  const unreadCount = notifications.filter((n) => n.type === 'warning' || n.type === 'error').length;
+function OrganiserDashboard({ user }) {
+  const { data: courses, loading: coursesLoading, error: coursesError } = useApi(coursesApi.getCourses);
+  const { data: tutors, loading: tutorsLoading } = useApi(tutorsApi.getTutors);
+  const { data: allocations, loading: allocLoading } = useApi(allocationsApi.getAllocations);
+
+  if (coursesLoading || tutorsLoading || allocLoading) return <Spinner fullPage label="Loading your dashboard…" />;
+  if (coursesError) {
+    return (
+      <ErrorState
+        title="Couldn't load dashboard data"
+        description={coursesError}
+        action={
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+          </div>
+        }
+      />
+    );
+  }
+
+  const courseList = courses?.data ?? courses ?? [];
+  const tutorList = tutors?.data ?? tutors ?? [];
+  const allocationList = allocations?.data ?? allocations ?? [];
+
+  const activeAllocations = allocationList.filter((a) => a.status === 'ACTIVE' || a.status === 'PENDING');
+  const unfilled = courseList.filter(
+    (c) => allocationList.filter((a) => a.courseId === c.id).length < (c.requiredTutors ?? 1)
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Top bar: Search + Notifications */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search Bar */}
-        <div className="relative w-full max-w-md">
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-            ⌕
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search courses, tutors, sessions..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
+    <>
+      <Welcome
+        name={user?.name}
+        tagline="Here's how allocations are shaping up across the school this week."
+      />
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={BookOpen} label="Courses" value={courseList.length} description="Courses this semester" />
+        <StatCard icon={Users} label="Tutors" value={tutorList.length} tone="emerald" description="Registered tutors" />
+        <StatCard
+          icon={CheckCircle2}
+          label="Allocations"
+          value={activeAllocations.length}
+          tone="primary"
+          description="Active or pending assignments"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Unfilled Courses"
+          value={unfilled.length}
+          tone={unfilled.length > 0 ? 'rose' : 'emerald'}
+          description="Still need a tutor"
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Courses needing tutors"
+            description="Prioritise these on the allocation board."
+            action={
+              <Link to="/allocations">
+                <Button size="sm" variant="secondary">
+                  Open board <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            }
           />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Notification Button */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications((prev) => !prev)}
-            className={`relative rounded-xl border p-2.5 transition hover:bg-slate-50 ${
-              showNotifications
-                ? 'border-blue-300 bg-blue-50 text-blue-700'
-                : 'border-slate-200 text-slate-600'
-            }`}
-            aria-label="Notifications"
-          >
-            <span className="text-lg">🔔</span>
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-
-          {/* Notification Dropdown */}
-          {showNotifications && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
-              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                <h3 className="text-sm font-semibold text-slate-800">Notifications</h3>
-                <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
-                  {unreadCount} new
-                </span>
-              </div>
-
-              <ul className="max-h-64 divide-y divide-slate-100 overflow-y-auto">
-                {notifications.map((n) => (
-                  <li key={n.id} className="px-4 py-3 transition hover:bg-slate-50">
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
-                          n.type === 'error'
-                            ? 'bg-red-500'
-                            : n.type === 'warning'
-                            ? 'bg-amber-500'
-                            : 'bg-blue-500'
-                        }`}
-                      />
-                      <div>
-                        <p className="text-sm text-slate-700">{n.text}</p>
-                        <p className="mt-1 text-xs text-slate-400">{n.time}</p>
-                      </div>
+          <CardBody>
+            {unfilled.length === 0 ? (
+              <p className="text-sm text-slate-400">Every course has at least one tutor. Nice work.</p>
+            ) : (
+              <div className="space-y-3">
+                {unfilled.slice(0, 5).map((course) => (
+                  <div key={course.id} className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/50 p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{course.code}</p>
+                      <p className="text-xs text-slate-500">{course.name}</p>
                     </div>
-                  </li>
+                    <Badge tone="warning">Needs tutor</Badge>
+                  </div>
                 ))}
-              </ul>
-
-              <div className="border-t border-slate-100 px-4 py-2.5 text-center">
-                <button className="text-xs font-semibold text-blue-600 hover:text-blue-800">
-                  View all notifications
-                </button>
               </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Quick actions"
+            description="Jump back into the day-to-day."
+          />
+          <CardBody className="grid gap-3 sm:grid-cols-2">
+            <Link to="/allocations" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <p className="mt-2 text-sm font-semibold text-slate-800">Generate allocation</p>
+              <p className="mt-0.5 text-xs text-slate-400">Let Toodle propose assignments</p>
+            </Link>
+            <Link to="/timesheets" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+              <Clock className="h-4 w-4 text-primary" />
+              <p className="mt-2 text-sm font-semibold text-slate-800">Review timesheets</p>
+              <p className="mt-0.5 text-xs text-slate-400">Approve submitted hours</p>
+            </Link>
+            <Link to="/volunteers" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+              <HandHeart className="h-4 w-4 text-primary" />
+              <p className="mt-2 text-sm font-semibold text-slate-800">Post overflow work</p>
+              <p className="mt-0.5 text-xs text-slate-400">Open work for volunteers</p>
+            </Link>
+            <Link to="/reports" className="rounded-xl border border-slate-200 p-4 hover:border-primary hover:bg-primary-subtle">
+              <Users className="h-4 w-4 text-primary" />
+              <p className="mt-2 text-sm font-semibold text-slate-800">View reports</p>
+              <p className="mt-0.5 text-xs text-slate-400">Hours, budget & spread</p>
+            </Link>
+          </CardBody>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+// ── Tutor ────────────────────────────────────────────────────────────────
+
+function TutorDashboard({ user }) {
+  const { data: allocations, loading: allocLoading, error: allocError } = useApi(allocationsApi.getAllocations);
+  const { data: timesheets, loading: tsLoading, error: tsError } = useApi(timesheetsApi.getTimesheets);
+  const { data: swaps, loading: swapsLoading, error: swapsError } = useApi(swapsApi.getSwaps);
+
+  if (allocLoading || tsLoading || swapsLoading) return <Spinner fullPage label="Loading your dashboard…" />;
+  const dashError = allocError || tsError || swapsError;
+  if (dashError) {
+    return (
+      <ErrorState
+        title="Couldn't load your dashboard"
+        description={dashError}
+        action={
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+          </div>
+        }
+      />
+    );
+  }
+
+  const allocationList = allocations?.data ?? allocations ?? [];
+  const timesheetList = timesheets?.data ?? timesheets ?? [];
+  const swapList = swaps?.data ?? swaps ?? [];
+
+  const totalHours = allocationList.reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
+  const maxHours = user?.maxHoursPerWeek ?? 10;
+  const pendingSwaps = swapList.filter((s) => s.status === 'PENDING').length;
+  const draftTimesheets = timesheetList.filter((t) => t.status === 'DRAFT' || t.status === 'DISPUTED').length;
+
+  return (
+    <>
+      <Welcome name={user?.name} tagline="Here's what's on your plate this week." />
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon={BookOpen}
+          label="Courses"
+          value={allocationList.length}
+          description="Active assignments"
+        />
+        <StatCard
+          icon={Clock}
+          label="Weekly Hours"
+          value={`${formatHours(totalHours)} / ${maxHours}h`}
+          tone="emerald"
+          description="Allocated vs. your cap"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Timesheets"
+          value={draftTimesheets}
+          tone={draftTimesheets > 0 ? 'amber' : 'emerald'}
+          description="Need your attention"
+        />
+        <StatCard
+          icon={ArrowLeftRight}
+          label="Swap Requests"
+          value={pendingSwaps}
+          tone={pendingSwaps > 0 ? 'amber' : 'emerald'}
+          description="Awaiting a response"
+        />
+      </div>
+
+      <Card>
+        <CardHeader
+          title="My courses"
+          description="Sessions you're currently tutoring."
+          action={
+            <Link to="/timesheets">
+              <Button size="sm" variant="secondary">
+                Log hours <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          }
+        />
+        <CardBody>
+          {allocationList.length === 0 ? (
+            <p className="text-sm text-slate-400">You haven't been assigned to a course yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {allocationList.map((a) => (
+                <div key={a.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{a.course?.code || a.courseId}</p>
+                    <p className="text-xs text-slate-400">{a.course?.name}</p>
+                  </div>
+                  <Badge tone="primary">{formatHours(a.hoursPerWeek)} / week</Badge>
+                </div>
+              ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Courses" value="24" description="Courses requiring tutors this term" accent="text-blue-700" />
-        <StatCard label="Active Tutors" value="68" description="Tutors available this semester" accent="text-emerald-600" />
-        <StatCard label="Allocated Slots" value="52" description="Assignments currently active" accent="text-violet-600" />
-        <StatCard label="Constraint Alerts" value="4" description="Issues needing your attention" accent="text-amber-600" />
-      </div>
-
-      {/* Recent Activity */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="font-semibold text-slate-800">Recent Activity</h2>
-          <p className="mt-1 text-sm text-slate-400">Latest changes to allocations and courses.</p>
-        </div>
-
-        <ul className="divide-y divide-slate-100">
-          {recentActivity.map((item) => (
-            <li key={item.id} className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50/50">
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  item.action === 'Assigned'
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : item.action === 'Updated'
-                    ? 'bg-blue-50 text-blue-700'
-                    : item.action === 'Removed'
-                    ? 'bg-red-50 text-red-700'
-                    : 'bg-violet-50 text-violet-700'
-                }`}
-              >
-                {item.action}
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700">{item.detail}</p>
-              </div>
-              <span className="text-xs text-slate-400">{item.time}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+        </CardBody>
+      </Card>
+    </>
   );
 }
+
+// ── Student ──────────────────────────────────────────────────────────────
+
+function StudentDashboard({ user }) {
+  const { data: posts, loading, error: postsError } = useApi(overflowApi.getPosts, { params: [{ status: 'OPEN' }] });
+
+  if (loading) return <Spinner fullPage label="Loading opportunities…" />;
+  if (postsError) {
+    return (
+      <ErrorState
+        title="Couldn't load opportunities"
+        description={postsError}
+        action={
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>
+            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+          </div>
+        }
+      />
+    );
+  }
+  const postList = posts?.data ?? posts ?? [];
+
+  return (
+    <>
+      <Welcome name={user?.name} tagline="Overflow work nobody has claimed yet is listed below." />
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <StatCard icon={HandHeart} label="Open Opportunities" value={postList.length} description="Ready to claim" />
+        <StatCard icon={Clock} label="Weekly Cap" value={`${user?.maxHoursPerWeek ?? 10}h`} tone="emerald" description="Your maximum hours" />
+      </div>
+
+      <Card>
+        <CardHeader
+          title="Overflow work"
+          description="First come, first served — an organiser approves each claim."
+          action={
+            <Link to="/volunteers">
+              <Button size="sm" variant="secondary">
+                Browse all <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          }
+        />
+        <CardBody>
+          {postList.length === 0 ? (
+            <p className="text-sm text-slate-400">No overflow work is open right now — check back soon.</p>
+          ) : (
+            <div className="space-y-3">
+              {postList.slice(0, 5).map((post) => (
+                <div key={post.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{post.course?.code || post.courseId}</p>
+                    <p className="text-xs text-slate-400">{post.description || `${post.hoursPerWeek}h per week`}</p>
+                  </div>
+                  <Badge tone="info">{formatHours(post.hoursPerWeek)}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    </>
+  );
+}
+
+export function DashboardPage() {
+  const { user, role } = useAuth();
+
+  if (role === ROLES.ORGANISER) return <OrganiserDashboard user={user} />;
+  if (role === ROLES.TUTOR) return <TutorDashboard user={user} />;
+  return <StudentDashboard user={user} />;
+}
+
+export default DashboardPage;

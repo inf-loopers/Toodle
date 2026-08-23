@@ -12,138 +12,164 @@
  */
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus, BookOpen, Search, ArrowRight } from 'lucide-react';
+import { useApi } from '../hooks/useApi';
+import { coursesApi } from '../api/courses';
+import { useAuth } from '../hooks/useAuth';
+import { ROLES } from '../utils/constants';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
+import Modal from '../components/ui/Modal';
+import { Input, Textarea } from '../components/ui/Input';
+import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
-const courses = [
-  { id: 1, code: 'COMS1015A', title: 'Intro to Programming', tutorsNeeded: 3, tutorsAssigned: 3, minMark: 65, students: 320, status: 'full' },
-  { id: 2, code: 'COMS2001A', title: 'Data Structures & Algorithms', tutorsNeeded: 4, tutorsAssigned: 4, minMark: 70, students: 210, status: 'full' },
-  { id: 3, code: 'COMS3011A', title: 'Data Structures', tutorsNeeded: 2, tutorsAssigned: 1, minMark: 75, students: 85, status: 'partial' },
-  { id: 4, code: 'COMS3012A', title: 'Database Systems', tutorsNeeded: 2, tutorsAssigned: 1, minMark: 70, students: 92, status: 'partial' },
-  { id: 5, code: 'COMS3013A', title: 'Operating Systems', tutorsNeeded: 2, tutorsAssigned: 1, minMark: 72, students: 78, status: 'partial' },
-  { id: 6, code: 'COMS3014A', title: 'Computer Networks', tutorsNeeded: 2, tutorsAssigned: 0, minMark: 70, students: 65, status: 'none' },
-  { id: 7, code: 'COMS3015A', title: 'Software Engineering', tutorsNeeded: 3, tutorsAssigned: 2, minMark: 68, students: 110, status: 'partial' },
-  { id: 8, code: 'COMS3022A', title: 'Algorithms', tutorsNeeded: 2, tutorsAssigned: 2, minMark: 75, students: 88, status: 'full' },
-  { id: 9, code: 'COMS3033A', title: 'Computer Graphics', tutorsNeeded: 1, tutorsAssigned: 1, minMark: 70, students: 42, status: 'full' },
-  { id: 10, code: 'COMS3044A', title: 'Distributed Systems', tutorsNeeded: 2, tutorsAssigned: 1, minMark: 73, students: 56, status: 'partial' },
-  { id: 11, code: 'COMS3050A', title: 'Human-Computer Interaction', tutorsNeeded: 1, tutorsAssigned: 1, minMark: 65, students: 70, status: 'full' },
-  { id: 12, code: 'COMS3060A', title: 'Cybersecurity', tutorsNeeded: 2, tutorsAssigned: 1, minMark: 70, students: 63, status: 'partial' },
-];
+function CreateCourseModal({ open, onClose, onCreated }) {
+  const [form, setForm] = useState({ code: '', name: '', description: '', year: 2026, semester: 1, requiredTutors: 1, minMarkRequired: 50 });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-const statusConfig = {
-  full:    { label: 'Fully Staffed',  bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  partial: { label: 'Needs Tutors',   bg: 'bg-amber-50',    text: 'text-amber-700',   dot: 'bg-amber-500' },
-  none:    { label: 'Unassigned',     bg: 'bg-red-50',      text: 'text-red-700',     dot: 'bg-red-500' },
-};
+  const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-export default function CoursesPage() {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
-
-  const filtered = courses.filter((c) => {
-    const matchesSearch =
-      c.code.toLowerCase().includes(search.toLowerCase()) ||
-      c.title.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === 'all' || c.status === filter;
-    return matchesSearch && matchesFilter;
-  });
-
-  const counts = {
-    all: courses.length,
-    full: courses.filter((c) => c.status === 'full').length,
-    partial: courses.filter((c) => c.status === 'partial').length,
-    none: courses.filter((c) => c.status === 'none').length,
+  const handleSubmit = async () => {
+    if (!form.code || !form.name) {
+      setError('Course code and name are required.');
+      return;
+    }
+    setSubmitting(true);
+    setError('');
+    try {
+      await coursesApi.createCourse({
+        ...form,
+        year: Number(form.year),
+        semester: Number(form.semester),
+        requiredTutors: Number(form.requiredTutors),
+        minMarkRequired: Number(form.minMarkRequired),
+      });
+      onCreated();
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || 'Could not create the course.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Heading */}
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-        <div>
-          <p className="text-sm font-medium text-blue-600">Catalog</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Courses</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Manage course offerings, staffing status, and prerequisite requirements.
-          </p>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="New course"
+      description="Add a course for organisers to allocate tutors against."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} loading={submitting}>Create course</Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Course code" placeholder="COMS3011A" value={form.code} onChange={update('code')} />
+          <Input label="Year" type="number" value={form.year} onChange={update('year')} />
         </div>
-        <button className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
-          + Add Course
-        </button>
-      </div>
-
-      {/* Search + filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-md flex-1">
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
-          <input
-            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by code or title..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
-          />
+        <Input label="Course name" placeholder="Data Structures" value={form.name} onChange={update('name')} />
+        <Textarea label="Description" value={form.description} onChange={update('description')} />
+        <div className="grid grid-cols-3 gap-4">
+          <Input label="Semester" type="number" min={1} max={2} value={form.semester} onChange={update('semester')} />
+          <Input label="Tutors needed" type="number" min={1} value={form.requiredTutors} onChange={update('requiredTutors')} />
+          <Input label="Min. mark %" type="number" min={0} max={100} value={form.minMarkRequired} onChange={update('minMarkRequired')} />
         </div>
-        <div className="flex gap-2">
-          {['all', 'full', 'partial', 'none'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                filter === f
-                  ? 'bg-blue-700 text-white'
-                  : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {f === 'all' ? 'All' : f === 'full' ? 'Staffed' : f === 'partial' ? 'Partial' : 'Unassigned'}
-              <span className="ml-1.5 opacity-70">{counts[f]}</span>
-            </button>
-          ))}
-        </div>
+        {error && <p className="text-xs text-rose-600">{error}</p>}
       </div>
-
-      {/* Course grid */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((c) => {
-          const s = statusConfig[c.status];
-          const fillPct = Math.round((c.tutorsAssigned / c.tutorsNeeded) * 100);
-
-          return (
-            <div key={c.id} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-lg font-bold text-slate-900">{c.code}</p>
-                  <p className="mt-0.5 text-sm text-slate-500">{c.title}</p>
-                </div>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${s.bg} ${s.text}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                  {s.label}
-                </span>
-              </div>
-
-              {/* Tutor fill bar */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Tutor fill</span>
-                  <span className="font-semibold text-slate-700">{c.tutorsAssigned}/{c.tutorsNeeded}</span>
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={`h-full rounded-full transition-all ${fillPct === 100 ? 'bg-emerald-500' : fillPct > 0 ? 'bg-amber-400' : 'bg-red-400'}`}
-                    style={{ width: `${fillPct}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Meta */}
-              <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
-                <span>Min mark: <strong className="text-slate-600">{c.minMark}%</strong></span>
-                <span className="h-1 w-1 rounded-full bg-slate-300" />
-                <span>{c.students} students</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 && (
-        <p className="py-12 text-center text-sm text-slate-400">No courses match your search.</p>
-      )}
-    </div>
+    </Modal>
   );
 }
+
+export function CoursesPage() {
+  const { isOrganiser } = useAuth();
+  const { data, loading, error, refetch } = useApi(coursesApi.getCourses);
+  const [search, setSearch] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const courses = data?.data ?? data ?? [];
+  const filtered = courses.filter(
+    (c) =>
+      c.code?.toLowerCase().includes(search.toLowerCase()) ||
+      c.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return <Spinner fullPage label="Loading courses…" />;
+  if (error) return <ErrorState title="Couldn't load courses" description={error} action={<Button onClick={refetch}>Try again</Button>} />;
+
+  return (
+    <>
+      <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Courses</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {isOrganiser ? 'Everything the school is running this semester.' : 'The courses you tutor for.'}
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+            <Search className="mr-2 h-4 w-4 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search courses…"
+              className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
+            />
+          </div>
+          {isOrganiser && (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> New course
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="No courses found"
+          description={search ? 'Try a different search term.' : 'Courses will appear here once added.'}
+        />
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((course) => (
+            <Link key={course.id} to={`/courses/${course.id}`}>
+              <Card className="h-full transition-shadow hover:shadow-md">
+                <div className="flex items-start justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <Badge tone="neutral">Sem {course.semester} · {course.year}</Badge>
+                </div>
+                <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
+                <p className="text-sm text-slate-500">{course.name}</p>
+                {course.description && (
+                  <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
+                )}
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <span className="text-xs text-slate-400">{course.requiredTutors ?? 1} tutor(s) needed</span>
+                  <span className="flex items-center gap-1 text-xs font-semibold text-primary">
+                    Details <ArrowRight className="h-3 w-3" />
+                  </span>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {isOrganiser && (
+        <CreateCourseModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={refetch} />
+      )}
+    </>
+  );
+}
+
+export default CoursesPage;
