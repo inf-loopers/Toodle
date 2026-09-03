@@ -73,7 +73,7 @@ Toodle/
 ### 2. Installation
 
 ```bash
-git clone <repo-url>
+git clone https://sdp.ms.wits.ac.za/infinite-loopers/Toodle.git
 cd Toodle
 npm install
 ```

@@ -47,5 +47,5 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthShell />
     </BrowserRouter>
-  </StrictMode>,
+  </StrictMode>
 );
