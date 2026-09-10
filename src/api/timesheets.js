@@ -41,9 +41,9 @@ export const timesheetsApi = {
     return response.data;
   },
 
-  // POST /timesheets/:id/dispute — SUBMITTED -> DISPUTED, with a note
-  disputeTimesheet: async (id, disputeNote) => {
-    const response = await apiClient.post(`/timesheets/${id}/dispute`, { disputeNote });
+  // POST /timesheets/:id/dispute — SUBMITTED -> DISPUTED, with a reason
+  disputeTimesheet: async (id, disputeReason) => {
+    const response = await apiClient.post(`/timesheets/${id}/dispute`, { disputeReason });
     return response.data;
   },
 };

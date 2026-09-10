@@ -32,7 +32,7 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
   const monday = new Date(today.setDate(today.getDate() - ((today.getDay() + 6) % 7)));
   const [form, setForm] = useState({
     courseId: '',
-    weekStarting: monday.toISOString().slice(0, 10),
+    weekStartDate: monday.toISOString().slice(0, 10),
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -80,8 +80,8 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
         <Input
           label="Week starting"
           type="date"
-          value={form.weekStarting}
-          onChange={(e) => setForm((f) => ({ ...f, weekStarting: e.target.value }))}
+          value={form.weekStartDate}
+          onChange={(e) => setForm((f) => ({ ...f, weekStartDate: e.target.value }))}
         />
       </div>
     </Modal>
@@ -98,7 +98,7 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
     if (!form.date) return;
     setSubmitting(true);
     try {
-      await timesheetsApi.addEntry(timesheet.id, { ...form, hours: Number(form.hours) });
+      await timesheetsApi.addEntry(timesheet.id, { ...form, hoursWorked: Number(form.hours) });
       onLogged();
       onClose();
     } finally {
@@ -273,12 +273,12 @@ export function TimesheetsPage() {
                     <Badge tone={TIMESHEET_STATUS_TONE[ts.status] || 'neutral'}>{ts.status}</Badge>
                   </div>
                   <p className="mt-1 text-xs text-slate-400">
-                    Week of {formatShortDate(ts.weekStarting)}{' '}
+                    Week of {formatShortDate(ts.weekStartDate)}{' '}
                     {isOrganiser && ts.user?.name ? `· ${ts.user.name}` : ''} ·{' '}
                     {Number(ts.totalHours || 0)}h logged
                   </p>
-                  {ts.disputeNote && ts.status === 'DISPUTED' && (
-                    <p className="mt-1 text-xs text-amber-700">"{ts.disputeNote}"</p>
+                  {ts.disputeReason && ts.status === 'DISPUTED' && (
+                    <p className="mt-1 text-xs text-amber-700">"{ts.disputeReason}"</p>
                   )}
                 </div>
 
