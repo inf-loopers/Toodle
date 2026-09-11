@@ -3,12 +3,10 @@
  * @description Tutor-facing page for trading sessions between tutors.
  *
  * Responsibilities:
- * - Displays the current tutor's assigned sessions with "Propose Swap" actions.
- * - Provides a swap-proposal modal: pick a partner, select their session,
- *   run real-time constraint checks (timetable clash, weekly hours, eligibility).
- * - Lists incoming swap requests from other tutors (accept / decline).
- * - Lists outgoing swap requests with approval status (pending / approved / rejected).
- * - Routes submitted swaps to the Organiser for final approval.
+ * - Lets tutors propose trades using their active allocations and partner options.
+ * - Displays incoming/outgoing requests and persisted validation warnings.
+ * - Lets organisers approve/reject and requesters cancel pending swaps.
+ * - Surfaces constraint failures returned by the API.
  *
  * Route: `/swaps`
  */
@@ -17,7 +15,6 @@ import { useState } from 'react';
 import { Plus, ArrowLeftRight, Check, X, Ban } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { swapsApi } from '../api/swaps';
-import { allocationsApi } from '../api/allocations';
 import { useAuth } from '../hooks/useAuth';
 import { SWAP_STATUS_TONE } from '../utils/constants';
 import { getInitials } from '../utils/helpers';
@@ -29,6 +26,21 @@ import Modal from '../components/ui/Modal';
 import { Select, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
+function swapErrorMessage(err) {
+  const body = err?.response?.data;
+  const details = body?.details;
+  const warnings =
+    details && !Array.isArray(details)
+      ? Object.values(details)
+          .flat()
+          .map((warning) => warning.message)
+          .join(' ')
+      : '';
+  return [body?.error || body?.message || err.message || 'Could not update the swap.', warnings]
+    .filter(Boolean)
+    .join(' ');
+}
+
 function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequested }) {
   const [originId, setOriginId] = useState('');
   const [targetId, setTargetId] = useState('');
@@ -37,7 +49,10 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
   const [error, setError] = useState('');
 
   const targetOptions = allAllocations.filter(
-    (a) => a.id !== originId && a.userId !== myAllocations[0]?.userId
+    (a) =>
+      a.status === 'ACTIVE' &&
+      a.userId !== myAllocations[0]?.userId &&
+      a.courseId !== myAllocations.find((origin) => origin.id === originId)?.courseId
   );
 
   const handleSubmit = async () => {
@@ -52,10 +67,10 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
         requesteeId: target?.userId,
         reason,
       });
-      onRequested();
+      await onRequested();
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Could not request the swap.');
+      setError(swapErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -82,7 +97,10 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
         <Select
           label="One of your sessions"
           value={originId}
-          onChange={(e) => setOriginId(e.target.value)}
+          onChange={(e) => {
+            setOriginId(e.target.value);
+            setTargetId('');
+          }}
         >
           <option value="">Choose…</option>
           {myAllocations.map((a) => (
@@ -111,21 +129,32 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
 }
 
 export function SessionSwapPage() {
-  const { isOrganiser, user } = useAuth();
+  const { dbUser: user, role } = useAuth();
+  const isOrganiser = role?.toUpperCase() === 'ORGANISER';
+  const isTutor = role?.toUpperCase() === 'TUTOR';
   const { data, loading, error, refetch } = useApi(swapsApi.getSwaps);
-  const { data: allocData } = useApi(allocationsApi.getAllocations);
+  const {
+    data: allocData,
+    error: optionsError,
+    refetch: refetchOptions,
+  } = useApi(swapsApi.getOptions, { immediate: isTutor });
   const [requestOpen, setRequestOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   const swaps = data?.data ?? data ?? [];
   const allocations = allocData?.data ?? allocData ?? [];
-  const myAllocations = allocations.filter((a) => a.userId === user?.id);
+  const myAllocations = allocations.filter((a) => a.userId === user?.id && a.status === 'ACTIVE');
 
   const act = async (fn, id) => {
     setBusyId(id);
+    setActionError('');
     try {
       await fn(id);
-      refetch();
+      await refetch();
+      if (isTutor) await refetchOptions();
+    } catch (err) {
+      setActionError(swapErrorMessage(err));
     } finally {
       setBusyId(null);
     }
@@ -145,12 +174,18 @@ export function SessionSwapPage() {
               : 'Trade a session with another tutor.'}
           </p>
         </div>
-        {!isOrganiser && (
+        {isTutor && (
           <Button onClick={() => setRequestOpen(true)}>
             <Plus className="h-4 w-4" /> Request swap
           </Button>
         )}
       </div>
+
+      {(actionError || optionsError) && (
+        <p role="alert" className="mb-4 text-sm text-rose-600">
+          {actionError || optionsError}
+        </p>
+      )}
 
       {swaps.length === 0 ? (
         <EmptyState
@@ -182,9 +217,18 @@ export function SessionSwapPage() {
                       {swap.requestee?.name}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {swap.originAllocation?.course?.code} ↔ {swap.targetAllocation?.course?.code}
+                      {swap.requesterAllocation?.course?.code} ↔{' '}
+                      {swap.targetAllocation?.course?.code}
                       {swap.reason && ` · "${swap.reason}"`}
                     </p>
+                    {Object.entries(swap.validationWarnings || {}).flatMap(([side, warnings]) =>
+                      (Array.isArray(warnings) ? warnings : []).map((warning, index) => (
+                        <p key={`${side}-${index}`} className="mt-1 text-xs text-amber-700">
+                          {side === 'requester' ? swap.requester?.name : swap.requestee?.name}:{' '}
+                          {warning.message}
+                        </p>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -228,7 +272,7 @@ export function SessionSwapPage() {
         </Card>
       )}
 
-      {!isOrganiser && (
+      {isTutor && (
         <RequestSwapModal
           open={requestOpen}
           onClose={() => setRequestOpen(false)}

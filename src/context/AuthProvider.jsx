@@ -34,7 +34,7 @@ export default function AuthProvider({ children }) {
       isAuthenticated,
       hasUser: !!auth0User,
       auth0Error: auth0Error?.message || null,
-      currentUrl: window.location.href,
+      currentPath: window.location.pathname,
     });
   }, [auth0Loading, isAuthenticated, auth0User, auth0Error]);
 
