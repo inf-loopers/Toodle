@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.production
 !.env.example
+
+# Test coverage
+coverage/

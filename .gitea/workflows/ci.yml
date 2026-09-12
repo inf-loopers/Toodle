@@ -50,8 +50,17 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Vitest Suite
-        run: npm test
+      - name: Run Vitest Suite with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        if: always()
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          curl -Os https://cli.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov upload-process --fail-on-error -t "$CODECOV_TOKEN" -f coverage/lcov.info -F frontend
 
   build:
     name: Production Build Verification
