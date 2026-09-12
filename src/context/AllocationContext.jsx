@@ -111,9 +111,8 @@ export function AllocationProvider({ children }) {
 
   const unfilledCount = useMemo(
     () =>
-      courseList.filter(
-        (c) => (courseAllocMap[c.id]?.length ?? 0) < (c.requiredTutors ?? 1)
-      ).length,
+      courseList.filter((c) => (courseAllocMap[c.id]?.length ?? 0) < (c.requiredTutors ?? 1))
+        .length,
     [courseList, courseAllocMap]
   );
 

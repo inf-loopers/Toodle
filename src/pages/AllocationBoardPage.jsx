@@ -201,8 +201,7 @@ function AssignTutorModal({
 
         {checking && (
           <p className="flex items-center gap-2 text-xs text-slate-400">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking marks, timetable &amp;
-            hours…
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking marks, timetable &amp; hours…
           </p>
         )}
 
@@ -258,7 +257,13 @@ function AssignTutorModal({
  * disabled and the card degrades to a tap-to-assign action so the flow
  * remains usable without drag-and-drop.
  */
-function DraggableTutorCard({ tutor, usedHours, allocationCount, dragEnabled = true, onAssignTap }) {
+function DraggableTutorCard({
+  tutor,
+  usedHours,
+  allocationCount,
+  dragEnabled = true,
+  onAssignTap,
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `tutor-${tutor.id}`,
     data: { type: 'tutor', tutor },
@@ -336,7 +341,8 @@ function DraggableTutorCard({ tutor, usedHours, allocationCount, dragEnabled = t
       {/* Footer: allocation count + interaction affordance */}
       <div className="mt-2.5 flex items-center justify-between">
         <Badge tone="neutral" className="text-[10px]">
-          <UserCheck className="h-2.5 w-2.5" /> {allocationCount} allocation{allocationCount !== 1 ? 's' : ''}
+          <UserCheck className="h-2.5 w-2.5" /> {allocationCount} allocation
+          {allocationCount !== 1 ? 's' : ''}
         </Badge>
         {dragEnabled && <span className="text-[10px] text-slate-400">Drag to assign</span>}
       </div>
@@ -400,11 +406,7 @@ function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
             className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             title={allocation.isLocked ? 'Unlock' : 'Lock'}
           >
-            {allocation.isLocked ? (
-              <Lock className="h-3 w-3" />
-            ) : (
-              <Unlock className="h-3 w-3" />
-            )}
+            {allocation.isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
           <button
             onClick={() => onRemove(allocation)}
@@ -625,9 +627,8 @@ function AllocationBoard() {
   const handleAssignTap = useCallback(
     (tutor) => {
       const target =
-        courseList.find(
-          (c) => (courseAllocMap[c.id]?.length ?? 0) < (c.requiredTutors ?? 1)
-        ) ?? courseList[0];
+        courseList.find((c) => (courseAllocMap[c.id]?.length ?? 0) < (c.requiredTutors ?? 1)) ??
+        courseList[0];
       if (target) openAssignModal(target, tutor.id);
     },
     [courseList, courseAllocMap, openAssignModal]
