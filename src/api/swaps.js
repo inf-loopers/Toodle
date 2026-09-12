@@ -1,12 +1,20 @@
 import apiClient from './client';
 
 export const swapsApi = {
+  getOptions: async () => {
+    const response = await apiClient.get('/swaps/options');
+    return response.data;
+  },
   // GET /swaps — tutors see swaps they're involved in, organisers see all
   getSwaps: async (params) => {
     const response = await apiClient.get('/swaps', { params });
     return response.data;
   },
-
+  // GET /swaps/:id — get a specific swap
+  getSwap: async (id) => {
+    const response = await apiClient.get(`/swaps/${id}`);
+    return response.data;
+  },
   // POST /swaps — request a trade between two allocations
   requestSwap: async (data) => {
     const response = await apiClient.post('/swaps', data);
@@ -20,8 +28,8 @@ export const swapsApi = {
   },
 
   // POST /swaps/:id/reject
-  rejectSwap: async (id) => {
-    const response = await apiClient.post(`/swaps/${id}/reject`);
+  rejectSwap: async (id, rejectionReason) => {
+    const response = await apiClient.post(`/swaps/${id}/reject`, { rejectionReason });
     return response.data;
   },
 
