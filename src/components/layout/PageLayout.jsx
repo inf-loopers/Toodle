@@ -29,6 +29,7 @@ const PAGE_TITLES = [
   { match: '/tutors', title: 'Tutors' },
   { match: '/volunteers', title: 'Volunteer Overflow' },
   { match: '/timesheets', title: 'Timesheets' },
+  { match: '/excusals', title: 'Excusals' },
   { match: '/swaps', title: 'Session Swaps' },
   { match: '/reports', title: 'Reports' },
   { match: '/profile', title: 'My Profile' },
