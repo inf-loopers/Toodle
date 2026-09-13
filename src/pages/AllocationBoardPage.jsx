@@ -255,7 +255,8 @@ function DraggableTutorCard({ tutor, usedHours, allocationCount }) {
       {/* Footer: allocation count */}
       <div className="mt-2.5 flex items-center justify-between">
         <Badge tone="neutral" className="text-[10px]">
-          <UserCheck className="h-2.5 w-2.5" /> {allocationCount} allocation{allocationCount !== 1 ? 's' : ''}
+          <UserCheck className="h-2.5 w-2.5" /> {allocationCount} allocation
+          {allocationCount !== 1 ? 's' : ''}
         </Badge>
         <span className="text-[10px] text-slate-400">Drag to assign</span>
       </div>
@@ -308,11 +309,7 @@ function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
             className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             title={allocation.isLocked ? 'Unlock' : 'Lock'}
           >
-            {allocation.isLocked ? (
-              <Lock className="h-3 w-3" />
-            ) : (
-              <Unlock className="h-3 w-3" />
-            )}
+            {allocation.isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
           <button
             onClick={() => onRemove(allocation)}
@@ -343,9 +340,7 @@ function CourseColumn({ course, allocations, onToggleLock, onRemove, onAssignCli
     <div
       ref={setNodeRef}
       className={`flex min-w-[260px] flex-1 flex-col rounded-2xl border-2 transition-colors ${
-        isOver
-          ? 'border-primary bg-primary-subtle/30'
-          : 'border-slate-200 bg-white'
+        isOver ? 'border-primary bg-primary-subtle/30' : 'border-slate-200 bg-white'
       }`}
     >
       {/* Column header */}
@@ -458,9 +453,7 @@ export function AllocationBoardPage() {
   const filteredTutors = useMemo(() => {
     const q = tutorSearch.toLowerCase();
     return tutorList.filter(
-      (t) =>
-        (t.name || '').toLowerCase().includes(q) ||
-        (t.email || '').toLowerCase().includes(q)
+      (t) => (t.name || '').toLowerCase().includes(q) || (t.email || '').toLowerCase().includes(q)
     );
   }, [tutorList, tutorSearch]);
 
@@ -469,9 +462,7 @@ export function AllocationBoardPage() {
   ).length;
 
   // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handleDragStart = useCallback((event) => {
     const { active } = event;
@@ -480,21 +471,18 @@ export function AllocationBoardPage() {
     }
   }, []);
 
-  const handleDragEnd = useCallback(
-    (event) => {
-      setActiveTutor(null);
-      const { active, over } = event;
-      if (!over) return;
+  const handleDragEnd = useCallback((event) => {
+    setActiveTutor(null);
+    const { active, over } = event;
+    if (!over) return;
 
-      const tutorData = active.data.current;
-      const courseData = over.data.current;
+    const tutorData = active.data.current;
+    const courseData = over.data.current;
 
-      if (tutorData?.type === 'tutor' && courseData?.type === 'course') {
-        setAssignTarget({ ...courseData.course, _preselectedTutorId: tutorData.tutor.id });
-      }
-    },
-    []
-  );
+    if (tutorData?.type === 'tutor' && courseData?.type === 'course') {
+      setAssignTarget({ ...courseData.course, _preselectedTutorId: tutorData.tutor.id });
+    }
+  }, []);
 
   const handleDragCancel = useCallback(() => {
     setActiveTutor(null);

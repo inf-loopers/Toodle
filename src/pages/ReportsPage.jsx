@@ -91,10 +91,22 @@ function timesheetHours(ts) {
 }
 
 export function ReportsPage() {
-  const { data: courses, loading: coursesLoading, error: coursesError } = useApi(coursesApi.getCourses);
-  const { data: allocations, loading: allocLoading, error: allocError } = useApi(allocationsApi.getAllocations);
+  const {
+    data: courses,
+    loading: coursesLoading,
+    error: coursesError,
+  } = useApi(coursesApi.getCourses);
+  const {
+    data: allocations,
+    loading: allocLoading,
+    error: allocError,
+  } = useApi(allocationsApi.getAllocations);
   // Only approved timesheets feed the report — hours are final once approved.
-  const { data: timesheets, loading: tsLoading, error: tsError } = useApi(timesheetsApi.getTimesheets, {
+  const {
+    data: timesheets,
+    loading: tsLoading,
+    error: tsError,
+  } = useApi(timesheetsApi.getTimesheets, {
     params: [{ status: 'APPROVED' }],
   });
 
@@ -194,12 +206,11 @@ export function ReportsPage() {
     const byTutor = new Map();
     for (const a of activeAllocations) {
       const tutor = a.user ?? { id: a.userId, name: a.userId };
-      const entry =
-        byTutor.get(a.userId) ?? {
-          tutor,
-          hours: 0,
-          capacity: Number(tutor.maxHoursPerWeek) || 0,
-        };
+      const entry = byTutor.get(a.userId) ?? {
+        tutor,
+        hours: 0,
+        capacity: Number(tutor.maxHoursPerWeek) || 0,
+      };
       entry.hours += Number(a.hoursPerWeek || 0);
       byTutor.set(a.userId, entry);
     }
@@ -272,7 +283,8 @@ export function ReportsPage() {
           </p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{formatHours(totalWeeklyHours)}</p>
           <p className="mt-1 text-xs text-slate-400">
-            across {activeAllocations.length} active allocation{activeAllocations.length === 1 ? '' : 's'}
+            across {activeAllocations.length} active allocation
+            {activeAllocations.length === 1 ? '' : 's'}
           </p>
         </Card>
         <Card>
@@ -281,7 +293,8 @@ export function ReportsPage() {
           </p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{formatHours(totalLoggedHours)}</p>
           <p className="mt-1 text-xs text-slate-400">
-            from {timesheetsInPeriod.length} timesheet{timesheetsInPeriod.length === 1 ? '' : 's'} {periodLabel}
+            from {timesheetsInPeriod.length} timesheet{timesheetsInPeriod.length === 1 ? '' : 's'}{' '}
+            {periodLabel}
           </p>
         </Card>
         <Card>
@@ -314,22 +327,27 @@ export function ReportsPage() {
             {totalWeeklyHours === 0 && totalLoggedHours === 0 ? (
               <p className="text-sm text-slate-400">No allocations or approved timesheets yet.</p>
             ) : (
-              hoursByCourse.slice(0, 8).map(({ course, allocatedHours, loggedHours }) => (
-                <DualBar
-                  key={course.id}
-                  label={course.code}
-                  allocated={allocatedHours}
-                  logged={loggedHours}
-                  max={chartMax}
-                  suffix="h"
-                />
-              ))
+              hoursByCourse
+                .slice(0, 8)
+                .map(({ course, allocatedHours, loggedHours }) => (
+                  <DualBar
+                    key={course.id}
+                    label={course.code}
+                    allocated={allocatedHours}
+                    logged={loggedHours}
+                    max={chartMax}
+                    suffix="h"
+                  />
+                ))
             )}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader title="Workload spread" description="Weekly hours per tutor against their weekly cap." />
+          <CardHeader
+            title="Workload spread"
+            description="Weekly hours per tutor against their weekly cap."
+          />
           <CardBody className="space-y-4">
             {workloadPerTutor.length === 0 ? (
               <p className="text-sm text-slate-400">No tutors have hours allocated yet.</p>
@@ -371,7 +389,11 @@ export function ReportsPage() {
                   max={quota}
                   suffix={` / ${quota} tutor${quota === 1 ? '' : 's'}`}
                   tone={
-                    shortfall > 0 ? (assigned === 0 ? 'bg-rose-400' : 'bg-amber-400') : 'bg-emerald-500'
+                    shortfall > 0
+                      ? assigned === 0
+                        ? 'bg-rose-400'
+                        : 'bg-amber-400'
+                      : 'bg-emerald-500'
                   }
                 />
               );
