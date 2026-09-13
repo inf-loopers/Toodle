@@ -72,8 +72,12 @@ VITE_API_URL=http://localhost:3000/api/v1
 VITE_AUTH0_DOMAIN=...
 VITE_AUTH0_CLIENT_ID=...
 VITE_AUTH0_AUDIENCE=....
-VITE_AUTH0_CALLBACK_URL=http://localhost:5173
 ```
+
+Login automatically returns to `/callback` on the current browser origin;
+`VITE_AUTH0_CALLBACK_URL` is no longer used. Register each environment's callback
+URL, logout URL, and web origin in Auth0 as described in the
+[README environment setup](../README.md#3-environment-setup).
 
 ### Start Development Server
 
