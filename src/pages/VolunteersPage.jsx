@@ -1,24 +1,24 @@
 /**
  * @file VolunteersPage.jsx
- * @description Volunteer registration and management page.
+ * @description Volunteer overflow work page with role-split views.
  *
  * Responsibilities:
- * - Lists registered volunteers with contact info and course interests.
- * - Shows volunteer availability and preferred subjects.
- * - Status tracking: pending review, active, or inactive.
- * - Quick actions to approve or archive volunteers.
+ * - Organiser view: approval queue with claimant details + open posts grid.
+ * - Student/tutor view: browse open posts and claim work.
+ * - Course filter dropdown for both views.
+ * - Claim status badges: Pending (amber), Approved (green), Rejected (red).
  *
  * Route: `/volunteers`
  */
 
 import { useState } from 'react';
-import { Plus, HandHeart, CheckCircle2 } from 'lucide-react';
+import { Plus, HandHeart, CheckCircle2, Mail, CalendarClock } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { overflowApi } from '../api/overflow';
 import { coursesApi } from '../api/courses';
 import { useAuth } from '../hooks/useAuth';
-import { formatHours, getInitials } from '../utils/helpers';
-import Card, { CardHeader, CardBody } from '../components/ui/Card';
+import { formatHours, formatShortDate, getInitials } from '../utils/helpers';
+import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
@@ -32,6 +32,18 @@ const STATUS_TONE = {
   APPROVED: 'success',
   CLOSED: 'neutral',
   CANCELLED: 'danger',
+};
+
+const CLAIM_STATUS_TONE = {
+  CLAIMED: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+};
+
+const CLAIM_STATUS_LABEL = {
+  CLAIMED: 'Pending',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
 };
 
 function PostWorkModal({ open, onClose, courses, onCreated }) {
@@ -98,12 +110,26 @@ function PostWorkModal({ open, onClose, courses, onCreated }) {
 export function VolunteersPage() {
   const { isOrganiser } = useAuth();
   const { data, loading, error, refetch } = useApi(overflowApi.getPosts);
-  const { data: coursesData } = useApi(coursesApi.getCourses, { immediate: isOrganiser });
+  const { data: coursesData } = useApi(coursesApi.getCourses, { immediate: true });
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [courseFilter, setCourseFilter] = useState('');
 
   const posts = data?.data ?? data ?? [];
   const courses = coursesData?.data ?? coursesData ?? [];
+
+  // Filter posts by selected course
+  const filteredPosts = courseFilter
+    ? posts.filter((p) => String(p.course?.id ?? p.courseId) === String(courseFilter))
+    : posts;
+
+  // Organiser: posts with pending claims
+  const pendingClaimsPosts = filteredPosts.filter((p) =>
+    p.claims?.some((c) => c.status === 'CLAIMED')
+  );
+
+  // Student/tutor: only OPEN posts
+  const openPosts = filteredPosts.filter((p) => p.status === 'OPEN');
 
   const handleClaim = async (postId) => {
     setBusyId(postId);
@@ -128,8 +154,50 @@ export function VolunteersPage() {
   if (loading) return <Spinner fullPage label="Loading overflow work…" />;
   if (error) return <ErrorState title="Couldn't load overflow work" description={error} />;
 
+  // --- Course filter dropdown (shared by both views) ---
+  const courseFilterBar = courses.length > 0 && (
+    <div className="mb-6 max-w-xs">
+      <Select
+        label="Filter by course"
+        value={courseFilter}
+        onChange={(e) => setCourseFilter(e.target.value)}
+      >
+        <option value="">All courses</option>
+        {courses.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.code} — {c.name}
+          </option>
+        ))}
+      </Select>
+    </div>
+  );
+
+  // --- Shared post card header (icon + course info + hours badge) ---
+  function PostCardShell({ post, children }) {
+    return (
+      <Card>
+        <div className="flex items-start justify-between">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+            <HandHeart className="h-5 w-5" />
+          </div>
+          <Badge tone={STATUS_TONE[post.status] || 'neutral'}>{post.status}</Badge>
+        </div>
+        <h3 className="mt-4 font-bold text-slate-900">{post.course?.code || post.courseId}</h3>
+        <p className="text-sm text-slate-500">{post.course?.name}</p>
+        <p className="mt-2 text-xs text-slate-400">
+          {post.description || 'No description provided.'}
+        </p>
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <Badge tone="primary">{formatHours(post.hoursPerWeek)} / week</Badge>
+          {children}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <>
+      {/* ── Page header ── */}
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Volunteer Overflow</h1>
@@ -146,81 +214,167 @@ export function VolunteersPage() {
         )}
       </div>
 
-      {posts.length === 0 ? (
-        <EmptyState
-          icon={HandHeart}
-          title="No overflow work right now"
-          description="Check back soon, or post new work if you're an organiser."
-        />
-      ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {posts.map((post) => (
-            <Card key={post.id}>
-              <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                  <HandHeart className="h-5 w-5" />
-                </div>
-                <Badge tone={STATUS_TONE[post.status] || 'neutral'}>{post.status}</Badge>
-              </div>
-              <h3 className="mt-4 font-bold text-slate-900">
-                {post.course?.code || post.courseId}
-              </h3>
-              <p className="text-sm text-slate-500">{post.course?.name}</p>
-              <p className="mt-2 text-xs text-slate-400">
-                {post.description || 'No description provided.'}
-              </p>
+      {courseFilterBar}
 
-              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                <Badge tone="primary">{formatHours(post.hoursPerWeek)} / week</Badge>
+      {/* ══════════════════════════════════════════════════
+          ORGANISER VIEW
+          ══════════════════════════════════════════════════ */}
+      {isOrganiser && (
+        <>
+          {/* ── Approval Queue ── */}
+          <section className="mb-10">
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">Approval Queue</h2>
 
-                {!isOrganiser && post.status === 'OPEN' && (
-                  <Button
-                    size="sm"
-                    onClick={() => handleClaim(post.id)}
-                    loading={busyId === post.id}
-                  >
-                    Claim
-                  </Button>
-                )}
+            {pendingClaimsPosts.length === 0 ? (
+              <EmptyState
+                icon={CheckCircle2}
+                title="No pending claims"
+                description="All claims have been reviewed. Nicely done!"
+              />
+            ) : (
+              <div className="space-y-5">
+                {pendingClaimsPosts.map((post) => (
+                  <Card key={post.id}>
+                    {/* Post summary row */}
+                    <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                        <HandHeart className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-semibold text-slate-900">
+                          {post.course?.code || post.courseId}
+                        </span>
+                        <span className="ml-2 text-sm text-slate-500">{post.course?.name}</span>
+                      </div>
+                      <Badge tone="primary">{formatHours(post.hoursPerWeek)} / week</Badge>
+                    </div>
 
-                {isOrganiser && post.claims?.length > 0 && (
-                  <div className="w-full">
-                    <p className="mt-1 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Claims
+                    {/* Claims list */}
+                    <p className="mt-3 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Claims ({post.claims.length})
                     </p>
                     <div className="space-y-2">
-                      {post.claims.map((claim) => (
-                        <div
-                          key={claim.id}
-                          className="flex items-center justify-between rounded-lg border border-slate-100 px-2.5 py-1.5"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
-                              {getInitials(claim.user?.name)}
+                      {post.claims.map((claim) => {
+                        const isPending = claim.status === 'CLAIMED';
+                        return (
+                          <div
+                            key={claim.id}
+                            className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3"
+                          >
+                            <div className="flex flex-wrap items-center gap-3">
+                              {/* Avatar + name */}
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700">
+                                {getInitials(claim.user?.name)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-slate-800 truncate">
+                                  {claim.user?.name || 'Unknown'}
+                                </p>
+                                {/* Claimant email */}
+                                {claim.user?.email && (
+                                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                                    <Mail className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">{claim.user.email}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Claimed date */}
+                              {claim.claimedAt && (
+                                <div className="flex items-center gap-1 text-xs text-slate-400">
+                                  <CalendarClock className="h-3 w-3" />
+                                  {formatShortDate(claim.claimedAt)}
+                                </div>
+                              )}
+
+                              {/* Status badge */}
+                              <Badge tone={CLAIM_STATUS_TONE[claim.status] || 'neutral'}>
+                                {CLAIM_STATUS_LABEL[claim.status] || claim.status}
+                              </Badge>
                             </div>
-                            <span className="text-xs text-slate-600">{claim.user?.name}</span>
+
+                            {/* Approve action (only for pending claims) */}
+                            {isPending && (
+                              <div className="mt-3 flex justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleApproveClaim(claim.id)}
+                                  loading={busyId === claim.id}
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                          {claim.status === 'CLAIMED' ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleApproveClaim(claim.id)}
-                              loading={busyId === claim.id}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                            </Button>
-                          ) : (
-                            <Badge tone="success">Approved</Badge>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  </div>
-                )}
+                  </Card>
+                ))}
               </div>
-            </Card>
-          ))}
-        </div>
+            )}
+          </section>
+
+          {/* ── Open Posts (organiser can see but not claim) ── */}
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">Open Posts</h2>
+            {openPosts.length === 0 ? (
+              <EmptyState
+                icon={HandHeart}
+                title={courseFilter ? 'No open posts for this course' : 'No open posts right now'}
+                description={
+                  courseFilter
+                    ? 'Try clearing the course filter or posting new work.'
+                    : 'Post new overflow work for tutors and students to claim.'
+                }
+              />
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {openPosts.map((post) => (
+                  <PostCardShell key={post.id} post={post} />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {/* ══════════════════════════════════════════════════
+          STUDENT / TUTOR VIEW
+          ══════════════════════════════════════════════════ */}
+      {!isOrganiser && (
+        <>
+          {openPosts.length === 0 ? (
+            <EmptyState
+              icon={HandHeart}
+              title={
+                courseFilter ? 'No overflow work for this course' : 'No overflow work right now'
+              }
+              description={
+                courseFilter
+                  ? 'Try clearing the filter or check back soon.'
+                  : 'Check back soon, or ask your organiser to post new work.'
+              }
+            />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {openPosts.map((post) => (
+                <PostCardShell key={post.id} post={post}>
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={() => handleClaim(post.id)}
+                      loading={busyId === post.id}
+                    >
+                      Claim
+                    </Button>
+                  </div>
+                </PostCardShell>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {isOrganiser && (
