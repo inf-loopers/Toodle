@@ -5,7 +5,6 @@ import LandingBadge from './LandingBadge';
 import LandingButton from './LandingButton';
 import { useAuth } from '../../hooks/useAuth';
 
-
 export default function Hero() {
   const { isAuthenticated, isLoading, login } = useAuth();
   const navigate = useNavigate();
