@@ -57,32 +57,50 @@ describe('Modal', () => {
   });
 
   it('opens and displays content when open is true', () => {
-    render(<Modal open onClose={onClose} title="Assign Tutor">Body content</Modal>);
+    render(
+      <Modal open onClose={onClose} title="Assign Tutor">
+        Body content
+      </Modal>
+    );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Assign Tutor')).toBeInTheDocument();
     expect(screen.getByText('Body content')).toBeInTheDocument();
   });
 
   it('calls onClose when the backdrop is clicked', () => {
-    render(<Modal open onClose={onClose} title="Backdrop Test">Content</Modal>);
+    render(
+      <Modal open onClose={onClose} title="Backdrop Test">
+        Content
+      </Modal>
+    );
     const backdrop = screen.getByRole('dialog').parentElement.querySelector('[aria-hidden="true"]');
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when the ESC key is pressed', () => {
-    render(<Modal open onClose={onClose} title="Escape Test">Content</Modal>);
+    render(
+      <Modal open onClose={onClose} title="Escape Test">
+        Content
+      </Modal>
+    );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('locks body scroll while open and restores it on close', () => {
     const { rerender } = render(
-      <Modal open onClose={onClose} title="Scroll Lock">Content</Modal>
+      <Modal open onClose={onClose} title="Scroll Lock">
+        Content
+      </Modal>
     );
     expect(document.body.style.overflow).toBe('hidden');
 
-    rerender(<Modal open={false} onClose={onClose} title="Scroll Lock">Content</Modal>);
+    rerender(
+      <Modal open={false} onClose={onClose} title="Scroll Lock">
+        Content
+      </Modal>
+    );
     expect(document.body.style.overflow).toBe('');
   });
 });
@@ -106,7 +124,11 @@ describe('Badge', () => {
   });
 
   it('renders a status dot when dot={true}', () => {
-    const { container } = render(<Badge tone="success" dot>Active</Badge>);
+    const { container } = render(
+      <Badge tone="success" dot>
+        Active
+      </Badge>
+    );
     const dot = container.querySelector('.rounded-full.bg-current');
     expect(dot).toBeInTheDocument();
   });
@@ -122,12 +144,7 @@ describe('Badge', () => {
 
 describe('EmptyState', () => {
   it('renders the icon, title, and description', () => {
-    render(
-      <EmptyState
-        title="No courses found"
-        description="Try adjusting your search filters"
-      />
-    );
+    render(<EmptyState title="No courses found" description="Try adjusting your search filters" />);
     expect(screen.getByText('No courses found')).toBeInTheDocument();
     expect(screen.getByText('Try adjusting your search filters')).toBeInTheDocument();
     // Default Inbox icon renders inside the circular container
@@ -150,9 +167,7 @@ describe('EmptyState', () => {
   });
 
   it('renders a custom icon when provided', () => {
-    const { container } = render(
-      <EmptyState icon={Inbox} title="Custom Icon" />
-    );
+    const { container } = render(<EmptyState icon={Inbox} title="Custom Icon" />);
     const iconWrapper = container.querySelector('.rounded-full');
     expect(iconWrapper.querySelector('.h-5.w-5')).toBeInTheDocument();
   });
