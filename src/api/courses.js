@@ -17,6 +17,12 @@
 import apiClient from './client';
 
 export const coursesApi = {
+  getApplications: async (id) => (await apiClient.get(`/courses/${id}/applications`)).data,
+  apply: async (id, data) => (await apiClient.post(`/courses/${id}/applications`, data)).data,
+  reviewApplication: async (id, applicationId, data) =>
+    (await apiClient.patch(`/courses/${id}/applications/${applicationId}`, data)).data,
+  withdrawApplication: async (id, applicationId) =>
+    (await apiClient.post(`/courses/${id}/applications/${applicationId}/withdraw`)).data,
   // GET /courses
   getCourses: async (params) => {
     const response = await apiClient.get('/courses', { params });

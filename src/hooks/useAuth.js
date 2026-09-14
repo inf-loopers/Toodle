@@ -32,6 +32,7 @@ export function useAuth() {
   const dbUser = ctx?.dbUser ?? null;
   const isSyncing = ctx?.isSyncing ?? false;
   const syncError = ctx?.syncError ?? null;
+  const updateDbUser = ctx?.updateDbUser ?? (() => {});
 
   const [jwtRole, setJwtRole] = useState(null);
 
@@ -45,7 +46,7 @@ export function useAuth() {
   }, [isAuthenticated, user]);
 
   // Prefer the authoritative database role over the JWT claim
-  const role = dbUser?.role || jwtRole;
+  const role = (dbUser?.role || jwtRole)?.toLowerCase() ?? null;
   const error = syncError || auth0Error?.message || null;
 
   const login = () => loginWithRedirect();
@@ -60,7 +61,11 @@ export function useAuth() {
     isLoading: isLoading || isSyncing,
     user,
     dbUser,
+    updateDbUser,
     role,
+    isOrganiser: role === 'organiser',
+    isTutor: role === 'tutor',
+    isStudent: role === 'student',
     error,
     login,
     logout,

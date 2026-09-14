@@ -17,7 +17,6 @@ import { Plus, BookOpen, Search, ArrowRight } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { useAuth } from '../hooks/useAuth';
-import { ROLES } from '../utils/constants';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -31,7 +30,7 @@ function CreateCourseModal({ open, onClose, onCreated }) {
     code: '',
     name: '',
     description: '',
-    year: 2026,
+    year: new Date().getFullYear(),
     semester: 1,
     requiredTutors: 1,
     minMarkRequired: 50,
@@ -59,7 +58,12 @@ function CreateCourseModal({ open, onClose, onCreated }) {
       onCreated();
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Could not create the course.');
+      setError(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err.message ||
+          'Could not create the course.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +165,7 @@ export function CoursesPage() {
           <p className="mt-2 text-sm text-slate-500">
             {isOrganiser
               ? 'Everything the school is running this semester.'
-              : 'The courses you tutor for.'}
+              : 'Browse courses, check requirements and apply to tutor.'}
           </p>
         </div>
         <div className="flex gap-3">
@@ -205,6 +209,10 @@ export function CoursesPage() {
                 </div>
                 <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
                 <p className="text-sm text-slate-500">{course.name}</p>
+                <p className="mt-2 text-xs text-slate-600">
+                  Minimum mark: {course.minMarkRequired}% · Applications{' '}
+                  {course.applicationsOpen ? 'open' : 'closed'}
+                </p>
                 {course.description && (
                   <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
                 )}

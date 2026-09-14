@@ -50,7 +50,6 @@ import {
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
   PointerSensor,
   KeyboardSensor,
   useSensor,
@@ -72,6 +71,8 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Select, Input, Textarea } from '../components/ui/Input';
 import { ErrorState, EmptyState } from '../components/ui/EmptyState';
+import AllocationMarkVerification from '../components/AllocationMarkVerification';
+import { allocationCollisionDetection } from '../utils/allocationCollision';
 
 // ── Stat Chip ──────────────────────────────────────────────────────────
 
@@ -94,14 +95,19 @@ function AssignTutorModal({
   initialTutorId,
   initialValidation,
   onAssigned,
+  onMarkSaved,
 }) {
   const [tutorId, setTutorId] = useState('');
   const [hours, setHours] = useState(DEFAULT_HOURS);
   const [reason, setReason] = useState('');
   const [warnings, setWarnings] = useState([]);
   const [checking, setChecking] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [savingMark, setSavingMark] = useState(false);
+  const [markRevision, setMarkRevision] = useState(0);
+  const selectedTutor = tutors.find((tutor) => tutor.id === tutorId);
 
   useEffect(() => {
     if (open) {
@@ -116,24 +122,28 @@ function AssignTutorModal({
   }, [open, initialTutorId, initialValidation]);
 
   useEffect(() => {
-    if (!tutorId || !course) return;
+    if (!open || !tutorId || !course) return;
     let cancelled = false;
     setChecking(true);
+    setValidationError('');
     allocationsApi
       .validateAllocation({ userId: tutorId, courseId: course.id, hoursPerWeek: hours })
       .then((res) => {
         if (!cancelled) setWarnings(res?.warnings ?? res?.data?.warnings ?? []);
       })
       .catch(() => {
-        if (!cancelled) setWarnings([]);
+        if (!cancelled)
+          setValidationError(
+            'Could not check eligibility. Select the tutor again or change hours to retry.'
+          );
       })
       .finally(() => !cancelled && setChecking(false));
     return () => {
       cancelled = true;
     };
-  }, [tutorId, hours, course]);
+  }, [open, tutorId, hours, course, markRevision]);
 
-  // Split constraint feedback by severity: errors block, warnings allow override
+  // Errors produce a pending allocation; warnings allow a reasoned active assignment.
   const constraintErrors = warnings.filter((w) => w.severity === 'error');
   const constraintWarnings = warnings.filter((w) => w.severity !== 'error');
 
@@ -166,22 +176,41 @@ function AssignTutorModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={submitting || savingMark ? () => {} : onClose}
       title={`Assign a tutor · ${course?.code ?? ''}`}
       description={course?.name}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" disabled={submitting || savingMark} onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} loading={submitting} disabled={!tutorId}>
-            Confirm assignment
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={
+              !tutorId ||
+              checking ||
+              savingMark ||
+              hours === '' ||
+              !Number.isInteger(Number(hours)) ||
+              Number(hours) < 1 ||
+              Number(hours) > 20 ||
+              Boolean(validationError) ||
+              (warnings.length > 0 && !reason.trim())
+            }
+          >
+            {constraintErrors.length > 0 ? 'Save pending allocation' : 'Confirm assignment'}
           </Button>
         </>
       }
     >
-      <div className="space-y-4">
-        <Select label="Tutor" value={tutorId} onChange={(e) => setTutorId(e.target.value)}>
+      <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
+        <Select
+          label="Tutor"
+          value={tutorId}
+          disabled={submitting || savingMark}
+          onChange={(e) => setTutorId(e.target.value)}
+        >
           <option value="">Select a tutor…</option>
           {tutors.map((t) => (
             <option key={t.id} value={t.id}>
@@ -189,6 +218,21 @@ function AssignTutorModal({
             </option>
           ))}
         </Select>
+
+        {selectedTutor && course && (
+          <AllocationMarkVerification
+            key={`${tutorId}-${course.id}`}
+            tutor={selectedTutor}
+            course={course}
+            disabled={submitting}
+            onBusyChange={setSavingMark}
+            onSaved={(mark) => {
+              onMarkSaved(tutorId, mark);
+              setChecking(true);
+              setMarkRevision((value) => value + 1);
+            }}
+          />
+        )}
 
         <Input
           label="Hours per week"
@@ -205,7 +249,12 @@ function AssignTutorModal({
           </p>
         )}
 
-        {!checking && tutorId && warnings.length === 0 && (
+        {validationError && (
+          <p role="alert" className="text-rose-700">
+            {validationError}
+          </p>
+        )}
+        {!checking && !validationError && tutorId && warnings.length === 0 && (
           <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">
             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>All constraints passed — no conflicts detected.</span>
@@ -214,6 +263,10 @@ function AssignTutorModal({
 
         {constraintErrors.length > 0 && (
           <div className="space-y-2 rounded-xl border border-rose-200 bg-rose-50/60 p-3">
+            <p className="text-xs text-rose-700">
+              Resolve these checks for an active assignment. Saving with a reason creates a pending
+              allocation and does not fill this course.
+            </p>
             {constraintErrors.map((w, i) => (
               <div key={i} className="flex items-start gap-2 text-xs font-medium text-rose-700">
                 <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -236,7 +289,7 @@ function AssignTutorModal({
 
         {warnings.length > 0 && (
           <Textarea
-            label="Reason for overriding the warning above"
+            label="Reason for allocation exceptions"
             placeholder="e.g. Tutor is being cross-trained for next semester"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -399,6 +452,9 @@ function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
             {user?.name || allocation.userId}
           </p>
           <p className="text-[10px] text-slate-400">{formatHours(allocation.hoursPerWeek)}/wk</p>
+          <Badge tone={allocation.status === 'ACTIVE' ? 'success' : 'warning'}>
+            {allocation.status}
+          </Badge>
         </div>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           <button
@@ -438,7 +494,7 @@ function CourseColumn({
   });
 
   const required = course.requiredTutors ?? 1;
-  const assigned = allocations.length;
+  const assigned = allocations.filter((allocation) => allocation.status === 'ACTIVE').length;
   const isFull = assigned >= required;
 
   // Live drag-over feedback: green = valid, amber = warnings, red = errors
@@ -584,6 +640,7 @@ function AllocationBoard() {
   const {
     courseList,
     tutorList,
+    updateTutorMark,
     allocationList,
     loading,
     coursesError,
@@ -627,8 +684,11 @@ function AllocationBoard() {
   const handleAssignTap = useCallback(
     (tutor) => {
       const target =
-        courseList.find((c) => (courseAllocMap[c.id]?.length ?? 0) < (c.requiredTutors ?? 1)) ??
-        courseList[0];
+        courseList.find(
+          (c) =>
+            (courseAllocMap[c.id]?.filter((a) => a.status === 'ACTIVE').length ?? 0) <
+            (c.requiredTutors ?? 1)
+        ) ?? courseList[0];
       if (target) openAssignModal(target, tutor.id);
     },
     [courseList, courseAllocMap, openAssignModal]
@@ -681,6 +741,10 @@ function AllocationBoard() {
               ? 'Drag tutors from the pool and drop them onto course columns to assign.'
               : 'Tap a tutor or a course column to assign tutors to courses.'}
           </p>
+          <p className="mt-2 text-sm text-slate-500">
+            Verify existing tutors' marks in the assignment dialog. Student applicants are reviewed
+            under Courses; approval assigns them automatically.
+          </p>
         </div>
         <div className="flex gap-3">
           <span title="Import Timetable is not available yet." className="inline-flex">
@@ -725,14 +789,17 @@ function AllocationBoard() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatChip label="Courses" value={courseList.length} />
         <StatChip label="Available Tutors" value={tutorList.length} />
-        <StatChip label="Assigned" value={allocationList.length} />
+        <StatChip
+          label="Assigned"
+          value={allocationList.filter((a) => a.status === 'ACTIVE').length}
+        />
         <StatChip label="Unfilled" value={unfilledCount} />
       </div>
 
       {/* Board */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={allocationCollisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -840,6 +907,7 @@ function AllocationBoard() {
         initialValidation={assignTarget?._dropValidation}
         onClose={closeAssignModal}
         onAssigned={refetchAll}
+        onMarkSaved={updateTutorMark}
       />
     </>
   );

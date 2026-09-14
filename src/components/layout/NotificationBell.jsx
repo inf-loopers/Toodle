@@ -21,6 +21,7 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const panelRef = useRef(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -31,8 +32,11 @@ export default function NotificationBell() {
       const result = await notificationsApi.getNotifications();
       const list = result?.data ?? result ?? [];
       setNotifications(Array.isArray(list) ? list : []);
-    } catch {
+    } catch (err) {
       setNotifications([]);
+      // The API does not expose notifications yet; hide the bell rather than
+      // spam the console with 404s on every mount and dropdown open.
+      if (err?.response?.status === 404) setUnavailable(true);
     } finally {
       setLoading(false);
     }
@@ -88,6 +92,8 @@ export default function NotificationBell() {
       // Silently continue
     }
   };
+
+  if (unavailable) return null;
 
   return (
     <div className="relative" ref={panelRef}>
