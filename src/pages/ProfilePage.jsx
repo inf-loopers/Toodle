@@ -142,10 +142,21 @@ export function ProfilePage() {
             <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover">
               <Camera className="h-3.5 w-3.5" />
               {savingAvatar ? 'Uploading…' : 'Change picture'}
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} disabled={savingAvatar} className="sr-only" />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarChange}
+                disabled={savingAvatar}
+                className="sr-only"
+              />
             </label>
             {profile?.avatarUrl && (
-              <button type="button" onClick={handleDeleteAvatar} disabled={savingAvatar} className="mt-1 text-xs text-slate-400 hover:text-rose-600">
+              <button
+                type="button"
+                onClick={handleDeleteAvatar}
+                disabled={savingAvatar}
+                className="mt-1 text-xs text-slate-400 hover:text-rose-600"
+              >
                 Remove picture
               </button>
             )}
