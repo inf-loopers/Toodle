@@ -3,260 +3,888 @@
  * @description Weekly timesheet and hours tracking page for tutors.
  *
  * Responsibilities:
- * - Displays a weekly timesheet grid with session entries.
- * - Shows daily and weekly hour totals.
- * - Status tracking: submitted, approved, or draft.
- * - Tutors can see their logged hours; Organisers can approve entries.
+ * - Displays weekly timesheets and logged hours.
+ * - Only allows tutors to use courses from active allocations.
+ * - Shows logged hours against allocated weekly hours.
+ * - Displays the timesheet status flow.
+ * - Allows disputed timesheets to be corrected and re-submitted.
+ * - Allows organisers to approve or dispute submitted timesheets.
  *
  * Route: `/timesheets`
  */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Plus, Clock, Send, CheckCircle2, XCircle, Trash2, ListChecks } from 'lucide-react';
 
-const weekLabel = 'Aug 18 – Aug 22, 2026';
+import { useApi } from '../hooks/useApi';
+import { useAuth } from '../hooks/useAuth';
 
-const timesheetEntries = [
-  {
-    id: 1,
-    tutor: 'Thabo Mokoena',
-    initials: 'TM',
-    course: 'COMS3011A',
-    session: 'Data Structures Tutorial',
-    day: 'Monday',
-    date: 'Aug 18',
-    time: '10:00–12:00',
-    hours: 2,
-    status: 'approved',
-  },
-  {
-    id: 2,
-    tutor: 'Sarah Nkosi',
-    initials: 'SN',
-    course: 'COMS3012A',
-    session: 'Database Systems Lab',
-    day: 'Tuesday',
-    date: 'Aug 19',
-    time: '12:00–14:00',
-    hours: 2,
-    status: 'approved',
-  },
-  {
-    id: 3,
-    tutor: 'Liam Smith',
-    initials: 'LS',
-    course: 'COMS3013A',
-    session: 'Operating Systems Tutorial',
-    day: 'Wednesday',
-    date: 'Aug 20',
-    time: '09:00–11:00',
-    hours: 2,
-    status: 'submitted',
-  },
-  {
-    id: 4,
-    tutor: 'Thabo Mokoena',
-    initials: 'TM',
-    course: 'COMS3022A',
-    session: 'Algorithms Lab',
-    day: 'Wednesday',
-    date: 'Aug 20',
-    time: '14:00–16:00',
-    hours: 2,
-    status: 'submitted',
-  },
-  {
-    id: 5,
-    tutor: 'Ayesha Khan',
-    initials: 'AK',
-    course: 'COMS3015A',
-    session: 'Software Engineering Tutorial',
-    day: 'Friday',
-    date: 'Aug 22',
-    time: '10:00–12:00',
-    hours: 2,
-    status: 'draft',
-  },
-  {
-    id: 6,
-    tutor: 'Thabo Mokoena',
-    initials: 'TM',
-    course: 'COMS3040A',
-    session: 'Machine Learning Lab',
-    day: 'Friday',
-    date: 'Aug 22',
-    time: '08:00–10:00',
-    hours: 2,
-    status: 'draft',
-  },
-];
+import { timesheetsApi } from '../api/timesheets';
+import { allocationsApi } from '../api/allocations';
 
-const statusConfig = {
-  approved: {
-    label: 'Approved',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
-    dot: 'bg-emerald-500',
-  },
-  submitted: { label: 'Submitted', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500' },
-  draft: { label: 'Draft', bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' },
-};
+import { TIMESHEET_STATUS_TONE } from '../utils/constants';
+import { formatShortDate } from '../utils/helpers';
 
-const dayTotals = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => ({
-  day,
-  hours: timesheetEntries.filter((e) => e.day === day).reduce((sum, e) => sum + e.hours, 0),
-}));
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
+import Modal from '../components/ui/Modal';
+import { Select, Input, Textarea } from '../components/ui/Input';
+import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 
-export default function TimesheetsPage() {
-  const [filter, setFilter] = useState('all');
+function getErrorMessage(error, fallback) {
+  return (
+    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback
+  );
+}
 
-  const filtered =
-    filter === 'all' ? timesheetEntries : timesheetEntries.filter((e) => e.status === filter);
-  const totalHours = timesheetEntries.reduce((sum, e) => sum + e.hours, 0);
-  const approvedHours = timesheetEntries
-    .filter((e) => e.status === 'approved')
-    .reduce((sum, e) => sum + e.hours, 0);
+function getCurrentMonday() {
+  const today = new Date();
+  const monday = new Date(today);
+
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+  return monday.toISOString().slice(0, 10);
+}
+
+function StatusStepper({ status }) {
+  let finalStatus = 'APPROVED';
+
+  if (status === 'DISPUTED') {
+    finalStatus = 'DISPUTED';
+  }
+
+  if (status === 'REJECTED') {
+    finalStatus = 'REJECTED';
+  }
+
+  const steps = ['DRAFT', 'SUBMITTED', finalStatus];
+
+  let currentIndex = 0;
+
+  if (status === 'SUBMITTED') {
+    currentIndex = 1;
+  }
+
+  if (
+    status === 'APPROVED' ||
+    status === 'DISPUTED' ||
+    status === 'REJECTED' ||
+    status === 'PAID'
+  ) {
+    currentIndex = 2;
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Heading */}
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-        <div>
-          <p className="text-sm font-medium text-blue-600">Tracking</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Timesheets</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Review weekly session hours, approve submissions, and monitor tutor workload.
-          </p>
-        </div>
-        <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-          {weekLabel}
-        </span>
-      </div>
+    <div className="mt-4 flex items-center">
+      {steps.map((step, index) => {
+        const reached = index <= currentIndex;
+        const current = index === currentIndex;
 
-      {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Total Logged</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{totalHours}h</p>
-          <p className="mt-1 text-xs text-slate-400">{timesheetEntries.length} entries this week</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Approved</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-600">{approvedHours}h</p>
-          <p className="mt-1 text-xs text-slate-400">Confirmed by Organiser</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Pending Review</p>
-          <p className="mt-2 text-3xl font-bold text-amber-600">{totalHours - approvedHours}h</p>
-          <p className="mt-1 text-xs text-slate-400">Awaiting approval</p>
-        </div>
-      </div>
-
-      {/* Daily breakdown */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-slate-700">Daily Hours</h2>
-        <div className="flex items-end gap-3">
-          {dayTotals.map(({ day, hours }) => (
-            <div key={day} className="flex flex-1 flex-col items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-700">{hours}h</span>
-              <div className="relative h-20 w-full overflow-hidden rounded-lg bg-slate-100">
-                <div
-                  className="absolute bottom-0 w-full rounded-lg bg-blue-500 transition-all"
-                  style={{ height: `${Math.min((hours / 6) * 100, 100)}%` }}
-                />
-              </div>
-              <span className="text-[10px] font-medium text-slate-400">{day.slice(0, 3)}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Entries table */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 lg:flex-row lg:items-center">
-          <div>
-            <h2 className="font-semibold text-slate-800">Session Entries</h2>
-            <p className="mt-0.5 text-sm text-slate-400">
-              Individual timesheet line items for this week.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {['all', 'draft', 'submitted', 'approved'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                  filter === f
-                    ? 'bg-blue-700 text-white'
-                    : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+        return (
+          <div key={`${step}-${index}`} className="flex flex-1 items-center">
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                  current
+                    ? status === 'DISPUTED'
+                      ? 'bg-amber-500 text-white'
+                      : status === 'REJECTED'
+                        ? 'bg-rose-500 text-white'
+                        : 'bg-slate-900 text-white'
+                    : reached
+                      ? 'bg-slate-300 text-slate-700'
+                      : 'bg-slate-100 text-slate-400'
                 }`}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+                {index + 1}
+              </div>
+
+              <span
+                className={`mt-1 text-[10px] font-medium ${
+                  current ? 'text-slate-800' : 'text-slate-400'
+                }`}
+              >
+                {step}
+              </span>
+            </div>
+
+            {index < steps.length - 1 && (
+              <div
+                className={`mx-2 h-0.5 flex-1 ${
+                  index < currentIndex ? 'bg-slate-300' : 'bg-slate-100'
+                }`}
+              />
+            )}
           </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px]">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/70 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
-                <th className="px-5 py-3">Tutor</th>
-                <th className="px-5 py-3">Course</th>
-                <th className="px-5 py-3">Day</th>
-                <th className="px-5 py-3">Time</th>
-                <th className="px-5 py-3">Hours</th>
-                <th className="px-5 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((entry) => {
-                const s = statusConfig[entry.status];
-                return (
-                  <tr
-                    key={entry.id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
-                  >
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
-                          {entry.initials}
-                        </div>
-                        <span className="text-sm font-medium text-slate-800">{entry.tutor}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-sm font-semibold text-slate-800">{entry.course}</p>
-                      <p className="text-xs text-slate-400">{entry.session}</p>
-                    </td>
-                    <td className="px-5 py-3 text-sm text-slate-600">
-                      {entry.day}
-                      <span className="ml-1 text-xs text-slate-400">({entry.date})</span>
-                    </td>
-                    <td className="px-5 py-3 text-sm text-slate-600">{entry.time}</td>
-                    <td className="px-5 py-3 text-sm font-semibold text-slate-800">
-                      {entry.hours}h
-                    </td>
-                    <td className="px-5 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${s.bg} ${s.text}`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                        {s.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {filtered.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">
-            No entries match the selected filter.
-          </p>
-        )}
-      </section>
+        );
+      })}
     </div>
   );
 }
+
+function NewTimesheetModal({ open, onClose, courses, onCreated }) {
+  const [form, setForm] = useState({
+    courseId: '',
+    weekStartDate: getCurrentMonday(),
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setForm({
+        courseId: '',
+        weekStartDate: getCurrentMonday(),
+      });
+
+      setError('');
+    }
+  }, [open]);
+
+  const handleSubmit = async () => {
+    if (!form.courseId || !form.weekStartDate) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await timesheetsApi.createTimesheet({
+        courseId: form.courseId,
+        weekStartDate: form.weekStartDate,
+      });
+
+      await onCreated();
+      onClose();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not create the timesheet.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Start a timesheet"
+      description="Choose one of your actively allocated courses."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={!form.courseId || !form.weekStartDate}
+          >
+            Create
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Select
+          label="Course"
+          value={form.courseId}
+          onChange={(event) =>
+            setForm((previous) => ({
+              ...previous,
+              courseId: event.target.value,
+            }))
+          }
+        >
+          <option value="">Choose a course…</option>
+
+          {courses.map((course) => (
+            <option key={course.id} value={course.id}>
+              {course.code}
+              {course.name ? ` — ${course.name}` : ''}
+            </option>
+          ))}
+        </Select>
+
+        <Input
+          label="Week starting"
+          type="date"
+          value={form.weekStartDate}
+          onChange={(event) =>
+            setForm((previous) => ({
+              ...previous,
+              weekStartDate: event.target.value,
+            }))
+          }
+        />
+
+        {error && (
+          <p role="alert" className="text-xs text-rose-600">
+            {error}
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function LogHoursModal({ timesheet, open, onClose, onLogged }) {
+  const [form, setForm] = useState({
+    date: '',
+    hours: 1,
+    description: '',
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setForm({
+        date: '',
+        hours: 1,
+        description: '',
+      });
+
+      setError('');
+    }
+  }, [open]);
+
+  if (!timesheet) {
+    return null;
+  }
+
+  const handleSubmit = async () => {
+    if (!form.date) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await timesheetsApi.addEntry(timesheet.id, {
+        date: form.date,
+        hoursWorked: Number(form.hours),
+        description: form.description,
+      });
+
+      await onLogged();
+      onClose();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not log the hours.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Log hours"
+      description={timesheet.course?.code || 'Timesheet entry'}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+
+          <Button onClick={handleSubmit} loading={submitting} disabled={!form.date}>
+            Log entry
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Input
+          label="Date"
+          type="date"
+          value={form.date}
+          onChange={(event) =>
+            setForm((previous) => ({
+              ...previous,
+              date: event.target.value,
+            }))
+          }
+        />
+
+        <Input
+          label="Hours"
+          type="number"
+          min={0.25}
+          max={24}
+          step={0.25}
+          value={form.hours}
+          onChange={(event) =>
+            setForm((previous) => ({
+              ...previous,
+              hours: event.target.value,
+            }))
+          }
+        />
+
+        <Textarea
+          label="What did you work on?"
+          value={form.description}
+          onChange={(event) =>
+            setForm((previous) => ({
+              ...previous,
+              description: event.target.value,
+            }))
+          }
+        />
+
+        {error && (
+          <p role="alert" className="text-xs text-rose-600">
+            {error}
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function ManageEntriesModal({ timesheet, open, onClose, onChanged }) {
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
+
+  const timesheetId = timesheet?.id;
+
+  const loadTimesheet = useCallback(async () => {
+    if (!timesheetId) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheetId);
+
+      setDetails(response?.data ?? response ?? null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not load timesheet entries.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [timesheetId]);
+
+  useEffect(() => {
+    if (open && timesheetId) {
+      loadTimesheet();
+    }
+
+    if (!open) {
+      setDetails(null);
+      setError('');
+    }
+  }, [open, timesheetId, loadTimesheet]);
+
+  if (!timesheet) {
+    return null;
+  }
+
+  const handleDelete = async (entryId) => {
+    setDeletingId(entryId);
+    setError('');
+
+    try {
+      await timesheetsApi.deleteEntry(timesheet.id, entryId);
+
+      await loadTimesheet();
+      await onChanged();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not remove the entry.'));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const entries = details?.entries ?? [];
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Manage timesheet entries"
+      description={
+        timesheet.status === 'DISPUTED'
+          ? 'Remove incorrect entries, then log the corrected hours before re-submitting.'
+          : 'Review or remove your logged entries.'
+      }
+      footer={
+        <Button variant="secondary" onClick={onClose}>
+          Close
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading entries…</p>
+        ) : entries.length === 0 ? (
+          <p className="text-sm text-slate-500">No entries have been logged yet.</p>
+        ) : (
+          <div className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+            {entries.map((entry) => (
+              <div key={entry.id} className="flex items-start justify-between gap-4 p-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-800">
+                      {Number(entry.hoursWorked || 0)}h
+                    </p>
+
+                    {entry.course?.code && <Badge tone="neutral">{entry.course.code}</Badge>}
+                  </div>
+
+                  <p className="mt-1 text-xs text-slate-400">{formatShortDate(entry.date)}</p>
+
+                  {entry.description && (
+                    <p className="mt-2 text-sm text-slate-600">{entry.description}</p>
+                  )}
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => handleDelete(entry.id)}
+                  loading={deletingId === entry.id}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {details && (
+          <p className="text-sm font-medium text-slate-700">
+            Total logged: {Number(details.totalHours || 0)}h
+          </p>
+        )}
+
+        {error && (
+          <p role="alert" className="text-xs text-rose-600">
+            {error}
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function DisputeModal({ timesheet, open, onClose, onDisputed }) {
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setReason('');
+      setError('');
+    }
+  }, [open]);
+
+  if (!timesheet) {
+    return null;
+  }
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await timesheetsApi.disputeTimesheet(timesheet.id, reason.trim());
+
+      await onDisputed();
+      onClose();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not dispute the timesheet.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Dispute timesheet"
+      description={`${timesheet.user?.name || ''}${
+        timesheet.course?.code ? ` · ${timesheet.course.code}` : ''
+      }`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+
+          <Button
+            variant="danger"
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={!reason.trim()}
+          >
+            Send back
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Textarea
+          label="What needs to change?"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="e.g. Hours on Tuesday don't match the session length."
+        />
+
+        {error && (
+          <p role="alert" className="text-xs text-rose-600">
+            {error}
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+export function TimesheetsPage() {
+  const { dbUser: user, role } = useAuth();
+
+  const isOrganiser = role?.toUpperCase() === 'ORGANISER';
+
+  const { data, loading, error, refetch } = useApi(timesheetsApi.getTimesheets);
+
+  /*
+   * Allocations are loaded for both Tutors and Organisers.
+   *
+   * Tutors use these to:
+   * - restrict the New Timesheet course dropdown
+   * - show their weekly allocated hours
+   *
+   * Organisers use these to:
+   * - compare each Tutor's logged hours with their allocation
+   */
+  const { data: allocationsData, error: allocationsError } = useApi(allocationsApi.getAllocations);
+
+  const [newOpen, setNewOpen] = useState(false);
+
+  const [logTarget, setLogTarget] = useState(null);
+
+  const [manageTarget, setManageTarget] = useState(null);
+
+  const [disputeTarget, setDisputeTarget] = useState(null);
+
+  const [busyId, setBusyId] = useState(null);
+
+  const [actionError, setActionError] = useState('');
+
+  const timesheets = data?.data ?? data ?? [];
+
+  const allocations = allocationsData?.data ?? allocationsData ?? [];
+
+  /*
+   * All ACTIVE allocations.
+   *
+   * Organisers need the full list so we can match each
+   * timesheet to the correct Tutor allocation.
+   */
+  const activeAllocations = allocations.filter((allocation) => allocation.status === 'ACTIVE');
+
+  /*
+   * Tutors must only be able to create timesheets for
+   * courses they personally have an ACTIVE allocation for.
+   */
+  const tutorActiveAllocations = activeAllocations.filter(
+    (allocation) => allocation.userId === user?.id
+  );
+
+  const courses = tutorActiveAllocations
+    .map((allocation) => allocation.course)
+    .filter(Boolean)
+    .filter((course, index, array) => array.findIndex((item) => item.id === course.id) === index);
+
+  /*
+   * Match both the Tutor and Course.
+   *
+   * This is important on the Organiser page because multiple
+   * Tutors can have allocations for the same course.
+   */
+  const getAllocationForTimesheet = (timesheet) =>
+    activeAllocations.find(
+      (allocation) =>
+        allocation.courseId === timesheet.courseId && allocation.userId === timesheet.userId
+    );
+
+  const handleSubmitTimesheet = async (id) => {
+    setBusyId(id);
+    setActionError('');
+
+    try {
+      await timesheetsApi.submitTimesheet(id);
+
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not submit the timesheet.'));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    setBusyId(id);
+    setActionError('');
+
+    try {
+      await timesheetsApi.approveTimesheet(id);
+
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not approve the timesheet.'));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading) {
+    return <Spinner fullPage label="Loading timesheets…" />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title="Couldn't load timesheets"
+        description={getErrorMessage(error, 'Could not load timesheets.')}
+      />
+    );
+  }
+
+  const allocationErrorMessage = allocationsError
+    ? getErrorMessage(allocationsError, 'Could not load allocations.')
+    : '';
+
+  return (
+    <>
+      <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Timesheets</h1>
+
+          <p className="mt-2 text-sm text-slate-500">
+            {isOrganiser
+              ? 'Approve, dispute or track submitted hours.'
+              : 'Log your hours and submit them for approval.'}
+          </p>
+        </div>
+
+        {!isOrganiser && (
+          <Button onClick={() => setNewOpen(true)} disabled={tutorActiveAllocations.length === 0}>
+            <Plus className="h-4 w-4" />
+            New timesheet
+          </Button>
+        )}
+      </div>
+
+      {(actionError || allocationErrorMessage) && (
+        <p role="alert" className="mb-4 text-sm text-rose-600">
+          {actionError || allocationErrorMessage}
+        </p>
+      )}
+
+      {!isOrganiser && tutorActiveAllocations.length === 0 && !allocationErrorMessage && (
+        <p className="mb-4 text-sm text-slate-500">
+          You need an active allocation before you can create a timesheet.
+        </p>
+      )}
+
+      {timesheets.length === 0 ? (
+        <EmptyState
+          icon={Clock}
+          title="No timesheets yet"
+          description={
+            isOrganiser
+              ? 'Nothing has been submitted yet.'
+              : 'Start one to log your hours for the week.'
+          }
+        />
+      ) : (
+        <Card padded={false}>
+          <div className="divide-y divide-slate-100">
+            {timesheets.map((timesheet) => {
+              const allocation = getAllocationForTimesheet(timesheet);
+
+              const loggedHours = Number(timesheet.totalHours || 0);
+
+              const rawAllocatedHours =
+                allocation?.hoursPerWeek ?? allocation?.allocatedHours ?? allocation?.weeklyHours;
+
+              const allocatedHours =
+                rawAllocatedHours !== undefined && rawAllocatedHours !== null
+                  ? Number(rawAllocatedHours)
+                  : null;
+
+              return (
+                <div key={timesheet.id} className="px-5 py-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-800">
+                          {timesheet.course?.code || timesheet.courseId}
+                        </p>
+
+                        <Badge tone={TIMESHEET_STATUS_TONE[timesheet.status] || 'neutral'}>
+                          {timesheet.status}
+                        </Badge>
+                      </div>
+
+                      {timesheet.course?.name && (
+                        <p className="mt-1 text-sm text-slate-500">{timesheet.course.name}</p>
+                      )}
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        Week of {formatShortDate(timesheet.weekStartDate)}
+                        {isOrganiser && timesheet.user?.name ? ` · ${timesheet.user.name}` : ''}
+                      </p>
+
+                      <p className="mt-2 text-sm font-medium text-slate-700">
+                        {allocatedHours !== null
+                          ? `${loggedHours}h / ${allocatedHours}h allocated`
+                          : `${loggedHours}h logged`}
+                      </p>
+
+                      {allocatedHours !== null && allocatedHours > 0 && (
+                        <div className="mt-2 h-2 max-w-sm overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-slate-700"
+                            style={{
+                              width: `${Math.min((loggedHours / allocatedHours) * 100, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      <StatusStepper status={timesheet.status} />
+
+                      {timesheet.status === 'DISPUTED' && timesheet.disputeReason && (
+                        <div className="mt-4 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                            Changes requested
+                          </p>
+
+                          <p className="mt-1 text-sm text-amber-800">{timesheet.disputeReason}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {!isOrganiser &&
+                        (timesheet.status === 'DRAFT' || timesheet.status === 'DISPUTED') && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setManageTarget(timesheet)}
+                            >
+                              <ListChecks className="h-3.5 w-3.5" />
+                              Manage entries
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setLogTarget(timesheet)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Log hours
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              onClick={() => handleSubmitTimesheet(timesheet.id)}
+                              loading={busyId === timesheet.id}
+                            >
+                              <Send className="h-3.5 w-3.5" />
+
+                              {timesheet.status === 'DISPUTED' ? 'Resubmit' : 'Submit'}
+                            </Button>
+                          </>
+                        )}
+
+                      {isOrganiser && timesheet.status === 'SUBMITTED' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setDisputeTarget(timesheet)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Dispute
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(timesheet.id)}
+                            loading={busyId === timesheet.id}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Approve
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {!isOrganiser && (
+        <>
+          <NewTimesheetModal
+            open={newOpen}
+            onClose={() => setNewOpen(false)}
+            courses={courses}
+            onCreated={refetch}
+          />
+
+          <LogHoursModal
+            timesheet={logTarget}
+            open={Boolean(logTarget)}
+            onClose={() => setLogTarget(null)}
+            onLogged={refetch}
+          />
+
+          <ManageEntriesModal
+            timesheet={manageTarget}
+            open={Boolean(manageTarget)}
+            onClose={() => setManageTarget(null)}
+            onChanged={refetch}
+          />
+        </>
+      )}
+
+      {isOrganiser && (
+        <DisputeModal
+          timesheet={disputeTarget}
+          open={Boolean(disputeTarget)}
+          onClose={() => setDisputeTarget(null)}
+          onDisputed={refetch}
+        />
+      )}
+    </>
+  );
+}
+
+export default TimesheetsPage;

@@ -1,15 +1,13 @@
-/**
- * @file main.jsx
- * @description Main browser entry point mounting the root `<App />` component into the DOM.
- */
-
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import AuthShell from './AuthShell.jsx';
 import './styles/index.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <BrowserRouter>
+      <AuthShell />
+    </BrowserRouter>
+  </StrictMode>
 );

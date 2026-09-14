@@ -2,6 +2,7 @@
 
 [![React](https://img.shields.io/badge/React-19-61dafb?logo=react)](https://react.dev/)
 [![Auth0](https://img.shields.io/badge/Auth0-RBAC-eb5424?logo=auth0)](https://auth0.com/)
+[![codecov](https://codecov.io/gh/inf-loopers/Toodle/graph/badge.svg)](https://codecov.io/gh/inf-loopers/Toodle)
 
 > **Toodle Tutor Management & Allocation System**  
 > School of Computer Science and Applied Mathematics  
@@ -73,7 +74,7 @@ Toodle/
 ### 2. Installation
 
 ```bash
-git clone <repo-url>
+git clone https://sdp.ms.wits.ac.za/infinite-loopers/Toodle.git
 cd Toodle
 npm install
 ```
@@ -93,8 +94,41 @@ VITE_API_URL=http://localhost:3000/api/v1
 VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
 VITE_AUTH0_CLIENT_ID=your_client_id
 VITE_AUTH0_AUDIENCE=https://api.toodle.com
-VITE_AUTH0_CALLBACK_URL=http://localhost:5173
 ```
+
+During `npm run dev`, API requests go through Vite at `/api/v1`. The committed
+`.env.development` points the proxy to `http://localhost:3000/api/v1`, overriding
+the URL in `.env`. Start the backend in a separate terminal:
+
+```powershell
+cd "D:\Toodle App\toodle-api"
+npm.cmd run dev
+```
+
+To use a deployed backend locally, set `VITE_API_URL` in the ignored
+`.env.development.local` file. Restart Vite after changing environment files.
+The URL must serve the Express API; a React frontend URL will return HTML for
+GET requests and can reject the sign-in POST with 405 Method Not Allowed.
+
+Production builds use `VITE_API_URL` from the deployment environment or
+`.env.production`, not `.env.development`. Set it to the deployed backend API
+URL, and allow the deployed frontend origin in the backend's `FRONTEND_URL`.
+
+Authentication automatically returns to the current browser origin at `/callback`.
+`VITE_AUTH0_CALLBACK_URL` is no longer used, so a deployed URL in an old `.env`
+cannot redirect local sign-ins to production.
+
+In Auth0 Application Settings, register each environment (replace the example
+deployed origin with your real domain):
+
+| Setting               | Local                            | Deployed example                    |
+| --------------------- | -------------------------------- | ----------------------------------- |
+| Allowed Callback URLs | `http://localhost:5173/callback` | `https://your-app.example/callback` |
+| Allowed Logout URLs   | `http://localhost:5173`          | `https://your-app.example`          |
+| Allowed Web Origins   | `http://localhost:5173`          | `https://your-app.example`          |
+
+Add exact entries for any other ports or preview domains you use. The deployed
+host must serve the SPA for `/callback`, as it does for other frontend routes.
 
 ### 4. Run Development Server
 
