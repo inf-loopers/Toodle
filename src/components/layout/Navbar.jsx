@@ -18,13 +18,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { getInitials, getRoleBadgeStyle } from '../../utils/helpers';
+import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import LogoutButton from '../auth/LogoutButton';
 import NotificationBell from './NotificationBell';
+import UserAvatar from '../ui/UserAvatar';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
-  const { user, role } = useAuth();
+  const { user, dbUser, role } = useAuth();
+  const profile = dbUser || user;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -74,12 +76,10 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
               onClick={() => setMenuOpen((v) => !v)}
               className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition-colors hover:border-slate-200 hover:bg-slate-50"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-subtle text-xs font-semibold text-primary">
-                {getInitials(user.name || user.email)}
-              </div>
+              <UserAvatar user={profile} size="sm" className="text-xs font-semibold" />
               <div className="hidden flex-col items-start lg:flex">
                 <p className="text-sm font-medium leading-tight text-slate-700">
-                  {user.name || user.email}
+                  {profile.name || profile.email}
                 </p>
                 <span
                   className={`inline-block rounded px-1.5 text-[10px] font-semibold leading-tight ${getRoleBadgeStyle(role)}`}
@@ -98,8 +98,8 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                 {/* Header */}
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="text-sm font-semibold text-slate-800">{user.name || user.email}</p>
-                  {user.email && user.name && (
-                    <p className="mt-0.5 truncate text-xs text-slate-400">{user.email}</p>
+                  {profile.email && profile.name && (
+                    <p className="mt-0.5 truncate text-xs text-slate-400">{profile.email}</p>
                   )}
                   <span
                     className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${getRoleBadgeStyle(role)}`}

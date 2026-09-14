@@ -95,6 +95,10 @@ export default function AuthProvider({ children }) {
   }, [isAuthenticated, auth0Loading, getAccessTokenSilently]);
 
   return (
-    <AuthContext.Provider value={{ dbUser, isSyncing, syncError }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider
+      value={{ dbUser, isSyncing, syncError, updateDbUser: setDbUser }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
 }

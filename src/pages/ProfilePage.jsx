@@ -15,22 +15,23 @@
  * Endpoint Connections: `GET /auth/me`, `PUT /tutors/:id/availability`, `PATCH /users/:id`
  */
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, User } from 'lucide-react';
+import { Save, Plus, Trash2, Camera } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_LABELS, DAYS_OF_WEEK, ROLES } from '../utils/constants';
-import { getInitials, formatDay } from '../utils/helpers';
+import { formatDay } from '../utils/helpers';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
+import UserAvatar from '../components/ui/UserAvatar';
 
 export function ProfilePage() {
-  const { user, role, isTutor, isStudent } = useAuth();
+  const { user, role, isTutor, isStudent, updateDbUser } = useAuth();
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
   const [maxHours, setMaxHours] = useState(10);
   const [saving, setSaving] = useState(false);
@@ -38,6 +39,8 @@ export function ProfilePage() {
     { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' },
   ]);
   const [savingAvailability, setSavingAvailability] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   const profile = currentUser?.data ?? currentUser;
 
@@ -64,6 +67,46 @@ export function ProfilePage() {
       refetch();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setAvatarError('Choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('The image must be smaller than 5 MB.');
+      return;
+    }
+    setAvatarError('');
+    setSavingAvatar(true);
+    try {
+      const response = await usersApi.updateAvatar(profile.id, file);
+      updateDbUser(response.data);
+      await refetch();
+    } catch (error) {
+      setAvatarError(error?.response?.data?.error || 'Could not update your profile picture.');
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    setSavingAvatar(true);
+    setAvatarError('');
+    try {
+      await usersApi.deleteAvatar(profile.id);
+      const response = await usersApi.getCurrentUser();
+      updateDbUser(response.data);
+      await refetch();
+    } catch (error) {
+      setAvatarError(error?.response?.data?.error || 'Could not remove your profile picture.');
+    } finally {
+      setSavingAvatar(false);
     }
   };
 
@@ -95,9 +138,18 @@ export function ProfilePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary">
-              {getInitials(profile?.name || user?.name)}
-            </div>
+            <UserAvatar user={profile || user} />
+            <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover">
+              <Camera className="h-3.5 w-3.5" />
+              {savingAvatar ? 'Uploading…' : 'Change picture'}
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} disabled={savingAvatar} className="sr-only" />
+            </label>
+            {profile?.avatarUrl && (
+              <button type="button" onClick={handleDeleteAvatar} disabled={savingAvatar} className="mt-1 text-xs text-slate-400 hover:text-rose-600">
+                Remove picture
+              </button>
+            )}
+            {avatarError && <p className="mt-2 text-xs text-rose-600">{avatarError}</p>}
             <h2 className="mt-4 text-lg font-bold text-slate-900">{profile?.name || user?.name}</h2>
             <p className="text-sm text-slate-400">{profile?.email || user?.email}</p>
             <Badge tone="primary" className="mt-3">
