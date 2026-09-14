@@ -5,8 +5,19 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_');
-  const apiUrl = new URL(env.VITE_API_URL || 'http://localhost:3000/api/v1');
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiUrl = process.env.VITE_API_URL || env.VITE_API_URL || 'http://localhost:3000/api/v1';
+
+  // Parse the API URL to extract target origin and base path for the proxy
+  let target = 'http://localhost:3000';
+  let basePath = '/api/v1';
+  try {
+    const url = new URL(apiUrl);
+    target = url.origin;
+    basePath = url.pathname.replace(/\/$/, '') || '/api/v1';
+  } catch {
+    // Fall back to defaults if URL parsing fails
+  }
 
   return {
     plugins: [react(), tailwindcss()],
@@ -15,12 +26,13 @@ export default defineConfig(({ mode }) => {
       open: false,
       proxy: {
         '/api/v1': {
-          target: apiUrl.origin,
+          target,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/v1/, apiUrl.pathname.replace(/\/$/, '')),
+          rewrite: (path) => path.replace(/^\/api\/v1/, basePath),
           configure: (proxy) => {
-            // The browser talks to Vite; the upstream request is server-to-server.
-            proxy.on('proxyReq', (request) => request.removeHeader('origin'));
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin');
+            });
           },
         },
       },
