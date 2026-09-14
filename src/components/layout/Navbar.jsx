@@ -22,12 +22,14 @@ import { Menu, X, ChevronDown, UserRound, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../hooks/useAuth';
-import { getInitials, getRoleBadgeStyle } from '../../utils/helpers';
+import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import NotificationBell from './NotificationBell';
+import UserAvatar from '../ui/UserAvatar';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
-  const { user, role, logout } = useAuth();
+  const { user, dbUser, role, logout } = useAuth();
+  const profile = dbUser || user;
 
   const navigate = useNavigate();
 
@@ -129,13 +131,11 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-subtle text-xs font-semibold text-primary dark:bg-slate-800 dark:text-sky-200">
-                  {getInitials(user.name || user.email)}
-                </div>
+                <UserAvatar user={profile} size="sm" className="text-xs font-semibold" />
 
                 <div className="hidden flex-col items-start lg:flex">
                   <p className="text-sm font-medium leading-tight text-slate-700 dark:text-slate-200">
-                    {user.name || user.email}
+                    {profile.name || profile.email}
                   </p>
 
                   <span
@@ -166,8 +166,8 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                       {user.name || user.email}
                     </p>
 
-                    {user.email && user.name && (
-                      <p className="mt-0.5 truncate text-xs text-slate-400">{user.email}</p>
+                    {profile.email && profile.name && (
+                      <p className="mt-0.5 truncate text-xs text-slate-400">{profile.email}</p>
                     )}
 
                     <span

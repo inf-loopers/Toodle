@@ -27,7 +27,7 @@ import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
 import { DAYS_OF_WEEK, ROLES, ROLE_LABELS } from '../utils/constants';
-import { formatDay, getInitials } from '../utils/helpers';
+import { formatDay } from '../utils/helpers';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -35,13 +35,12 @@ import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
+import UserAvatar from '../components/ui/UserAvatar';
 
 export function ProfilePage() {
-  const { user, role } = useAuth();
+  const { user, role, updateDbUser } = useAuth();
 
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
-
-  const [photoPreview, setPhotoPreview] = useState(null);
 
   const [maxHours, setMaxHours] = useState(10);
   const [savingHours, setSavingHours] = useState(false);
@@ -57,11 +56,14 @@ export function ProfilePage() {
 
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [availabilitySaved, setAvailabilitySaved] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   const profile = currentUser?.data ?? currentUser;
 
-  const roleKey = role?.toUpperCase();
+  const roleKey = (role || profile?.role)?.toLowerCase();
   const isTutor = roleKey === ROLES.TUTOR;
+  const canManageAvailability = isTutor || roleKey === ROLES.STUDENT;
 
   const displayName = profile?.name || user?.name || 'User';
   const displayEmail = profile?.email || user?.email || '—';
@@ -85,18 +87,6 @@ export function ProfilePage() {
     }
   }, [profile]);
 
-  /*
-   * Clean up temporary browser image URLs when the preview changes
-   * or when the user leaves the page.
-   */
-  useEffect(() => {
-    return () => {
-      if (photoPreview) {
-        URL.revokeObjectURL(photoPreview);
-      }
-    };
-  }, [photoPreview]);
-
   if (loading) {
     return <Spinner fullPage label="Loading your profile…" />;
   }
@@ -105,14 +95,48 @@ export function ProfilePage() {
     return <ErrorState title="Couldn't load your profile" description={error} />;
   }
 
-  const handlePhotoChange = (event) => {
+  const handlePhotoChange = async (event) => {
     const file = event.target.files?.[0];
-
+    event.target.value = '';
     if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setAvatarError('Choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('The image must be smaller than 5 MB.');
+      return;
+    }
+    setAvatarError('');
+    setSavingAvatar(true);
+    try {
+      const response = await usersApi.updateAvatar(profile.id, file);
+      updateDbUser(response.data);
+      await refetch();
+    } catch (uploadError) {
+      setAvatarError(
+        uploadError?.response?.data?.error || 'Could not update your profile picture.'
+      );
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
 
-    const previewUrl = URL.createObjectURL(file);
-
-    setPhotoPreview(previewUrl);
+  const handleDeleteAvatar = async () => {
+    setSavingAvatar(true);
+    setAvatarError('');
+    try {
+      await usersApi.deleteAvatar(profile.id);
+      const response = await usersApi.getCurrentUser();
+      updateDbUser(response.data);
+      await refetch();
+    } catch (deleteError) {
+      setAvatarError(
+        deleteError?.response?.data?.error || 'Could not remove your profile picture.'
+      );
+    } finally {
+      setSavingAvatar(false);
+    }
   };
 
   const handleSaveHours = async () => {
@@ -205,17 +229,7 @@ export function ProfilePage() {
         <CardBody>
           {/* Profile picture */}
           <div className="flex flex-col items-center">
-            {photoPreview || profile?.profileImageUrl ? (
-              <img
-                src={photoPreview || profile.profileImageUrl}
-                alt={`${displayName}'s profile`}
-                className="h-24 w-24 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary dark:bg-slate-800 dark:text-sky-200">
-                {getInitials(displayName)}
-              </div>
-            )}
+            <UserAvatar user={profile || user} />
 
             <label
               htmlFor="profile-photo"
@@ -232,6 +246,17 @@ export function ProfilePage() {
               onChange={handlePhotoChange}
               className="hidden"
             />
+            {profile?.avatarUrl && (
+              <button
+                type="button"
+                onClick={handleDeleteAvatar}
+                disabled={savingAvatar}
+                className="mt-2 text-xs text-slate-400 hover:text-rose-600"
+              >
+                Remove picture
+              </button>
+            )}
+            {avatarError && <p className="mt-2 text-xs text-rose-600">{avatarError}</p>}
           </div>
 
           {/* Divider */}
@@ -288,46 +313,46 @@ export function ProfilePage() {
         </CardBody>
       </Card>
 
-      {/* Tutor-only settings */}
-      {isTutor && (
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          {/* Weekly hours cap */}
-          <Card>
-            <CardHeader
-              title="Weekly hours cap"
-              description="The maximum number of hours you can be allocated each week."
-            />
+      {/* Personal work settings */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Weekly hours cap */}
+        <Card>
+          <CardHeader
+            title="Weekly hours cap"
+            description="The maximum number of hours you can be allocated each week."
+          />
 
-            <CardBody>
-              <div className="flex flex-wrap items-end gap-3">
-                <Input
-                  label="Hours per week"
-                  type="number"
-                  min={1}
-                  max={40}
-                  value={maxHours}
-                  onChange={(event) => {
-                    setMaxHours(event.target.value);
-                    setHoursSaved(false);
-                  }}
-                  className="max-w-36"
-                />
+          <CardBody>
+            <div className="flex flex-wrap items-end gap-3">
+              <Input
+                label="Hours per week"
+                type="number"
+                min={1}
+                max={40}
+                value={maxHours}
+                onChange={(event) => {
+                  setMaxHours(event.target.value);
+                  setHoursSaved(false);
+                }}
+                className="max-w-36"
+              />
 
-                <Button onClick={handleSaveHours} loading={savingHours}>
-                  <Save className="h-4 w-4" />
-                  Save
-                </Button>
-              </div>
+              <Button onClick={handleSaveHours} loading={savingHours}>
+                <Save className="h-4 w-4" />
+                Save
+              </Button>
+            </div>
 
-              {hoursSaved && (
-                <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  Weekly hours updated.
-                </p>
-              )}
-            </CardBody>
-          </Card>
+            {hoursSaved && (
+              <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                Weekly hours updated.
+              </p>
+            )}
+          </CardBody>
+        </Card>
 
-          {/* Availability */}
+        {/* Availability */}
+        {canManageAvailability && (
           <Card>
             <CardHeader
               title="Availability"
@@ -397,8 +422,8 @@ export function ProfilePage() {
               </div>
             </CardBody>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }

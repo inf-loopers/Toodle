@@ -49,6 +49,18 @@ export const usersApi = {
     const response = await apiClient.patch(`/users/${id}`, userData);
     return response.data;
   },
+
+  updateAvatar: async (id, file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const response = await apiClient.post(`/users/${id}/avatar`, formData);
+    return response.data;
+  },
+
+  deleteAvatar: async (id) => {
+    const response = await apiClient.delete(`/users/${id}/avatar`);
+    return response.data;
+  },
 };
 
 export default usersApi;

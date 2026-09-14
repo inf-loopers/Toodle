@@ -32,6 +32,7 @@ export function useAuth() {
   const dbUser = ctx?.dbUser ?? null;
   const isSyncing = ctx?.isSyncing ?? false;
   const syncError = ctx?.syncError ?? null;
+  const updateDbUser = ctx?.updateDbUser ?? (() => {});
 
   const [jwtRole, setJwtRole] = useState(null);
 
@@ -60,6 +61,7 @@ export function useAuth() {
     isLoading: isLoading || isSyncing,
     user,
     dbUser,
+    updateDbUser,
     role,
     isOrganiser: role === 'organiser',
     isTutor: role === 'tutor',
