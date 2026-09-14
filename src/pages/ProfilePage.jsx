@@ -1,85 +1,185 @@
 /**
  * @file ProfilePage.jsx
- * @description Tutor availability and personal capacity settings view.
+ * @description User profile and tutor work preferences.
  *
  * Responsibilities:
- * - Displays tutor account details (name, student number, email).
- * - Maximum weekly tutoring hours configuration input (e.g. 10 hours/week limit).
- * - Interactive weekly availability matrix (Monday to Friday time blocks):
- *   - Allows tutors to toggle time windows where they are available vs. busy.
- *   - Saves availability slots to the backend API (`PUT /tutors/:id/availability`).
- * - Provides immediate visual feedback upon saving.
+ * - Displays read-only account information.
+ * - Displays a profile image when one is available.
+ * - Allows a user to choose and preview a new profile photo.
+ * - Tutors can manage their weekly hours cap.
+ * - Tutors can manage their weekly availability.
  *
- * Role: Tutor / Organiser
  * Route: `/profile`
- * Endpoint Connections: `GET /auth/me`, `PUT /tutors/:id/availability`, `PATCH /users/:id`
+ *
+ * Endpoint Connections:
+ * - GET /auth/me
+ * - PATCH /users/:id
+ * - PUT /tutors/:id/availability
  */
-import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, User } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
+import { Camera, Plus, Save, Trash2 } from 'lucide-react';
+
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../hooks/useAuth';
+
 import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
-import { useAuth } from '../hooks/useAuth';
-import { ROLE_LABELS, DAYS_OF_WEEK, ROLES } from '../utils/constants';
-import { getInitials, formatDay } from '../utils/helpers';
-import Card, { CardHeader, CardBody } from '../components/ui/Card';
-import Button from '../components/ui/Button';
+
+import { DAYS_OF_WEEK, ROLES, ROLE_LABELS } from '../utils/constants';
+import { formatDay, getInitials } from '../utils/helpers';
+
+import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 
 export function ProfilePage() {
-  const { user, role, isTutor, isStudent } = useAuth();
+  const { user, role } = useAuth();
+
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
+
+  const [photoPreview, setPhotoPreview] = useState(null);
+
   const [maxHours, setMaxHours] = useState(10);
-  const [saving, setSaving] = useState(false);
+  const [savingHours, setSavingHours] = useState(false);
+  const [hoursSaved, setHoursSaved] = useState(false);
+
   const [slots, setSlots] = useState([
-    { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' },
+    {
+      dayOfWeek: 'MONDAY',
+      startTime: '09:00',
+      endTime: '11:00',
+    },
   ]);
+
   const [savingAvailability, setSavingAvailability] = useState(false);
+  const [availabilitySaved, setAvailabilitySaved] = useState(false);
 
   const profile = currentUser?.data ?? currentUser;
 
+  const roleKey = role?.toUpperCase();
+  const isTutor = roleKey === ROLES.TUTOR;
+
+  const displayName = profile?.name || user?.name || 'User';
+  const displayEmail = profile?.email || user?.email || '—';
+
+  const displayRole =
+    roleKey === ROLES.ORGANISER ? 'Course Organiser' : ROLE_LABELS?.[roleKey] || roleKey || '—';
+
   useEffect(() => {
-    if (profile?.maxHoursPerWeek) setMaxHours(profile.maxHoursPerWeek);
+    if (profile?.maxHoursPerWeek != null) {
+      setMaxHours(profile.maxHoursPerWeek);
+    }
+
     if (profile?.availability?.length) {
       setSlots(
-        profile.availability.map((a) => ({
-          dayOfWeek: a.dayOfWeek,
-          startTime: a.startTime,
-          endTime: a.endTime,
+        profile.availability.map((slot) => ({
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
         }))
       );
     }
   }, [profile]);
 
-  if (loading) return <Spinner fullPage label="Loading your profile…" />;
-  if (error) return <ErrorState title="Couldn't load your profile" description={error} />;
+  /*
+   * Clean up temporary browser image URLs when the preview changes
+   * or when the user leaves the page.
+   */
+  useEffect(() => {
+    return () => {
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [photoPreview]);
+
+  if (loading) {
+    return <Spinner fullPage label="Loading your profile…" />;
+  }
+
+  if (error) {
+    return <ErrorState title="Couldn't load your profile" description={error} />;
+  }
+
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+
+    setPhotoPreview(previewUrl);
+  };
 
   const handleSaveHours = async () => {
-    setSaving(true);
+    if (!profile?.id) return;
+
+    setSavingHours(true);
+    setHoursSaved(false);
+
     try {
-      await usersApi.updateUser(profile.id, { maxHoursPerWeek: Number(maxHours) });
-      refetch();
+      await usersApi.updateUser(profile.id, {
+        maxHoursPerWeek: Number(maxHours),
+      });
+
+      setHoursSaved(true);
+
+      await refetch();
     } finally {
-      setSaving(false);
+      setSavingHours(false);
     }
   };
 
-  const updateSlot = (idx, key, value) => {
-    setSlots((s) => s.map((slot, i) => (i === idx ? { ...slot, [key]: value } : slot)));
+  const addSlot = () => {
+    setAvailabilitySaved(false);
+
+    setSlots((current) => [
+      ...current,
+      {
+        dayOfWeek: 'MONDAY',
+        startTime: '09:00',
+        endTime: '11:00',
+      },
+    ]);
   };
 
-  const addSlot = () =>
-    setSlots((s) => [...s, { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' }]);
-  const removeSlot = (idx) => setSlots((s) => s.filter((_, i) => i !== idx));
+  const updateSlot = (index, field, value) => {
+    setAvailabilitySaved(false);
+
+    setSlots((current) =>
+      current.map((slot, slotIndex) =>
+        slotIndex === index
+          ? {
+              ...slot,
+              [field]: value,
+            }
+          : slot
+      )
+    );
+  };
+
+  const removeSlot = (index) => {
+    setAvailabilitySaved(false);
+
+    setSlots((current) => current.filter((_, slotIndex) => slotIndex !== index));
+  };
 
   const handleSaveAvailability = async () => {
+    if (!profile?.id) return;
+
     setSavingAvailability(true);
+    setAvailabilitySaved(false);
+
     try {
       await tutorsApi.setAvailability(profile.id, slots);
-      refetch();
+
+      setAvailabilitySaved(true);
+
+      await refetch();
     } finally {
       setSavingAvailability(false);
     }
@@ -87,106 +187,218 @@ export function ProfilePage() {
 
   return (
     <>
+      {/* Page heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Profile</h1>
-        <p className="mt-2 text-sm text-slate-500">Your details and how you're set up on Toodle.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          My Profile
+        </h1>
+
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Your details and how you're set up on Toodle.
+        </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary">
-              {getInitials(profile?.name || user?.name)}
+      {/* Account details */}
+      <Card>
+        <CardHeader title="Account details" />
+
+        <CardBody>
+          {/* Profile picture */}
+          <div className="flex flex-col items-center">
+            {photoPreview || profile?.profileImageUrl ? (
+              <img
+                src={photoPreview || profile.profileImageUrl}
+                alt={`${displayName}'s profile`}
+                className="h-24 w-24 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary dark:bg-slate-800 dark:text-sky-200">
+                {getInitials(displayName)}
+              </div>
+            )}
+
+            <label
+              htmlFor="profile-photo"
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              <Camera className="h-4 w-4" />
+              Change profile photo
+            </label>
+
+            <input
+              id="profile-photo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="my-6 border-t border-slate-100 dark:border-slate-800" />
+
+          {/* Read-only account information */}
+          <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+            {/* Full name */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Full name
+              </p>
+
+              <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {displayName}
+              </p>
             </div>
-            <h2 className="mt-4 text-lg font-bold text-slate-900">{profile?.name || user?.name}</h2>
-            <p className="text-sm text-slate-400">{profile?.email || user?.email}</p>
-            <Badge tone="primary" className="mt-3">
-              {ROLE_LABELS[role]}
-            </Badge>
+
+            {/* Email */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Email address
+              </p>
+
+              <p className="mt-1.5 break-all text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {displayEmail}
+              </p>
+            </div>
+
+            {/* Role */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Role
+              </p>
+
+              <div className="mt-1.5">
+                <Badge tone="primary">{displayRole}</Badge>
+              </div>
+            </div>
+
+            {/* Student number */}
             {profile?.studentNumber && (
-              <p className="mt-4 text-xs text-slate-400">Student number: {profile.studentNumber}</p>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  Student number
+                </p>
+
+                <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {profile.studentNumber}
+                </p>
+              </div>
             )}
           </div>
-        </Card>
+        </CardBody>
+      </Card>
 
-        <div className="space-y-6 lg:col-span-2">
+      {/* Tutor-only settings */}
+      {isTutor && (
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          {/* Weekly hours cap */}
           <Card>
             <CardHeader
               title="Weekly hours cap"
-              description="The maximum hours you can be allocated per week."
+              description="The maximum number of hours you can be allocated each week."
             />
-            <CardBody className="flex items-end gap-3">
-              <Input
-                type="number"
-                min={1}
-                max={40}
-                value={maxHours}
-                onChange={(e) => setMaxHours(e.target.value)}
-                className="max-w-32"
-              />
-              <Button onClick={handleSaveHours} loading={saving}>
-                <Save className="h-4 w-4" /> Save
-              </Button>
+
+            <CardBody>
+              <div className="flex flex-wrap items-end gap-3">
+                <Input
+                  label="Hours per week"
+                  type="number"
+                  min={1}
+                  max={40}
+                  value={maxHours}
+                  onChange={(event) => {
+                    setMaxHours(event.target.value);
+                    setHoursSaved(false);
+                  }}
+                  className="max-w-36"
+                />
+
+                <Button onClick={handleSaveHours} loading={savingHours}>
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+              </div>
+
+              {hoursSaved && (
+                <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  Weekly hours updated.
+                </p>
+              )}
             </CardBody>
           </Card>
 
-          {(isTutor || isStudent) && (
-            <Card>
-              <CardHeader
-                title="Availability"
-                description="When you're already busy — used to catch timetable clashes."
-                action={
-                  <Button size="sm" variant="secondary" onClick={addSlot}>
-                    <Plus className="h-3.5 w-3.5" /> Add slot
-                  </Button>
-                }
-              />
-              <CardBody className="space-y-3">
-                {slots.map((slot, idx) => (
-                  <div key={idx} className="flex items-end gap-2">
-                    <Select
-                      label={idx === 0 ? 'Day' : undefined}
-                      value={slot.dayOfWeek}
-                      onChange={(e) => updateSlot(idx, 'dayOfWeek', e.target.value)}
-                    >
-                      {DAYS_OF_WEEK.map((d) => (
-                        <option key={d} value={d}>
-                          {formatDay(d)}
-                        </option>
-                      ))}
-                    </Select>
-                    <Input
-                      label={idx === 0 ? 'Start' : undefined}
-                      type="time"
-                      value={slot.startTime}
-                      onChange={(e) => updateSlot(idx, 'startTime', e.target.value)}
-                    />
-                    <Input
-                      label={idx === 0 ? 'End' : undefined}
-                      type="time"
-                      value={slot.endTime}
-                      onChange={(e) => updateSlot(idx, 'endTime', e.target.value)}
-                    />
-                    <button
-                      onClick={() => removeSlot(idx)}
-                      className="mb-0.5 rounded-lg p-2.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                <Button
-                  onClick={handleSaveAvailability}
-                  loading={savingAvailability}
-                  variant="secondary"
-                >
-                  <Save className="h-4 w-4" /> Save availability
+          {/* Availability */}
+          <Card>
+            <CardHeader
+              title="Availability"
+              description="When you're already busy — used to catch timetable clashes."
+              action={
+                <Button variant="secondary" size="sm" onClick={addSlot}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Add slot
                 </Button>
-              </CardBody>
-            </Card>
-          )}
+              }
+            />
+
+            <CardBody className="space-y-3">
+              {slots.map((slot, index) => (
+                <div
+                  key={`${slot.dayOfWeek}-${index}`}
+                  className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                >
+                  <Select
+                    label="Day"
+                    value={slot.dayOfWeek}
+                    onChange={(event) => updateSlot(index, 'dayOfWeek', event.target.value)}
+                  >
+                    {DAYS_OF_WEEK.map((day) => (
+                      <option key={day} value={day}>
+                        {formatDay(day)}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <Input
+                    label="From"
+                    type="time"
+                    value={slot.startTime}
+                    onChange={(event) => updateSlot(index, 'startTime', event.target.value)}
+                  />
+
+                  <Input
+                    label="To"
+                    type="time"
+                    value={slot.endTime}
+                    onChange={(event) => updateSlot(index, 'endTime', event.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removeSlot(index)}
+                    className="mb-0.5 rounded-lg p-2.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
+                    aria-label="Remove availability slot"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Button onClick={handleSaveAvailability} loading={savingAvailability}>
+                  <Save className="h-4 w-4" />
+                  Save availability
+                </Button>
+
+                {availabilitySaved && (
+                  <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    Availability saved.
+                  </p>
+                )}
+              </div>
+            </CardBody>
+          </Card>
         </div>
-      </div>
+      )}
     </>
   );
 }
