@@ -22,6 +22,7 @@
  * ```
  */
 
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
