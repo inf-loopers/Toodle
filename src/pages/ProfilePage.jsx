@@ -27,7 +27,7 @@ import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
 import { DAYS_OF_WEEK, ROLES, ROLE_LABELS } from '../utils/constants';
-import { formatDay, getInitials } from '../utils/helpers';
+import { formatDay } from '../utils/helpers';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -35,13 +35,12 @@ import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
+import UserAvatar from '../components/ui/UserAvatar';
 
 export function ProfilePage() {
-  const { user, role } = useAuth();
+  const { user, role, updateDbUser } = useAuth();
 
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
-
-  const [photoPreview, setPhotoPreview] = useState(null);
 
   const [maxHours, setMaxHours] = useState(10);
   const [savingHours, setSavingHours] = useState(false);
@@ -57,6 +56,8 @@ export function ProfilePage() {
 
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [availabilitySaved, setAvailabilitySaved] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   const profile = currentUser?.data ?? currentUser;
 
@@ -85,18 +86,6 @@ export function ProfilePage() {
     }
   }, [profile]);
 
-  /*
-   * Clean up temporary browser image URLs when the preview changes
-   * or when the user leaves the page.
-   */
-  useEffect(() => {
-    return () => {
-      if (photoPreview) {
-        URL.revokeObjectURL(photoPreview);
-      }
-    };
-  }, [photoPreview]);
-
   if (loading) {
     return <Spinner fullPage label="Loading your profile…" />;
   }
@@ -105,14 +94,48 @@ export function ProfilePage() {
     return <ErrorState title="Couldn't load your profile" description={error} />;
   }
 
-  const handlePhotoChange = (event) => {
+  const handlePhotoChange = async (event) => {
     const file = event.target.files?.[0];
-
+    event.target.value = '';
     if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setAvatarError('Choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('The image must be smaller than 5 MB.');
+      return;
+    }
+    setAvatarError('');
+    setSavingAvatar(true);
+    try {
+      const response = await usersApi.updateAvatar(profile.id, file);
+      updateDbUser(response.data);
+      await refetch();
+    } catch (uploadError) {
+      setAvatarError(
+        uploadError?.response?.data?.error || 'Could not update your profile picture.'
+      );
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
 
-    const previewUrl = URL.createObjectURL(file);
-
-    setPhotoPreview(previewUrl);
+  const handleDeleteAvatar = async () => {
+    setSavingAvatar(true);
+    setAvatarError('');
+    try {
+      await usersApi.deleteAvatar(profile.id);
+      const response = await usersApi.getCurrentUser();
+      updateDbUser(response.data);
+      await refetch();
+    } catch (deleteError) {
+      setAvatarError(
+        deleteError?.response?.data?.error || 'Could not remove your profile picture.'
+      );
+    } finally {
+      setSavingAvatar(false);
+    }
   };
 
   const handleSaveHours = async () => {
@@ -205,17 +228,7 @@ export function ProfilePage() {
         <CardBody>
           {/* Profile picture */}
           <div className="flex flex-col items-center">
-            {photoPreview || profile?.profileImageUrl ? (
-              <img
-                src={photoPreview || profile.profileImageUrl}
-                alt={`${displayName}'s profile`}
-                className="h-24 w-24 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary dark:bg-slate-800 dark:text-sky-200">
-                {getInitials(displayName)}
-              </div>
-            )}
+            <UserAvatar user={profile || user} />
 
             <label
               htmlFor="profile-photo"
@@ -232,6 +245,17 @@ export function ProfilePage() {
               onChange={handlePhotoChange}
               className="hidden"
             />
+            {profile?.avatarUrl && (
+              <button
+                type="button"
+                onClick={handleDeleteAvatar}
+                disabled={savingAvatar}
+                className="mt-2 text-xs text-slate-400 hover:text-rose-600"
+              >
+                Remove picture
+              </button>
+            )}
+            {avatarError && <p className="mt-2 text-xs text-rose-600">{avatarError}</p>}
           </div>
 
           {/* Divider */}
