@@ -72,9 +72,7 @@ const PAGE_NAMES = [
 ];
 
 function getPageName(pathname) {
-  const page = PAGE_NAMES.find((item) =>
-    pathname.startsWith(item.match)
-  );
+  const page = PAGE_NAMES.find((item) => pathname.startsWith(item.match));
 
   return page?.name || 'Toodle';
 }
@@ -102,9 +100,7 @@ export function Sidebar({
 
   const themeLabel = isDark ? 'Light mode' : 'Dark mode';
 
-  const themeTooltip = isDark
-    ? 'Switch to light mode'
-    : 'Switch to dark mode';
+  const themeTooltip = isDark ? 'Switch to light mode' : 'Switch to dark mode';
 
   const pageName = getPageName(pathname);
 
@@ -140,9 +136,7 @@ export function Sidebar({
           type="button"
           onClick={onToggleCollapsed}
           className="absolute -right-3 top-6 z-50 hidden h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-          aria-label={
-            isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
-          }
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-pressed={isCollapsed}
         >
           {isCollapsed ? (
@@ -164,13 +158,9 @@ export function Sidebar({
           </div>
 
           <div className={cn(isCollapsed && 'lg:hidden')}>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              Toodle
-            </h1>
+            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Toodle</h1>
 
-            <p className="text-xs text-slate-400">
-              Tutor Management
-            </p>
+            <p className="text-xs text-slate-400">Tutor Management</p>
           </div>
 
           {/* Mobile close */}
@@ -185,80 +175,44 @@ export function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav
-          className={cn(
-            'flex-1 overflow-y-auto px-3 py-6',
-            isCollapsed && 'lg:px-2'
-          )}
-        >
+        <nav className={cn('flex-1 overflow-y-auto px-3 py-6', isCollapsed && 'lg:px-2')}>
           {sections.map((section) => (
-            <div
-              key={section.heading}
-              className="sidebar-section"
-            >
+            <div key={section.heading} className="sidebar-section">
               <p
                 className={cn(
                   'sidebar-heading',
-                  isCollapsed &&
-                    'sidebar-heading-collapsed lg:justify-center lg:px-0'
+                  isCollapsed && 'sidebar-heading-collapsed lg:justify-center lg:px-0'
                 )}
               >
-                <span
-                  className={cn(
-                    isCollapsed && 'lg:hidden'
-                  )}
-                >
-                  {section.heading}
-                </span>
+                <span className={cn(isCollapsed && 'lg:hidden')}>{section.heading}</span>
               </p>
 
               <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const Icon = ICONS[item.icon] || Home;
 
-                  const badge =
-                    item.name === 'Swaps' &&
-                    pendingSwaps > 0
-                      ? pendingSwaps
-                      : null;
+                  const badge = item.name === 'Swaps' && pendingSwaps > 0 ? pendingSwaps : null;
 
                   return (
                     <NavLink
                       key={item.path}
                       to={item.path}
                       onClick={onClose}
-                      aria-label={
-                        isCollapsed
-                          ? item.name
-                          : undefined
-                      }
-                      title={
-                        isCollapsed
-                          ? item.name
-                          : undefined
-                      }
+                      aria-label={isCollapsed ? item.name : undefined}
+                      title={isCollapsed ? item.name : undefined}
                       className={({ isActive }) =>
                         cn(
                           'sidebar-nav-item group relative',
-                          isCollapsed &&
-                            'lg:justify-center lg:gap-0 lg:px-2',
+                          isCollapsed && 'lg:justify-center lg:gap-0 lg:px-2',
                           isActive && 'active'
                         )
                       }
                     >
                       <span className="icon-box">
-                        <Icon
-                          className="h-4 w-4"
-                          strokeWidth={2}
-                        />
+                        <Icon className="h-4 w-4" strokeWidth={2} />
                       </span>
 
-                      <span
-                        className={cn(
-                          'truncate',
-                          isCollapsed && 'lg:hidden'
-                        )}
-                      >
+                      <span className={cn('truncate', isCollapsed && 'lg:hidden')}>
                         {item.name}
                       </span>
 
@@ -300,32 +254,17 @@ export function Sidebar({
               type="button"
               onClick={handleOpenReport}
               aria-label="Report a problem"
-              title={
-                isCollapsed
-                  ? 'Report a problem'
-                  : undefined
-              }
+              title={isCollapsed ? 'Report a problem' : undefined}
               className={cn(
                 'sidebar-nav-item group relative w-full',
-                isCollapsed &&
-                  'lg:justify-center lg:gap-0 lg:px-2'
+                isCollapsed && 'lg:justify-center lg:gap-0 lg:px-2'
               )}
             >
               <span className="icon-box">
-                <Bug
-                  className="h-4 w-4"
-                  strokeWidth={2}
-                />
+                <Bug className="h-4 w-4" strokeWidth={2} />
               </span>
 
-              <span
-                className={cn(
-                  'truncate',
-                  isCollapsed && 'lg:hidden'
-                )}
-              >
-                Report a problem
-              </span>
+              <span className={cn('truncate', isCollapsed && 'lg:hidden')}>Report a problem</span>
 
               {isCollapsed && (
                 <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 lg:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
@@ -342,40 +281,24 @@ export function Sidebar({
               role="switch"
               aria-checked={isDark}
               aria-label={themeTooltip}
-              title={
-                isCollapsed
-                  ? themeTooltip
-                  : undefined
-              }
+              title={isCollapsed ? themeTooltip : undefined}
               onClick={onToggleTheme}
               className={cn(
                 'sidebar-theme-button group relative',
-                isCollapsed &&
-                  'lg:flex-col lg:justify-center lg:gap-1 lg:px-2'
+                isCollapsed && 'lg:flex-col lg:justify-center lg:gap-1 lg:px-2'
               )}
             >
               <span className="icon-box">
-                <ThemeIcon
-                  className="h-4 w-4"
-                  strokeWidth={2}
-                />
+                <ThemeIcon className="h-4 w-4" strokeWidth={2} />
               </span>
 
-              <span
-                className={cn(
-                  'truncate',
-                  isCollapsed && 'lg:hidden'
-                )}
-              >
-                {themeLabel}
-              </span>
+              <span className={cn('truncate', isCollapsed && 'lg:hidden')}>{themeLabel}</span>
 
               <span
                 className={cn(
                   'theme-switch',
                   isDark && 'theme-switch-on',
-                  isCollapsed &&
-                    'theme-switch-compact lg:ml-0'
+                  isCollapsed && 'theme-switch-compact lg:ml-0'
                 )}
                 aria-hidden="true"
               >
@@ -391,19 +314,13 @@ export function Sidebar({
           </div>
 
           {/* Expanded account status */}
-          <div
-            className={cn(
-              isCollapsed && 'lg:hidden'
-            )}
-          >
+          <div className={cn(isCollapsed && 'lg:hidden')}>
             <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
               Signed in as
             </p>
 
             <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-200">
-                {roleLabel}
-              </p>
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-200">{roleLabel}</p>
 
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-emerald-600">

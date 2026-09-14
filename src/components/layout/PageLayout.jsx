@@ -21,7 +21,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
-
 const SIDEBAR_STORAGE_KEY = 'toodle.sidebarCollapsed';
 const THEME_STORAGE_KEY = 'toodle.theme';
 
@@ -108,7 +107,6 @@ export function PageLayout() {
           <main className="flex-1 p-6 lg:p-8">
             <Outlet />
           </main>
-
         </div>
       </div>
     </div>

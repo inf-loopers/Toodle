@@ -41,12 +41,7 @@ const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 export function ProfilePage() {
   const { user, role } = useAuth();
 
-  const {
-    data: currentUser,
-    loading,
-    error,
-    refetch,
-  } = useApi(usersApi.getCurrentUser);
+  const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
 
   const [photoPreview, setPhotoPreview] = useState(null);
 
@@ -75,9 +70,7 @@ export function ProfilePage() {
   const displayEmail = profile?.email || user?.email || '—';
 
   const displayRole =
-    roleKey === 'ORGANISER'
-      ? 'Course Organiser'
-      : ROLE_LABELS?.[roleKey] || roleKey || '—';
+    roleKey === 'ORGANISER' ? 'Course Organiser' : ROLE_LABELS?.[roleKey] || roleKey || '—';
 
   useEffect(() => {
     if (profile?.maxHoursPerWeek != null) {
@@ -112,12 +105,7 @@ export function ProfilePage() {
   }
 
   if (error) {
-    return (
-      <ErrorState
-        title="Couldn't load your profile"
-        description={error}
-      />
-    );
+    return <ErrorState title="Couldn't load your profile" description={error} />;
   }
 
   const handlePhotoChange = (event) => {
@@ -180,9 +168,7 @@ export function ProfilePage() {
   const removeSlot = (index) => {
     setAvailabilitySaved(false);
 
-    setSlots((current) =>
-      current.filter((_, slotIndex) => slotIndex !== index)
-    );
+    setSlots((current) => current.filter((_, slotIndex) => slotIndex !== index));
   };
 
   const handleSaveAvailability = async () => {
@@ -330,10 +316,7 @@ export function ProfilePage() {
                   className="max-w-36"
                 />
 
-                <Button
-                  onClick={handleSaveHours}
-                  loading={savingHours}
-                >
+                <Button onClick={handleSaveHours} loading={savingHours}>
                   <Save className="h-4 w-4" />
                   Save
                 </Button>
@@ -353,11 +336,7 @@ export function ProfilePage() {
               title="Availability"
               description="When you're already busy — used to catch timetable clashes."
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={addSlot}
-                >
+                <Button variant="secondary" size="sm" onClick={addSlot}>
                   <Plus className="h-3.5 w-3.5" />
                   Add slot
                 </Button>
@@ -373,9 +352,7 @@ export function ProfilePage() {
                   <Select
                     label="Day"
                     value={slot.dayOfWeek}
-                    onChange={(event) =>
-                      updateSlot(index, 'dayOfWeek', event.target.value)
-                    }
+                    onChange={(event) => updateSlot(index, 'dayOfWeek', event.target.value)}
                   >
                     {DAYS.map((day) => (
                       <option key={day} value={day}>
@@ -388,18 +365,14 @@ export function ProfilePage() {
                     label="From"
                     type="time"
                     value={slot.startTime}
-                    onChange={(event) =>
-                      updateSlot(index, 'startTime', event.target.value)
-                    }
+                    onChange={(event) => updateSlot(index, 'startTime', event.target.value)}
                   />
 
                   <Input
                     label="To"
                     type="time"
                     value={slot.endTime}
-                    onChange={(event) =>
-                      updateSlot(index, 'endTime', event.target.value)
-                    }
+                    onChange={(event) => updateSlot(index, 'endTime', event.target.value)}
                   />
 
                   <button
@@ -414,10 +387,7 @@ export function ProfilePage() {
               ))}
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Button
-                  onClick={handleSaveAvailability}
-                  loading={savingAvailability}
-                >
+                <Button onClick={handleSaveAvailability} loading={savingAvailability}>
                   <Save className="h-4 w-4" />
                   Save availability
                 </Button>

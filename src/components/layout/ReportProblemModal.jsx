@@ -56,10 +56,7 @@ export default function ReportProblemModal({ open, onClose }) {
       description="Tell us what went wrong and we'll look into it."
       footer={
         <>
-          <Button
-            variant="secondary"
-            onClick={onClose}
-          >
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
 
@@ -85,10 +82,7 @@ export default function ReportProblemModal({ open, onClose }) {
           </option>
 
           {PAGE_OPTIONS.map((page) => (
-            <option
-              key={page}
-              value={page}
-            >
+            <option key={page} value={page}>
               {page}
             </option>
           ))}

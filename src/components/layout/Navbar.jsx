@@ -11,24 +11,14 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  Menu,
-  X,
-  ChevronDown,
-  UserRound,
-  LogOut,
-} from 'lucide-react';
+import { Menu, X, ChevronDown, UserRound, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../hooks/useAuth';
 import { getInitials, getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 
-export default function Navbar({
-  title,
-  isSidebarOpen,
-  onToggleSidebar,
-}) {
+export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, role, logout } = useAuth();
 
   const navigate = useNavigate();
@@ -41,10 +31,7 @@ export default function Navbar({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target)
-      ) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
     };
@@ -96,15 +83,9 @@ export default function Navbar({
             type="button"
             onClick={onToggleSidebar}
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden"
-            aria-label={
-              isSidebarOpen ? 'Close sidebar' : 'Open sidebar'
-            }
+            aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
-            {isSidebarOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
           {/* Mobile logo */}
@@ -113,9 +94,7 @@ export default function Navbar({
               T
             </div>
 
-            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Toodle
-            </span>
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Toodle</span>
           </div>
 
           {/* Desktop page title */}
@@ -149,7 +128,7 @@ export default function Navbar({
 
                   <span
                     className={`inline-block rounded px-1.5 text-[10px] font-semibold leading-tight ${getRoleBadgeStyle(
-                      role,
+                      role
                     )}`}
                   >
                     {ROLE_LABELS[role] || 'User'}
@@ -176,14 +155,12 @@ export default function Navbar({
                     </p>
 
                     {user.email && user.name && (
-                      <p className="mt-0.5 truncate text-xs text-slate-400">
-                        {user.email}
-                      </p>
+                      <p className="mt-0.5 truncate text-xs text-slate-400">{user.email}</p>
                     )}
 
                     <span
                       className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${getRoleBadgeStyle(
-                        role,
+                        role
                       )}`}
                     >
                       {ROLE_LABELS[role] || 'User'}
