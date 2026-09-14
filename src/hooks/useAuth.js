@@ -45,7 +45,7 @@ export function useAuth() {
   }, [isAuthenticated, user]);
 
   // Prefer the authoritative database role over the JWT claim
-  const role = dbUser?.role || jwtRole;
+  const role = (dbUser?.role || jwtRole)?.toLowerCase() ?? null;
   const error = syncError || auth0Error?.message || null;
 
   const login = () => loginWithRedirect();
@@ -61,6 +61,9 @@ export function useAuth() {
     user,
     dbUser,
     role,
+    isOrganiser: role === 'organiser',
+    isTutor: role === 'tutor',
+    isStudent: role === 'student',
     error,
     login,
     logout,
