@@ -5,6 +5,7 @@
  * Responsibilities:
  * - Displays the current page title and Toodle branding on mobile.
  * - Mobile hamburger toggle button to open/close the responsive Sidebar.
+ * - Notification bell with unread count badge and dropdown panel.
  * - Authenticated user section: displays user avatar, display name, role badge, and quick logout button.
  * - Sticky header positioning with translucent backdrop blur effect.
  *
@@ -20,6 +21,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getInitials, getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import LogoutButton from '../auth/LogoutButton';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, role } = useAuth();
@@ -61,8 +63,10 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
         {title && <h2 className="hidden text-lg font-semibold text-slate-900 md:block">{title}</h2>}
       </div>
 
-      {/* Right section: user info */}
+      {/* Right section: notifications + user info */}
       <div className="flex items-center gap-3">
+        {user && <NotificationBell />}
+
         {user && (
           <div className="relative" ref={menuRef}>
             {/* User trigger button */}

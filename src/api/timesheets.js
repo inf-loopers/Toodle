@@ -21,11 +21,13 @@ export const timesheetsApi = {
   // POST /timesheets/:id/entries — log an hours entry against a timesheet
   addEntry: async (timesheetId, entryData) => {
     const response = await apiClient.post(`/timesheets/${timesheetId}/entries`, entryData);
+
     return response.data;
   },
 
   deleteEntry: async (timesheetId, entryId) => {
     const response = await apiClient.delete(`/timesheets/${timesheetId}/entries/${entryId}`);
+
     return response.data;
   },
 
@@ -41,9 +43,12 @@ export const timesheetsApi = {
     return response.data;
   },
 
-  // POST /timesheets/:id/dispute — SUBMITTED -> DISPUTED, with a note
-  disputeTimesheet: async (id, disputeNote) => {
-    const response = await apiClient.post(`/timesheets/${id}/dispute`, { disputeNote });
+  // POST /timesheets/:id/dispute — SUBMITTED -> DISPUTED, with a reason
+  disputeTimesheet: async (id, disputeReason) => {
+    const response = await apiClient.post(`/timesheets/${id}/dispute`, {
+      disputeReason,
+    });
+
     return response.data;
   },
 };
