@@ -61,7 +61,7 @@ export function ProfilePage() {
 
   const profile = currentUser?.data ?? currentUser;
 
-  const roleKey = role?.toUpperCase();
+  const roleKey = role?.toLowerCase();
   const isTutor = roleKey === ROLES.TUTOR;
   const canManageAvailability = isTutor || roleKey === ROLES.STUDENT;
 
