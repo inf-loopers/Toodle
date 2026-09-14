@@ -63,6 +63,7 @@ export function ProfilePage() {
 
   const roleKey = role?.toUpperCase();
   const isTutor = roleKey === ROLES.TUTOR;
+  const canManageAvailability = isTutor || roleKey === ROLES.STUDENT;
 
   const displayName = profile?.name || user?.name || 'User';
   const displayEmail = profile?.email || user?.email || '—';
@@ -351,7 +352,7 @@ export function ProfilePage() {
         </Card>
 
         {/* Availability */}
-        {isTutor && (
+        {canManageAvailability && (
           <Card>
             <CardHeader
               title="Availability"
