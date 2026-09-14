@@ -8,7 +8,7 @@ import React from 'react';
  *  - "primary": solid navy button (used for "Sign In to Portal")
  *  - "ghost":   text-only button (used for footer links)
  */
-export default function Button({
+export default function LandingButton({
   children,
   variant = 'primary',
   icon: Icon,

@@ -35,6 +35,7 @@ import SessionSwapPage from '../pages/SessionSwapPage';
 import ReportsPage from '../pages/ReportsPage';
 import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
+import ExcusalsPage from '../pages/ExcusalsPage';
 
 export default function AppRoutes() {
   return (
@@ -55,6 +56,11 @@ export default function AppRoutes() {
           <Route path="/volunteers" element={<VolunteersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
 
+          {/* Tutor + Organiser */}
+          <Route element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.ORGANISER]} />}>
+            <Route path="/excusals" element={<ExcusalsPage />} />
+          </Route>
+
           {/* Organiser-only */}
           <Route element={<ProtectedRoute allowedRoles={[ROLES.ORGANISER]} />}>
             <Route path="/allocations" element={<AllocationBoardPage />} />
@@ -65,6 +71,7 @@ export default function AppRoutes() {
       </Route>
 
       <Route path="/404" element={<NotFoundPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
