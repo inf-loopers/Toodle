@@ -224,12 +224,17 @@ export function AllocationBoardPage() {
         </div>
 
         <div className="flex gap-3">
-          <Button variant="secondary">
-            <Upload className="h-4 w-4" /> Import Timetable
-          </Button>
-          <Button variant="accent">
-            <Sparkles className="h-4 w-4" /> Generate Allocation
-          </Button>
+          <span title="Import Timetable is not available yet." className="inline-flex">
+            <Button variant="secondary" disabled>
+              <Upload className="h-4 w-4" /> Import Timetable
+            </Button>
+          </span>
+
+          <span title="Generate Allocation is not available yet." className="inline-flex">
+            <Button variant="accent" disabled>
+              <Sparkles className="h-4 w-4" /> Generate Allocation
+            </Button>
+          </span>
         </div>
       </div>
 
