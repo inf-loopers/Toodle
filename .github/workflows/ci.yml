@@ -56,6 +56,11 @@ jobs:
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v5
+        env:
+          # The repo remote is a Gitea server (sdp.ms.wits.ac.za), which the
+          # Codecov CLI cannot auto-detect. Without this it aborts with
+          # "Upload service is missing".
+          CODECOV_GIT_SERVICE: github
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
