@@ -12,6 +12,8 @@
 import apiClient from './client';
 
 export const tutorsApi = {
+  submitMark: async (data) => (await apiClient.post('/tutors/me/marks', data)).data,
+  reviewMark: async (id, data) => (await apiClient.patch(`/tutors/marks/${id}`, data)).data,
   // GET /tutors
   getTutors: async (params) => {
     const response = await apiClient.get('/tutors', { params });

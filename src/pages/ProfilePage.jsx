@@ -30,7 +30,7 @@ import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 
 export function ProfilePage() {
-  const { user, role, isTutor } = useAuth();
+  const { user, role, isTutor, isStudent } = useAuth();
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
   const [maxHours, setMaxHours] = useState(10);
   const [saving, setSaving] = useState(false);
@@ -130,7 +130,7 @@ export function ProfilePage() {
             </CardBody>
           </Card>
 
-          {isTutor && (
+          {(isTutor || isStudent) && (
             <Card>
               <CardHeader
                 title="Availability"
