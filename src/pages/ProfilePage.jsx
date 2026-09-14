@@ -312,46 +312,46 @@ export function ProfilePage() {
         </CardBody>
       </Card>
 
-      {/* Tutor-only settings */}
-      {isTutor && (
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          {/* Weekly hours cap */}
-          <Card>
-            <CardHeader
-              title="Weekly hours cap"
-              description="The maximum number of hours you can be allocated each week."
-            />
+      {/* Personal work settings */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Weekly hours cap */}
+        <Card>
+          <CardHeader
+            title="Weekly hours cap"
+            description="The maximum number of hours you can be allocated each week."
+          />
 
-            <CardBody>
-              <div className="flex flex-wrap items-end gap-3">
-                <Input
-                  label="Hours per week"
-                  type="number"
-                  min={1}
-                  max={40}
-                  value={maxHours}
-                  onChange={(event) => {
-                    setMaxHours(event.target.value);
-                    setHoursSaved(false);
-                  }}
-                  className="max-w-36"
-                />
+          <CardBody>
+            <div className="flex flex-wrap items-end gap-3">
+              <Input
+                label="Hours per week"
+                type="number"
+                min={1}
+                max={40}
+                value={maxHours}
+                onChange={(event) => {
+                  setMaxHours(event.target.value);
+                  setHoursSaved(false);
+                }}
+                className="max-w-36"
+              />
 
-                <Button onClick={handleSaveHours} loading={savingHours}>
-                  <Save className="h-4 w-4" />
-                  Save
-                </Button>
-              </div>
+              <Button onClick={handleSaveHours} loading={savingHours}>
+                <Save className="h-4 w-4" />
+                Save
+              </Button>
+            </div>
 
-              {hoursSaved && (
-                <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  Weekly hours updated.
-                </p>
-              )}
-            </CardBody>
-          </Card>
+            {hoursSaved && (
+              <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                Weekly hours updated.
+              </p>
+            )}
+          </CardBody>
+        </Card>
 
-          {/* Availability */}
+        {/* Availability */}
+        {isTutor && (
           <Card>
             <CardHeader
               title="Availability"
@@ -421,8 +421,8 @@ export function ProfilePage() {
               </div>
             </CardBody>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }
