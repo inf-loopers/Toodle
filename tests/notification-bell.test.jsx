@@ -33,7 +33,10 @@ describe('NotificationBell integration', () => {
     ];
 
     notificationsApi.getNotifications.mockResolvedValue({ success: true, data: items });
-    notificationsApi.markAsRead.mockResolvedValue({ success: true, data: { ...items[0], isRead: true } });
+    notificationsApi.markAsRead.mockResolvedValue({
+      success: true,
+      data: { ...items[0], isRead: true },
+    });
 
     render(
       <MemoryRouter>
