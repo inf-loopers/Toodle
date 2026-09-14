@@ -100,6 +100,7 @@ function AssignTutorModal({
   const [reason, setReason] = useState('');
   const [warnings, setWarnings] = useState([]);
   const [checking, setChecking] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -119,13 +120,17 @@ function AssignTutorModal({
     if (!tutorId || !course) return;
     let cancelled = false;
     setChecking(true);
+    setValidationError('');
     allocationsApi
       .validateAllocation({ userId: tutorId, courseId: course.id, hoursPerWeek: hours })
       .then((res) => {
         if (!cancelled) setWarnings(res?.warnings ?? res?.data?.warnings ?? []);
       })
       .catch(() => {
-        if (!cancelled) setWarnings([]);
+        if (!cancelled)
+          setValidationError(
+            'Could not check eligibility. Select the tutor again or change hours to retry.'
+          );
       })
       .finally(() => !cancelled && setChecking(false));
     return () => {
@@ -174,7 +179,16 @@ function AssignTutorModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} loading={submitting} disabled={!tutorId}>
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={
+              !tutorId ||
+              checking ||
+              Boolean(validationError) ||
+              (warnings.length > 0 && !reason.trim())
+            }
+          >
             Confirm assignment
           </Button>
         </>
@@ -205,7 +219,12 @@ function AssignTutorModal({
           </p>
         )}
 
-        {!checking && tutorId && warnings.length === 0 && (
+        {validationError && (
+          <p role="alert" className="text-rose-700">
+            {validationError}
+          </p>
+        )}
+        {!checking && !validationError && tutorId && warnings.length === 0 && (
           <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-700">
             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>All constraints passed — no conflicts detected.</span>

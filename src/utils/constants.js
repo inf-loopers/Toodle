@@ -128,6 +128,10 @@ export const NAV_SECTIONS = {
       heading: 'Admin',
       items: [{ name: 'Reports', path: '/reports', icon: 'BarChart3' }],
     },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
+    },
   ],
   [ROLES.TUTOR]: [
     {
@@ -144,6 +148,10 @@ export const NAV_SECTIONS = {
         { name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' },
       ],
     },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
+    },
   ],
   [ROLES.STUDENT]: [
     {
@@ -152,7 +160,14 @@ export const NAV_SECTIONS = {
     },
     {
       heading: 'Opportunities',
-      items: [{ name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' }],
+      items: [
+        { name: 'Courses', path: '/courses', icon: 'BookOpen' },
+        { name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' },
+      ],
+    },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
     },
   ],
 };
