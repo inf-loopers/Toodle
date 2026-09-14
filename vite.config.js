@@ -30,6 +30,13 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './tests/setup.js',
       css: true,
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{js,jsx}'],
+        exclude: ['src/main.jsx'],
+        reporter: ['text', 'text-summary', 'lcov'],
+        reportsDirectory: 'coverage',
+      },
     },
   };
 });

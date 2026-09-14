@@ -2,6 +2,7 @@
 
 [![React](https://img.shields.io/badge/React-19-61dafb?logo=react)](https://react.dev/)
 [![Auth0](https://img.shields.io/badge/Auth0-RBAC-eb5424?logo=auth0)](https://auth0.com/)
+[![codecov](https://codecov.io/gh/inf-loopers/Toodle/graph/badge.svg)](https://codecov.io/gh/inf-loopers/Toodle)
 
 > **Toodle Tutor Management & Allocation System**  
 > School of Computer Science and Applied Mathematics  
