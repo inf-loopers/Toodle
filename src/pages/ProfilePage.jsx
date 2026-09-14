@@ -130,7 +130,9 @@ export function ProfilePage() {
       updateDbUser(response.data);
       await refetch();
     } catch (deleteError) {
-      setAvatarError(deleteError?.response?.data?.error || 'Could not remove your profile picture.');
+      setAvatarError(
+        deleteError?.response?.data?.error || 'Could not remove your profile picture.'
+      );
     } finally {
       setSavingAvatar(false);
     }
