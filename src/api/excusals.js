@@ -19,8 +19,10 @@ export const excusalsApi = {
   },
 
   // POST /excusals/:id/decline
-  declineExcusal: async (id) => {
-    const response = await apiClient.post(`/excusals/${id}/decline`);
+  declineExcusal: async (id, reason) => {
+    const response = await apiClient.post(`/excusals/${id}/decline`, {
+      reason,
+    });
     return response.data;
   },
 };

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import Badge from './Badge';
-import Button from './Button';
+import LandingBadge from './LandingBadge';
+import LandingButton from './LandingButton';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function Hero() {
@@ -30,7 +30,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-slate-800/90 via-blue-900/70 to-white" />
 
       <div className="relative z-20 max-w-5xl mx-auto px-6 pt-20 pb-32 flex flex-col items-center text-center">
-        <Badge>Academic Precision System</Badge>
+        <LandingBadge>Academic Precision System</LandingBadge>
 
         <h1 className="mt-8 text-4xl md:text-5xl font-extrabold text-white leading-tight max-w-3xl">
           Empowering Academic Excellence through Efficient Tutor Management
@@ -41,7 +41,7 @@ export default function Hero() {
           hours, and ensure seamless academic support across the university.
         </p>
 
-        <Button
+        <LandingButton
           variant="primary"
           icon={ArrowRight}
           onClick={handleClick}
@@ -49,7 +49,7 @@ export default function Hero() {
           className="mt-9 disabled:opacity-60"
         >
           {isAuthenticated ? 'Go to Dashboard' : 'Sign In to Portal'}
-        </Button>
+        </LandingButton>
       </div>
     </section>
   );

@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import Navbar from '../components/LandingPage Components/Navbar';
+import LandingNavbar from '../components/LandingPage Components/LandingNavbar';
 import Hero from '../components/LandingPage Components/Hero';
 import FeatureSection from '../components/LandingPage Components/FeatureSection';
-import Footer from '../components/LandingPage Components/Footer';
+import LandingFooter from '../components/LandingPage Components/LandingFooter';
 import { useAuth } from '../hooks/useAuth';
 
 export default function LandingPage() {
@@ -17,11 +17,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white">
-      <Navbar />
+      <LandingNavbar />
       <Hero />
       <FeatureSection />
       <div className="flex-1" />
-      <Footer />
+      <LandingFooter />
     </div>
   );
 }
