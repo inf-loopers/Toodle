@@ -35,12 +35,14 @@ const STATUS_TONE = {
 };
 
 const CLAIM_STATUS_TONE = {
+  PENDING: 'warning',
   CLAIMED: 'warning',
   APPROVED: 'success',
   REJECTED: 'danger',
 };
 
 const CLAIM_STATUS_LABEL = {
+  PENDING: 'Pending',
   CLAIMED: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
@@ -125,7 +127,7 @@ export function VolunteersPage() {
 
   // Organiser: posts with pending claims
   const pendingClaimsPosts = filteredPosts.filter((p) =>
-    p.claims?.some((c) => c.status === 'CLAIMED')
+    p.claims?.some((c) => c.status === 'PENDING' || c.status === 'CLAIMED')
   );
 
   // Student/tutor: only OPEN posts
@@ -188,7 +190,7 @@ export function VolunteersPage() {
           {post.description || 'No description provided.'}
         </p>
         <div className="mt-4 border-t border-slate-100 pt-4">
-          <Badge tone="primary">{formatHours(post.hoursPerWeek)} / week</Badge>
+          <Badge tone="primary">{formatHours(post.hoursPerWeek ?? post.hoursNeeded)} / week</Badge>
           {children}
         </div>
       </Card>
@@ -255,7 +257,7 @@ export function VolunteersPage() {
                     </p>
                     <div className="space-y-2">
                       {post.claims.map((claim) => {
-                        const isPending = claim.status === 'CLAIMED';
+                        const isPending = claim.status === 'PENDING' || claim.status === 'CLAIMED';
                         return (
                           <div
                             key={claim.id}
