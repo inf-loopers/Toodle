@@ -30,8 +30,9 @@ import { allocationsApi } from '../api/allocations';
 import { overflowApi } from '../api/overflow';
 import { timesheetsApi } from '../api/timesheets';
 import { swapsApi } from '../api/swaps';
+import { usersApi } from '../api/users';
 import { ROLES } from '../utils/constants';
-import { formatHours } from '../utils/helpers';
+import { formatDay, formatHours, formatTime } from '../utils/helpers';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -245,10 +246,15 @@ function TutorDashboard({ user }) {
     error: tsError,
   } = useApi(timesheetsApi.getTimesheets);
   const { data: swaps, loading: swapsLoading, error: swapsError } = useApi(swapsApi.getSwaps);
+  const {
+    data: profileData,
+    loading: profileLoading,
+    error: profileError,
+  } = useApi(usersApi.getCurrentUser);
 
-  if (allocLoading || tsLoading || swapsLoading)
+  if (allocLoading || tsLoading || swapsLoading || profileLoading)
     return <Spinner fullPage label="Loading your dashboard…" />;
-  const dashError = allocError || tsError || swapsError;
+  const dashError = allocError || tsError || swapsError || profileError;
   if (dashError) {
     return (
       <ErrorState
@@ -269,9 +275,11 @@ function TutorDashboard({ user }) {
   const allocationList = allocations?.data ?? allocations ?? [];
   const timesheetList = timesheets?.data ?? timesheets ?? [];
   const swapList = swaps?.data ?? swaps ?? [];
+  const profile = profileData?.data ?? profileData ?? {};
+  const availability = profile.availability ?? [];
 
   const totalHours = allocationList.reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
-  const maxHours = user?.maxHoursPerWeek ?? 10;
+  const maxHours = profile.maxHoursPerWeek ?? user?.maxHoursPerWeek ?? 10;
   const pendingSwaps = swapList.filter((s) => s.status === 'PENDING').length;
   const draftTimesheets = timesheetList.filter(
     (t) => t.status === 'DRAFT' || t.status === 'DISPUTED'
@@ -311,41 +319,76 @@ function TutorDashboard({ user }) {
         />
       </div>
 
-      <Card>
-        <CardHeader
-          title="My courses"
-          description="Sessions you're currently tutoring."
-          action={
-            <Link to="/timesheets">
-              <Button size="sm" variant="secondary">
-                Log hours <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          }
-        />
-        <CardBody>
-          {allocationList.length === 0 ? (
-            <p className="text-sm text-slate-400">You haven't been assigned to a course yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {allocationList.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">
-                      {a.course?.code || a.courseId}
-                    </p>
-                    <p className="text-xs text-slate-400">{a.course?.name}</p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="My courses"
+            description="Sessions you're currently tutoring."
+            action={
+              <Link to="/timesheets">
+                <Button size="sm" variant="secondary">
+                  Log hours <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            }
+          />
+          <CardBody>
+            {allocationList.length === 0 ? (
+              <p className="text-sm text-slate-400">You haven't been assigned to a course yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {allocationList.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">
+                        {a.course?.code || a.courseId}
+                      </p>
+                      <p className="text-xs text-slate-400">{a.course?.name}</p>
+                    </div>
+                    <Badge tone="primary">{formatHours(a.hoursPerWeek)} / week</Badge>
                   </div>
-                  <Badge tone="primary">{formatHours(a.hoursPerWeek)} / week</Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardBody>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="My availability"
+            description="Your available times for timetable planning."
+            action={
+              <Link to="/profile">
+                <Button size="sm" variant="secondary">
+                  Edit availability
+                </Button>
+              </Link>
+            }
+          />
+          <CardBody>
+            {availability.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                No availability submitted yet. Add your available times on your profile.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {availability.map((slot) => (
+                  <div
+                    key={slot.id}
+                    className="rounded-xl border border-slate-100 px-3 py-2 text-sm text-slate-600"
+                  >
+                    {formatDay(slot.dayOfWeek)} · {formatTime(slot.startTime)}–
+                    {formatTime(slot.endTime)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </div>
     </>
   );
 }
@@ -427,10 +470,10 @@ function StudentDashboard({ user }) {
                       {post.course?.code || post.courseId}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {post.description || `${post.hoursPerWeek}h per week`}
+                      {post.description || `${post.hoursPerWeek ?? post.hoursNeeded}h per week`}
                     </p>
                   </div>
-                  <Badge tone="info">{formatHours(post.hoursPerWeek)}</Badge>
+                  <Badge tone="info">{formatHours(post.hoursPerWeek ?? post.hoursNeeded)}</Badge>
                 </div>
               ))}
             </div>
