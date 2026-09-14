@@ -52,10 +52,16 @@ export function AllocationProvider({ children }) {
     loading: coursesLoading,
     error: coursesError,
   } = useApi(coursesApi.getCourses);
-  const { data: tutors, loading: tutorsLoading } = useApi(tutorsApi.getTutors);
+  const {
+    data: tutors,
+    loading: tutorsLoading,
+    error: tutorsError,
+    setData: setTutors,
+  } = useApi(tutorsApi.getTutors);
   const {
     data: allocations,
     loading: allocLoading,
+    error: allocationsError,
     refetch: refetchAllocations,
   } = useApi(allocationsApi.getAllocations);
 
@@ -78,6 +84,7 @@ export function AllocationProvider({ children }) {
   const allocatedHoursMap = useMemo(() => {
     const map = {};
     allocationList.forEach((a) => {
+      if (a.status !== 'ACTIVE') return;
       map[a.userId] = (map[a.userId] || 0) + Number(a.hoursPerWeek || 0);
     });
     return map;
@@ -86,6 +93,7 @@ export function AllocationProvider({ children }) {
   const allocationCountMap = useMemo(() => {
     const map = {};
     allocationList.forEach((a) => {
+      if (a.status !== 'ACTIVE') return;
       map[a.userId] = (map[a.userId] || 0) + 1;
     });
     return map;
@@ -112,15 +120,39 @@ export function AllocationProvider({ children }) {
 
   const unfilledCount = useMemo(
     () =>
-      courseList.filter((c) => (courseAllocMap[c.id]?.length ?? 0) < (c.requiredTutors ?? 1))
-        .length,
+      courseList.filter(
+        (c) =>
+          (courseAllocMap[c.id]?.filter((a) => a.status === 'ACTIVE').length ?? 0) <
+          (c.requiredTutors ?? 1)
+      ).length,
     [courseList, courseAllocMap]
   );
 
   // ── Existing mutations (shared by DnD, modal and table) ──────────────
   const refetchAll = useCallback(() => {
-    refetchAllocations();
+    refetchAllocations().catch(() => {});
   }, [refetchAllocations]);
+
+  const updateTutorMark = useCallback(
+    (tutorId, mark) => {
+      setTutors((previous) => {
+        const list = previous?.data ?? previous ?? [];
+        const updated = list.map((tutor) =>
+          tutor.id === tutorId
+            ? {
+                ...tutor,
+                tutorMarks: [
+                  ...(tutor.tutorMarks ?? []).filter((item) => item.courseId !== mark.courseId),
+                  mark,
+                ],
+              }
+            : tutor
+        );
+        return Array.isArray(previous) ? updated : { ...previous, data: updated };
+      });
+    },
+    [setTutors]
+  );
 
   /** Last mutation failure (lock/unlock/remove), surfaced as a board banner. */
   const [mutationError, setMutationError] = useState(null);
@@ -138,7 +170,7 @@ export function AllocationProvider({ children }) {
         await allocationsApi.updateAllocation(allocation.id, {
           isLocked: !allocation.isLocked,
         });
-        refetchAllocations();
+        await refetchAllocations();
       } catch (err) {
         setMutationError(extractApiError(err, 'Could not update the allocation.'));
       }
@@ -151,7 +183,7 @@ export function AllocationProvider({ children }) {
       try {
         setMutationError(null);
         await allocationsApi.deleteAllocation(allocation.id);
-        refetchAllocations();
+        await refetchAllocations();
       } catch (err) {
         setMutationError(extractApiError(err, 'Could not remove the allocation.'));
       }
@@ -206,6 +238,7 @@ export function AllocationProvider({ children }) {
     }
 
     let cancelled = false;
+    setHoverValidation(null);
     const timer = setTimeout(() => {
       allocationsApi
         .validateAllocation({
@@ -255,7 +288,8 @@ export function AllocationProvider({ children }) {
       tutorList,
       allocationList,
       loading,
-      coursesError,
+      coursesError: coursesError || tutorsError || allocationsError,
+      updateTutorMark,
       // Derived
       allocatedHoursMap,
       allocationCountMap,
@@ -289,6 +323,9 @@ export function AllocationProvider({ children }) {
       allocationList,
       loading,
       coursesError,
+      tutorsError,
+      allocationsError,
+      updateTutorMark,
       allocatedHoursMap,
       allocationCountMap,
       courseAllocMap,
