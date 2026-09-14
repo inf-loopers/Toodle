@@ -209,7 +209,10 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                       {loggingOut ? 'Signing out...' : 'Sign out'}
                     </button>
                     {logoutError && (
-                      <p role="alert" className="px-3 py-2 text-sm text-rose-600 dark:text-rose-400">
+                      <p
+                        role="alert"
+                        className="px-3 py-2 text-sm text-rose-600 dark:text-rose-400"
+                      >
                         {logoutError}
                       </p>
                     )}
@@ -220,7 +223,6 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
           )}
         </div>
       </header>
-
     </>
   );
 }
