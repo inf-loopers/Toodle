@@ -26,8 +26,8 @@ import { useAuth } from '../hooks/useAuth';
 import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
-import { ROLES, ROLE_LABELS } from '../utils/constants';
-import { getInitials } from '../utils/helpers';
+import { DAYS_OF_WEEK, ROLES, ROLE_LABELS } from '../utils/constants';
+import { formatDay, getInitials } from '../utils/helpers';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -35,8 +35,6 @@ import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
-
-const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 
 export function ProfilePage() {
   const { user, role } = useAuth();
@@ -63,14 +61,13 @@ export function ProfilePage() {
   const profile = currentUser?.data ?? currentUser;
 
   const roleKey = role?.toUpperCase();
-
   const isTutor = roleKey === ROLES.TUTOR;
 
   const displayName = profile?.name || user?.name || 'User';
   const displayEmail = profile?.email || user?.email || '—';
 
   const displayRole =
-    roleKey === 'ORGANISER' ? 'Course Organiser' : ROLE_LABELS?.[roleKey] || roleKey || '—';
+    roleKey === ROLES.ORGANISER ? 'Course Organiser' : ROLE_LABELS?.[roleKey] || roleKey || '—';
 
   useEffect(() => {
     if (profile?.maxHoursPerWeek != null) {
@@ -215,7 +212,7 @@ export function ProfilePage() {
                 className="h-24 w-24 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-subtle text-2xl font-bold text-primary dark:bg-slate-800 dark:text-sky-200">
                 {getInitials(displayName)}
               </div>
             )}
@@ -354,9 +351,9 @@ export function ProfilePage() {
                     value={slot.dayOfWeek}
                     onChange={(event) => updateSlot(index, 'dayOfWeek', event.target.value)}
                   >
-                    {DAYS.map((day) => (
+                    {DAYS_OF_WEEK.map((day) => (
                       <option key={day} value={day}>
-                        {day.charAt(0) + day.slice(1).toLowerCase()}
+                        {formatDay(day)}
                       </option>
                     ))}
                   </Select>

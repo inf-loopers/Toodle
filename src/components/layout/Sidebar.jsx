@@ -11,6 +11,7 @@
  * - Provides access to the problem reporting flow.
  *
  * Props:
+ * - pendingSwaps: Number of pending swap requests.
  * - isOpen: Boolean indicating whether mobile drawer is open.
  * - isCollapsed: Boolean indicating whether desktop sidebar is collapsed.
  * - onClose: Callback to close mobile drawer.
@@ -27,6 +28,7 @@ import {
   BarChart3,
   BookOpen,
   Bug,
+  CalendarX,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -53,6 +55,7 @@ const ICONS = {
   Users,
   BookOpen,
   Clock,
+  CalendarX,
   ArrowLeftRight,
   HandHeart,
   BarChart3,

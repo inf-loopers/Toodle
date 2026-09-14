@@ -5,9 +5,16 @@
  * Responsibilities:
  * - Displays the current page title and Toodle branding on mobile.
  * - Mobile hamburger toggle button to open/close the responsive Sidebar.
+ * - Displays the notification bell and notification dropdown.
  * - Authenticated user section with profile dropdown.
  * - Provides quick access to My Profile.
  * - Confirms before signing the user out.
+ * - Supports light and dark mode styling.
+ *
+ * Props:
+ * - title: Current page title string from PageLayout.
+ * - isSidebarOpen: Boolean indicating mobile sidebar drawer state.
+ * - onToggleSidebar: Function callback to toggle mobile sidebar drawer.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -17,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getInitials, getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, role, logout } = useAuth();
@@ -28,7 +36,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
 
   const menuRef = useRef(null);
 
-  // Close dropdown when clicking outside
+  // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -43,7 +51,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
     };
   }, []);
 
-  // Close dropdown with Escape
+  // Close menus with Escape
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
@@ -107,6 +115,10 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
 
         {/* Right section */}
         <div className="flex items-center gap-3">
+          {/* Notifications */}
+          {user && <NotificationBell />}
+
+          {/* User profile */}
           {user && (
             <div className="relative" ref={menuRef}>
               {/* Profile trigger */}
@@ -142,7 +154,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
                 />
               </button>
 
-              {/* Dropdown */}
+              {/* Profile dropdown */}
               {menuOpen && (
                 <div
                   className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"

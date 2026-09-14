@@ -119,6 +119,7 @@ export const NAV_SECTIONS = {
       heading: 'Workflow',
       items: [
         { name: 'Timesheets', path: '/timesheets', icon: 'Clock' },
+        { name: 'Excusals', path: '/excusals', icon: 'CalendarX' },
         { name: 'Swaps', path: '/swaps', icon: 'ArrowLeftRight' },
         { name: 'Volunteers', path: '/volunteers', icon: 'HandHeart' },
       ],
@@ -126,6 +127,10 @@ export const NAV_SECTIONS = {
     {
       heading: 'Admin',
       items: [{ name: 'Reports', path: '/reports', icon: 'BarChart3' }],
+    },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
     },
   ],
   [ROLES.TUTOR]: [
@@ -138,9 +143,14 @@ export const NAV_SECTIONS = {
       items: [
         { name: 'My Courses', path: '/courses', icon: 'BookOpen' },
         { name: 'Timesheets', path: '/timesheets', icon: 'Clock' },
+        { name: 'Excusals', path: '/excusals', icon: 'CalendarX' },
         { name: 'Swaps', path: '/swaps', icon: 'ArrowLeftRight' },
         { name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' },
       ],
+    },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
     },
   ],
   [ROLES.STUDENT]: [
@@ -150,7 +160,14 @@ export const NAV_SECTIONS = {
     },
     {
       heading: 'Opportunities',
-      items: [{ name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' }],
+      items: [
+        { name: 'Courses', path: '/courses', icon: 'BookOpen' },
+        { name: 'Volunteer', path: '/volunteers', icon: 'HandHeart' },
+      ],
+    },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
     },
   ],
 };

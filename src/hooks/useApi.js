@@ -52,23 +52,16 @@ export function useApi(apiFn, { immediate = true, initialData = null, params = [
         }
         return result;
       } catch (err) {
-        // Treat 404 (endpoint not yet implemented) as empty data rather than an error
-        const status = err?.response?.status;
         if (isMountedRef.current) {
-          if (status === 404) {
-            setData([]);
-          } else {
-            setError(
-              err?.response?.data?.message ||
-                err?.response?.data?.error ||
-                err?.message ||
-                'An unexpected error occurred'
-            );
-          }
+          setError(
+            err?.response?.data?.message ||
+              err?.response?.data?.error ||
+              err?.message ||
+              'An unexpected error occurred'
+          );
           setLoading(false);
         }
-        if (status !== 404) throw err;
-        return [];
+        throw err;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,7 +70,7 @@ export function useApi(apiFn, { immediate = true, initialData = null, params = [
 
   useEffect(() => {
     if (immediate) {
-      execute();
+      execute().catch(() => {}); // Error is rendered by the caller through hook state.
     }
   }, [execute, immediate]);
 

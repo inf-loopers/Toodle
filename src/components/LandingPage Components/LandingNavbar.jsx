@@ -1,7 +1,7 @@
 import React from 'react';
 import { GraduationCap } from 'lucide-react';
 
-export default function Navbar() {
+export default function LandingNavbar() {
   return (
     <header className="w-full bg-white border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between">

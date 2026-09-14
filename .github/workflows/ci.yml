@@ -50,8 +50,22 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Vitest Suite
-        run: npm test
+      - name: Run Vitest Suite with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        env:
+          # The repo remote is a Gitea server (sdp.ms.wits.ac.za), which the
+          # Codecov CLI cannot auto-detect. Without this it aborts with
+          # "Upload service is missing".
+          CODECOV_GIT_SERVICE: github
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
 
   build:
     name: Production Build Verification

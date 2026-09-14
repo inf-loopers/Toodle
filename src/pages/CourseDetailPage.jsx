@@ -18,7 +18,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Plus, MapPin, Wallet } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
-import { allocationsApi } from '../api/allocations';
+import CourseApplications from '../components/CourseApplications';
 import { useAuth } from '../hooks/useAuth';
 import { formatDay, formatTime, getInitials, formatHours } from '../utils/helpers';
 import { SESSION_TYPES, DAYS_OF_WEEK } from '../utils/constants';
@@ -39,14 +39,18 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
     sessionType: 'TUTORIAL',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setError('');
     try {
       await coursesApi.createCourseSession(courseId, form);
-      onCreated();
+      await onCreated();
       onClose();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message);
     } finally {
       setSubmitting(false);
     }
@@ -69,6 +73,11 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
       }
     >
       <div className="space-y-4">
+        {error && (
+          <p role="alert" className="text-rose-700">
+            {error}
+          </p>
+        )}
         <Select label="Day" value={form.dayOfWeek} onChange={update('dayOfWeek')}>
           {DAYS_OF_WEEK.map((d) => (
             <option key={d} value={d}>
@@ -106,12 +115,9 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
 export function CourseDetailPage() {
   const { id } = useParams();
   const { isOrganiser } = useAuth();
-  const { data: course, loading, error } = useApi(coursesApi.getCourse, { params: [id] });
+  const { data: course, loading, error, refetch } = useApi(coursesApi.getCourse, { params: [id] });
   const { data: sessions, refetch: refetchSessions } = useApi(coursesApi.getCourseSessions, {
     params: [id],
-  });
-  const { data: allocations } = useApi(allocationsApi.getAllocations, {
-    params: [{ courseId: id }],
   });
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
 
@@ -120,7 +126,7 @@ export function CourseDetailPage() {
 
   const courseData = course?.data ?? course;
   const sessionList = sessions?.data ?? sessions ?? [];
-  const allocationList = allocations?.data ?? allocations ?? [];
+  const allocationList = (courseData?.allocations ?? []).filter((item) => item.status === 'ACTIVE');
   const budget = courseData?.budget;
 
   return (
@@ -157,7 +163,8 @@ export function CourseDetailPage() {
         <Card>
           <p className="text-sm font-medium text-slate-500">Tutors needed</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {allocationList.length} / {courseData?.requiredTutors ?? 1}
+            {isOrganiser ? `${allocationList.length} / ` : ''}
+            {courseData?.requiredTutors ?? 1}
           </p>
         </Card>
         <Card>
@@ -183,6 +190,7 @@ export function CourseDetailPage() {
         </Card>
       </div>
 
+      {courseData && <CourseApplications key={id} course={courseData} onUpdated={refetch} />}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card padded={false}>
           <div className="p-5">
@@ -256,7 +264,7 @@ export function CourseDetailPage() {
           open={sessionModalOpen}
           onClose={() => setSessionModalOpen(false)}
           courseId={id}
-          onCreated={refetchSessions}
+          onCreated={() => Promise.all([refetchSessions(), refetch()])}
         />
       )}
     </>
