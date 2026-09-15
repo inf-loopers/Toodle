@@ -38,12 +38,18 @@ const application = {
     warnings: [{ type: 'MARK_NOT_VERIFIED', message: 'Mark needs verification' }],
   },
 };
-const show = () =>
-  render(
-    <MemoryRouter>
-      <CourseApplications course={course} onUpdated={vi.fn().mockResolvedValue()} />
-    </MemoryRouter>
-  );
+const show = (props = {}) => {
+  const onUpdated = props.onUpdated ?? vi.fn().mockResolvedValue();
+  const c = props.course ?? course;
+  return {
+    ...render(
+      <MemoryRouter>
+        <CourseApplications course={c} onUpdated={onUpdated} />
+      </MemoryRouter>
+    ),
+    onUpdated,
+  };
+};
 beforeEach(() => {
   vi.resetAllMocks();
   useAuth.mockReturnValue({ isOrganiser: false });
@@ -128,5 +134,31 @@ describe('Course application workflow', () => {
     show();
     await user.click(await screen.findByRole('button', { name: 'Withdraw application' }));
     await waitFor(() => expect(coursesApi.withdrawApplication).toHaveBeenCalledWith('c1', 'a1'));
+  });
+  it('allows an organiser to open applications when currently closed', async () => {
+    useAuth.mockReturnValue({ isOrganiser: true });
+    coursesApi.updateCourse.mockResolvedValue({ data: { ...course, applicationsOpen: true } });
+    const onUpdated = vi.fn().mockResolvedValue();
+    const user = userEvent.setup();
+    show({ course: { ...course, applicationsOpen: false }, onUpdated });
+
+    await user.click(screen.getByRole('button', { name: 'Open applications' }));
+    await waitFor(() => {
+      expect(coursesApi.updateCourse).toHaveBeenCalledWith('c1', { applicationsOpen: true });
+      expect(onUpdated).toHaveBeenCalled();
+    });
+  });
+  it('allows an organiser to close applications when currently open', async () => {
+    useAuth.mockReturnValue({ isOrganiser: true });
+    coursesApi.updateCourse.mockResolvedValue({ data: { ...course, applicationsOpen: false } });
+    const onUpdated = vi.fn().mockResolvedValue();
+    const user = userEvent.setup();
+    show({ course: { ...course, applicationsOpen: true }, onUpdated });
+
+    await user.click(screen.getByRole('button', { name: 'Close applications' }));
+    await waitFor(() => {
+      expect(coursesApi.updateCourse).toHaveBeenCalledWith('c1', { applicationsOpen: false });
+      expect(onUpdated).toHaveBeenCalled();
+    });
   });
 });
