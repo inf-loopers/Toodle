@@ -470,10 +470,10 @@ function StudentDashboard({ user }) {
                       {post.course?.code || post.courseId}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {post.description || `${post.hoursPerWeek}h per week`}
+                      {post.description || `${post.hoursPerWeek ?? post.hoursNeeded}h per week`}
                     </p>
                   </div>
-                  <Badge tone="info">{formatHours(post.hoursPerWeek)}</Badge>
+                  <Badge tone="info">{formatHours(post.hoursPerWeek ?? post.hoursNeeded)}</Badge>
                 </div>
               ))}
             </div>
