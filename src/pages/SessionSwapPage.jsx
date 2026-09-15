@@ -29,19 +29,32 @@ import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 function swapErrorMessage(err) {
   const body = err?.response?.data;
   const details = body?.details;
-  const warnings =
-    details && !Array.isArray(details)
-      ? Object.values(details)
-          .flat()
-          .map((warning) => warning.message)
-          .join(' ')
-      : '';
+  const warnings = details
+    ? (Array.isArray(details)
+        ? details
+        : Object.entries(details).flatMap(([side, entries]) =>
+            (Array.isArray(entries) ? entries : []).map((warning) => ({
+              ...warning,
+              message: `${side === 'requester' ? 'Requesting tutor' : 'Other tutor'}: ${warning.message}`,
+            }))
+          )
+      )
+        .map((warning) => warning.message)
+        .join(' ')
+    : '';
   return [body?.error || body?.message || err.message || 'Could not update the swap.', warnings]
     .filter(Boolean)
     .join(' ');
 }
 
-function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequested }) {
+function RequestSwapModal({
+  open,
+  onClose,
+  myAllocations,
+  allAllocations,
+  onRequested,
+  onRefreshOptions,
+}) {
   const [originId, setOriginId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [reason, setReason] = useState('');
@@ -56,7 +69,12 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
   );
 
   const handleSubmit = async () => {
-    if (!originId || !targetId) return;
+    if (
+      submitting ||
+      !myAllocations.some((a) => a.id === originId) ||
+      !targetOptions.some((a) => a.id === targetId)
+    )
+      return;
     setSubmitting(true);
     setError('');
     try {
@@ -67,10 +85,24 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
         requesteeId: target?.userId,
         reason,
       });
-      await onRequested();
       onClose();
+      await onRequested();
     } catch (err) {
       setError(swapErrorMessage(err));
+      if ([404, 409].includes(err?.response?.status)) {
+        setOriginId('');
+        setTargetId('');
+        try {
+          await onRefreshOptions();
+          setError(
+            `${swapErrorMessage(err)} Choices refreshed; please select your allocations again.`
+          );
+        } catch {
+          setError(
+            `${swapErrorMessage(err)} Could not refresh choices. Close this form and try again.`
+          );
+        }
+      }
     } finally {
       setSubmitting(false);
     }
@@ -79,12 +111,12 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={submitting ? undefined : onClose}
       title="Request a swap"
-      description="Trade one of your sessions with another tutor's."
+      description="Exchange entire course allocations, including all their sessions and weekly hours. The other tutor must accept, then an organiser must approve."
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} loading={submitting} disabled={!originId || !targetId}>
@@ -95,7 +127,7 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
     >
       <div className="space-y-4">
         <Select
-          label="One of your sessions"
+          label="Your course allocation"
           value={originId}
           onChange={(e) => {
             setOriginId(e.target.value);
@@ -119,10 +151,21 @@ function RequestSwapModal({ open, onClose, myAllocations, allAllocations, onRequ
         </Select>
         <Textarea
           label="Reason (optional)"
+          maxLength={500}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
-        {error && <p className="text-xs text-rose-600">{error}</p>}
+        {myAllocations.length === 0 && (
+          <p>You need an active course allocation to request a swap.</p>
+        )}
+        {originId && targetOptions.length === 0 && (
+          <p>No other course allocations are available to swap.</p>
+        )}
+        {error && (
+          <p role="alert" className="text-xs text-rose-600">
+            {error}
+          </p>
+        )}
       </div>
     </Modal>
   );
@@ -141,12 +184,28 @@ export function SessionSwapPage() {
   const [requestOpen, setRequestOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [opening, setOpening] = useState(false);
+
+  const openRequest = async () => {
+    if (opening) return;
+    setOpening(true);
+    setActionError('');
+    try {
+      await refetchOptions();
+      setRequestOpen(true);
+    } catch (err) {
+      setActionError(swapErrorMessage(err));
+    } finally {
+      setOpening(false);
+    }
+  };
 
   const swaps = data?.data ?? data ?? [];
   const allocations = allocData?.data ?? allocData ?? [];
   const myAllocations = allocations.filter((a) => a.userId === user?.id && a.status === 'ACTIVE');
 
   const act = async (fn, id) => {
+    if (busyId) return;
     setBusyId(id);
     setActionError('');
     try {
@@ -160,8 +219,8 @@ export function SessionSwapPage() {
     }
   };
 
-  if (loading) return <Spinner fullPage label="Loading swap requests…" />;
-  if (error) return <ErrorState title="Couldn't load swaps" description={error} />;
+  if (loading && !data) return <Spinner fullPage label="Loading swap requests…" />;
+  if (error && !data) return <ErrorState title="Couldn't load swaps" description={error} />;
 
   return (
     <>
@@ -171,19 +230,19 @@ export function SessionSwapPage() {
           <p className="mt-2 text-sm text-slate-500">
             {isOrganiser
               ? 'Requests are checked against the same constraints before you approve.'
-              : 'Trade a session with another tutor.'}
+              : 'Exchange course allocations with another tutor, subject to organiser approval.'}
           </p>
         </div>
         {isTutor && (
-          <Button onClick={() => setRequestOpen(true)}>
+          <Button onClick={openRequest} loading={opening}>
             <Plus className="h-4 w-4" /> Request swap
           </Button>
         )}
       </div>
 
-      {(actionError || optionsError) && (
+      {(actionError || optionsError || error) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
-          {actionError || optionsError}
+          {actionError || optionsError || error}
         </p>
       )}
 
@@ -229,11 +288,44 @@ export function SessionSwapPage() {
                         </p>
                       ))
                     )}
+                    {swap.rejectionReason && (
+                      <p className="mt-1 text-xs text-rose-600">
+                        Rejection reason: {swap.rejectionReason}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Badge tone={SWAP_STATUS_TONE[swap.status] || 'neutral'}>{swap.status}</Badge>
+                  {swap.status === 'PENDING' && (
+                    <span className="text-xs text-slate-500">
+                      {swap.requesteeAcceptedAt
+                        ? 'Tutor accepted · awaiting organiser'
+                        : 'Awaiting other tutor’s acceptance'}
+                    </span>
+                  )}
+                  {isTutor && swap.status === 'PENDING' && swap.requesteeId === user?.id && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={Boolean(busyId)}
+                        onClick={() => act(swapsApi.declineSwap, swap.id)}
+                      >
+                        Decline
+                      </Button>
+                      {!swap.requesteeAcceptedAt && (
+                        <Button
+                          size="sm"
+                          disabled={Boolean(busyId)}
+                          onClick={() => act(swapsApi.acceptSwap, swap.id)}
+                        >
+                          Accept swap
+                        </Button>
+                      )}
+                    </>
+                  )}
 
                   {isOrganiser && swap.status === 'PENDING' && (
                     <>
@@ -242,6 +334,7 @@ export function SessionSwapPage() {
                         variant="secondary"
                         onClick={() => act(swapsApi.rejectSwap, swap.id)}
                         loading={busyId === swap.id}
+                        disabled={Boolean(busyId)}
                       >
                         <X className="h-3.5 w-3.5" /> Reject
                       </Button>
@@ -249,6 +342,7 @@ export function SessionSwapPage() {
                         size="sm"
                         onClick={() => act(swapsApi.approveSwap, swap.id)}
                         loading={busyId === swap.id}
+                        disabled={Boolean(busyId) || !swap.requesteeAcceptedAt}
                       >
                         <Check className="h-3.5 w-3.5" /> Approve
                       </Button>
@@ -261,6 +355,7 @@ export function SessionSwapPage() {
                       variant="ghost"
                       onClick={() => act(swapsApi.cancelSwap, swap.id)}
                       loading={busyId === swap.id}
+                      disabled={Boolean(busyId)}
                     >
                       <Ban className="h-3.5 w-3.5" /> Cancel
                     </Button>
@@ -272,13 +367,14 @@ export function SessionSwapPage() {
         </Card>
       )}
 
-      {isTutor && (
+      {isTutor && requestOpen && (
         <RequestSwapModal
           open={requestOpen}
           onClose={() => setRequestOpen(false)}
           myAllocations={myAllocations}
           allAllocations={allocations}
           onRequested={refetch}
+          onRefreshOptions={refetchOptions}
         />
       )}
     </>
