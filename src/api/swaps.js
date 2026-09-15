@@ -1,6 +1,8 @@
 import apiClient from './client';
 
 export const swapsApi = {
+  acceptSwap: async (id) => (await apiClient.post(`/swaps/${id}/accept`)).data,
+  declineSwap: async (id) => (await apiClient.post(`/swaps/${id}/decline`)).data,
   getOptions: async () => {
     const response = await apiClient.get('/swaps/options');
     return response.data;

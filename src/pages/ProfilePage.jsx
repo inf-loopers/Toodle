@@ -356,7 +356,7 @@ export function ProfilePage() {
           <Card>
             <CardHeader
               title="Availability"
-              description="When you're already busy — used to catch timetable clashes."
+              description="When you're free to tutor. Add and save time slots covering all sessions you can attend."
               action={
                 <Button variant="secondary" size="sm" onClick={addSlot}>
                   <Plus className="h-3.5 w-3.5" />
