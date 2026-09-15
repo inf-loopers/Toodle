@@ -34,6 +34,7 @@ function CreateCourseModal({ open, onClose, onCreated }) {
     semester: 1,
     requiredTutors: 1,
     minMarkRequired: 50,
+    budget: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -48,13 +49,19 @@ function CreateCourseModal({ open, onClose, onCreated }) {
     setSubmitting(true);
     setError('');
     try {
-      await coursesApi.createCourse({
+      const payload = {
         ...form,
         year: Number(form.year),
         semester: Number(form.semester),
         requiredTutors: Number(form.requiredTutors),
         minMarkRequired: Number(form.minMarkRequired),
-      });
+      };
+      if (form.budget !== '' && form.budget !== null && form.budget !== undefined) {
+        payload.budget = Number(form.budget);
+      } else {
+        delete payload.budget;
+      }
+      await coursesApi.createCourse(payload);
       onCreated();
       onClose();
     } catch (err) {
@@ -128,6 +135,15 @@ function CreateCourseModal({ open, onClose, onCreated }) {
             onChange={update('minMarkRequired')}
           />
         </div>
+        <Input
+          label="Budget (R)"
+          type="number"
+          min={0}
+          step="any"
+          placeholder="Optional total budget, e.g. 50000"
+          value={form.budget}
+          onChange={update('budget')}
+        />
         {error && <p className="text-xs text-rose-600">{error}</p>}
       </div>
     </Modal>
