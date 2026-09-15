@@ -133,6 +133,32 @@ export function AllocationProvider({ children }) {
     refetchAllocations().catch(() => {});
   }, [refetchAllocations]);
 
+  // Reload when returning from another tab and periodically while visible,
+  // so approvals made by another organiser appear without a page reload.
+  useEffect(() => {
+    if (activeTutor || assignTarget) return;
+    let refreshing = false;
+    const refresh = async () => {
+      if (document.visibilityState === 'hidden' || refreshing) return;
+      refreshing = true;
+      try {
+        await refetchAllocations();
+      } catch {
+        /* Hook exposes the error. */
+      } finally {
+        refreshing = false;
+      }
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+      window.clearInterval(timer);
+    };
+  }, [refetchAllocations, activeTutor, assignTarget]);
+
   const updateTutorMark = useCallback(
     (tutorId, mark) => {
       setTutors((previous) => {
