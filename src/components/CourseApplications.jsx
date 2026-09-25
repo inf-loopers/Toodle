@@ -107,13 +107,16 @@ function ApplicationReview({ application, course, run, busy }) {
 }
 
 export default function CourseApplications({ course, onUpdated }) {
-  const { isOrganiser } = useAuth();
+  const { dbUser, isAdmin } = useAuth();
   const navigate = useNavigate();
+  // Admins review every course; lecturers only the ones they coordinate.
+  const canReview =
+    isAdmin || (course.coordinators ?? []).some((c) => (c.userId ?? c.user?.id) === dbUser?.id);
   const { data, loading, error, refetch } = useApi(coursesApi.getApplications, {
     params: [course.id],
   });
   const { data: profile, refetch: refetchProfile } = useApi(usersApi.getCurrentUser, {
-    immediate: !isOrganiser,
+    immediate: !canReview,
   });
   const [hours, setHours] = useState(2);
   const [mark, setMark] = useState('');
@@ -133,7 +136,7 @@ export default function CourseApplications({ course, onUpdated }) {
     setNotice('');
     try {
       await action();
-      await Promise.all([refetch(), onUpdated(), ...(!isOrganiser ? [refetchProfile()] : [])]);
+      await Promise.all([refetch(), onUpdated(), ...(!canReview ? [refetchProfile()] : [])]);
       setNotice('Saved. The latest application checks are shown below.');
     } catch (err) {
       setActionError(message(err));
@@ -158,7 +161,7 @@ export default function CourseApplications({ course, onUpdated }) {
     <Card className="mb-6 space-y-4 text-sm">
       <h2 className="text-xl font-bold">Tutor applications</h2>
       <p>Applications are {course.applicationsOpen ? 'open' : 'closed'}.</p>
-      {isOrganiser ? (
+      {canReview ? (
         <>
           <p>
             Add sessions, open applications, verify applicants' marks against school records, then
@@ -175,9 +178,11 @@ export default function CourseApplications({ course, onUpdated }) {
             >
               {course.applicationsOpen ? 'Close applications' : 'Open applications'}
             </Button>
-            <Button variant="secondary" disabled={busy} onClick={() => setConfirmDelete(true)}>
-              Remove course
-            </Button>
+            {isAdmin && (
+              <Button variant="secondary" disabled={busy} onClick={() => setConfirmDelete(true)}>
+                Remove course
+              </Button>
+            )}
           </div>
           {confirmDelete && (
             <div className="space-y-3 rounded-xl border border-rose-200 p-4">
@@ -200,7 +205,8 @@ export default function CourseApplications({ course, onUpdated }) {
             <Link className="text-primary underline" to="/profile">
               Set your free time and weekly hours in your profile
             </Link>
-            , submit your course mark, then apply. An organiser checks your mark before approving.
+            , submit your course mark, then apply. A course coordinator checks your mark before
+            approving.
           </p>
           {ownMark && (
             <p>
@@ -281,7 +287,7 @@ export default function CourseApplications({ course, onUpdated }) {
       </Button>
       {!loading && !error && applications.length === 0 && <p>No applications yet.</p>}
       {applications.map((application) =>
-        isOrganiser ? (
+        canReview ? (
           <ApplicationReview
             key={application.id}
             application={application}
@@ -294,7 +300,7 @@ export default function CourseApplications({ course, onUpdated }) {
             <p>
               Your application: {application.status} — {application.hoursPerWeek}h / week
             </p>
-            {application.reason && <p>Organiser's reason: {application.reason}</p>}
+            {application.reason && <p>Coordinator's reason: {application.reason}</p>}
             {application.eligibility && (
               <p>{application.eligibility.remainingHours}h remaining before this assignment.</p>
             )}
@@ -317,7 +323,7 @@ export default function CourseApplications({ course, onUpdated }) {
               </p>
             )}
             {['REJECTED', 'WITHDRAWN'].includes(application.status) && (
-              <p>Reapplication is not supported yet. Contact your organiser.</p>
+              <p>Reapplication is not supported yet. Contact your course coordinator.</p>
             )}
           </article>
         )

@@ -7,7 +7,7 @@ export const overflowApi = {
     return response.data;
   },
 
-  // POST /overflow-posts (organiser posts overflow work for a course)
+  // POST /overflow-posts (staff posts overflow work for a course)
   createPost: async (data) => {
     const response = await apiClient.post('/overflow-posts', data);
     return response.data;
@@ -19,7 +19,7 @@ export const overflowApi = {
     return response.data;
   },
 
-  // POST /overflow-claims/:id/approve (organiser approves a claim)
+  // POST /overflow-claims/:id/approve (staff approves a claim)
   approveClaim: async (claimId) => {
     const response = await apiClient.post(`/overflow-claims/${claimId}/approve`);
     return response.data;

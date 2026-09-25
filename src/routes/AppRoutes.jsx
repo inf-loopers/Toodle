@@ -6,9 +6,10 @@
  * - Defines public routes (e.g. `/login`).
  * - Defines protected route hierarchy wrapped in `<ProtectedRoute>` and `<PageLayout>`.
  * - Implements role-based access rules via `<RoleGate>`:
- *   - `/allocation-board` (Organiser)
- *   - `/tutors` (Organiser)
- *   - `/profile` (Tutor, Organiser)
+ *   - `/allocation-board` (Admin, Lecturer)
+ *   - `/tutors` (Admin, Lecturer)
+ *   - `/profile` (All authenticated roles)
+ *   - `/reports` (Admin)
  *   - `/courses`, `/courses/:id`, `/dashboard` (All authenticated roles)
  * - Defines 404 catch-all route (`*`).
  *
@@ -56,15 +57,21 @@ export default function AppRoutes() {
           <Route path="/volunteers" element={<VolunteersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
 
-          {/* Tutor + Organiser */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.ORGANISER]} />}>
+          {/* Tutor + staff */}
+          <Route
+            element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.ADMIN, ROLES.LECTURER]} />}
+          >
             <Route path="/excusals" element={<ExcusalsPage />} />
           </Route>
 
-          {/* Organiser-only */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.ORGANISER]} />}>
+          {/* Staff (admin + lecturer) */}
+          <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.LECTURER]} />}>
             <Route path="/allocations" element={<AllocationBoardPage />} />
             <Route path="/tutors" element={<TutorsPage />} />
+          </Route>
+
+          {/* Admin-only */}
+          <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
             <Route path="/reports" element={<ReportsPage />} />
           </Route>
         </Route>

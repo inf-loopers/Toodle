@@ -37,7 +37,7 @@ export default function Hero() {
         </h1>
 
         <p className="mt-6 text-lg text-blue-50/90 max-w-2xl leading-relaxed">
-          A unified platform for organisers, tutors, and volunteers to streamline allocations, track
+          A unified platform for lecturers, tutors, and volunteers to streamline allocations, track
           hours, and ensure seamless academic support across the university.
         </p>
 

@@ -134,7 +134,7 @@ export function AllocationProvider({ children }) {
   }, [refetchAllocations]);
 
   // Reload when returning from another tab and periodically while visible,
-  // so approvals made by another organiser appear without a page reload.
+  // so approvals made by another staff member appear without a page reload.
   useEffect(() => {
     if (activeTutor || assignTarget) return;
     let refreshing = false;

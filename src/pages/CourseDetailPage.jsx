@@ -7,17 +7,19 @@
  * - Shows scheduled contact sessions (day, time, venue, tutorial vs. lab).
  * - Lists allocated tutors for this course with their marks and contact details.
  * - Displays prerequisite mark requirements and staffing status.
- * - Allows Organisers to navigate directly to allocation management for this course.
+ * - Allows staff (admins, or lecturers coordinating this course) to manage it.
+ * - Admin-only coordinator assignment via `PUT /courses/:id/coordinators`.
  *
  * Route: `/courses/:id`
  * Endpoint Connections: `GET /courses/:id`, `GET /courses/:id/sessions`
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Plus, MapPin, Wallet, Pencil } from 'lucide-react';
+import { ArrowLeft, Calendar, Plus, MapPin, Wallet, Pencil, Users } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
+import { usersApi } from '../api/users';
 import CourseApplications from '../components/CourseApplications';
 import EditCourseModal from '../components/EditCourseModal';
 import { useAuth } from '../hooks/useAuth';
@@ -113,15 +115,109 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
   );
 }
 
+/**
+ * Admin-only: assign which lecturers coordinate this course.
+ * Loads all LECTURER users and replaces the course's coordinator set.
+ */
+function CoordinatorsModal({ open, onClose, course, onUpdated }) {
+  const { data: usersData, loading } = useApi(usersApi.getUsers, {
+    params: [{ role: 'lecturer' }],
+    immediate: open,
+  });
+  const [selected, setSelected] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open && course) {
+      setSelected((course.coordinators ?? []).map((c) => c.userId ?? c.user?.id));
+    }
+  }, [open, course]);
+
+  const lecturers = (usersData?.data ?? usersData ?? []).filter((u) => u.role === 'LECTURER');
+
+  const toggle = (id) =>
+    setSelected((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+    );
+
+  const save = async () => {
+    setSubmitting(true);
+    setError('');
+    try {
+      await coursesApi.setCoordinators(course.id, selected);
+      await onUpdated();
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || 'Could not save coordinators.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Course coordinators"
+      description="Select the lecturers who coordinate this course. They can manage its sessions, allocations, applications and reviews."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={save} loading={submitting}>
+            Save
+          </Button>
+        </>
+      }
+    >
+      {loading ? (
+        <Spinner label="Loading lecturers…" />
+      ) : (
+        <div className="space-y-2">
+          {lecturers.length === 0 ? (
+            <p className="text-sm text-slate-400">No lecturer accounts found.</p>
+          ) : (
+            lecturers.map((lecturer) => (
+              <label
+                key={lecturer.id}
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 hover:bg-slate-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.includes(lecturer.id)}
+                  onChange={() => toggle(lecturer.id)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-800">{lecturer.name}</p>
+                  <p className="truncate text-xs text-slate-400">{lecturer.email}</p>
+                </div>
+              </label>
+            ))
+          )}
+          {error && (
+            <p role="alert" className="text-xs text-rose-600">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 export function CourseDetailPage() {
   const { id } = useParams();
-  const { isOrganiser } = useAuth();
+  const { dbUser, isAdmin, isStaff } = useAuth();
   const { data: course, loading, error, refetch } = useApi(coursesApi.getCourse, { params: [id] });
   const { data: sessions, refetch: refetchSessions } = useApi(coursesApi.getCourseSessions, {
     params: [id],
   });
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [coordinatorModalOpen, setCoordinatorModalOpen] = useState(false);
 
   if (loading) return <Spinner fullPage label="Loading course…" />;
   if (error) return <ErrorState title="Couldn't load this course" description={error} />;
@@ -130,6 +226,12 @@ export function CourseDetailPage() {
   const sessionList = sessions?.data ?? sessions ?? [];
   const allocationList = (courseData?.allocations ?? []).filter((item) => item.status === 'ACTIVE');
   const budget = courseData?.budget;
+
+  // Admins manage every course; lecturers only the ones they coordinate.
+  const canManageCourse =
+    isAdmin ||
+    (isStaff &&
+      (courseData?.coordinators ?? []).some((c) => (c.userId ?? c.user?.id) === dbUser?.id));
 
   return (
     <>
@@ -154,7 +256,7 @@ export function CourseDetailPage() {
           )}
         </div>
 
-        {isOrganiser && (
+        {canManageCourse && (
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" onClick={() => setEditModalOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit course
@@ -170,7 +272,7 @@ export function CourseDetailPage() {
         <Card>
           <p className="text-sm font-medium text-slate-500">Tutors needed</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {isOrganiser ? `${allocationList.length} / ` : ''}
+            {canManageCourse ? `${allocationList.length} / ` : ''}
             {courseData?.requiredTutors ?? 1}
           </p>
         </Card>
@@ -197,6 +299,37 @@ export function CourseDetailPage() {
         </Card>
       </div>
 
+      {isStaff && courseData?.coordinators && (
+        <Card className="mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                <Users className="h-3.5 w-3.5" /> Course coordinators
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {courseData.coordinators.length === 0 ? (
+                  <p className="text-sm text-slate-400">No lecturers assigned yet.</p>
+                ) : (
+                  courseData.coordinators.map((c) => (
+                    <span
+                      key={c.userId ?? c.user?.id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700"
+                    >
+                      {c.user?.name || c.userId}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+            {isAdmin && (
+              <Button size="sm" variant="secondary" onClick={() => setCoordinatorModalOpen(true)}>
+                Manage coordinators
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
+
       {courseData && <CourseApplications key={id} course={courseData} onUpdated={refetch} />}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card padded={false}>
@@ -205,7 +338,7 @@ export function CourseDetailPage() {
               title="Sessions"
               description="The term's timetable for this course."
               action={
-                isOrganiser && (
+                canManageCourse && (
                   <Button size="sm" onClick={() => setSessionModalOpen(true)}>
                     <Plus className="h-3.5 w-3.5" /> Add
                   </Button>
@@ -266,7 +399,7 @@ export function CourseDetailPage() {
         </Card>
       </div>
 
-      {isOrganiser && (
+      {canManageCourse && (
         <AddSessionModal
           open={sessionModalOpen}
           onClose={() => setSessionModalOpen(false)}
@@ -274,10 +407,18 @@ export function CourseDetailPage() {
           onCreated={() => Promise.all([refetchSessions(), refetch()])}
         />
       )}
-      {isOrganiser && courseData && (
+      {canManageCourse && courseData && (
         <EditCourseModal
           open={editModalOpen}
           onClose={() => setEditModalOpen(false)}
+          course={courseData}
+          onUpdated={refetch}
+        />
+      )}
+      {isAdmin && courseData && (
+        <CoordinatorsModal
+          open={coordinatorModalOpen}
+          onClose={() => setCoordinatorModalOpen(false)}
           course={courseData}
           onUpdated={refetch}
         />
