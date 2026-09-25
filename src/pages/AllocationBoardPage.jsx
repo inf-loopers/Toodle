@@ -1,6 +1,6 @@
 /**
  * @file AllocationBoardPage.jsx
- * @description Core Sprint 1 Feature — Organiser's Interactive Course Allocation Board.
+ * @description Core Sprint 1 Feature — Staff's Interactive Course Allocation Board.
  *
  * Responsibilities:
  * - Kanban-style board: left panel (draggable tutor pool) + main area (droppable course columns).
@@ -24,7 +24,7 @@
  *   flow (tap tutor card / "+ Assign tutor"), and a KeyboardSensor enables
  *   keyboard-driven dragging on desktop (Space/Enter, arrows, Esc).
  *
- * Role: Organiser Only
+ * Role: Staff Only (Admin, Lecturer)
  * Endpoint Connections: `GET /allocations`, `POST /allocations`, `DELETE /allocations/:id`, `GET /allocations/validate`
  */
 

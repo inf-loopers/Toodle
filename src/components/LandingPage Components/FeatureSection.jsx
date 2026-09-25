@@ -7,7 +7,7 @@ const FEATURES = [
     icon: LayoutGrid,
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-600',
-    title: 'Organisers',
+    title: 'Lecturers & Admins',
     description:
       'Optimise allocations with real-time validation and AI assistance. Manage large cohorts with confidence using our high-density scheduling board.',
   },

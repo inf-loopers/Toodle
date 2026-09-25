@@ -1,6 +1,6 @@
 /**
  * @file EditCourseModal.jsx
- * @description Modal allowing organisers to edit course configurations, requirements, and budget.
+ * @description Modal allowing staff to edit course configurations, requirements, and budget.
  */
 
 import { useState, useEffect } from 'react';

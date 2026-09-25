@@ -37,8 +37,14 @@ const pending = {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  // Match the actual auth hook: Auth0 user has no DB id or isOrganiser flag.
-  useAuth.mockReturnValue({ user: { sub: 'auth0|tutor' }, dbUser: { id: 'tutor' }, role: 'TUTOR' });
+  // Match the actual auth hook shape: Auth0 user plus the DB profile and derived role flags.
+  useAuth.mockReturnValue({
+    user: { sub: 'auth0|tutor' },
+    dbUser: { id: 'tutor' },
+    role: 'TUTOR',
+    isTutor: true,
+    isStaff: false,
+  });
   swapsApi.getSwaps.mockResolvedValue({ data: [pending] });
   swapsApi.getOptions.mockResolvedValue({
     data: [
@@ -70,21 +76,31 @@ beforeEach(() => {
 
 describe('Session swap page integration', () => {
   it('shows the accepted state after the recipient accepts and refreshes', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'target' }, role: 'TUTOR' });
+    useAuth.mockReturnValue({
+      dbUser: { id: 'target' },
+      role: 'TUTOR',
+      isTutor: true,
+      isStaff: false,
+    });
     swapsApi.getSwaps
       .mockResolvedValueOnce({ data: [{ ...pending, requesteeAcceptedAt: null }] })
       .mockResolvedValue({ data: [pending] });
     const user = userEvent.setup();
     render(<SessionSwapPage />);
     await user.click(await screen.findByRole('button', { name: 'Accept swap' }));
-    expect(await screen.findByText('Tutor accepted · awaiting organiser')).toBeInTheDocument();
+    expect(await screen.findByText('Tutor accepted · awaiting coordinator')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept swap' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
   });
   it.each(['Accept swap', 'Decline'])(
     'keeps a failed %s decision actionable and displays its error',
     async (action) => {
-      useAuth.mockReturnValue({ dbUser: { id: 'target' }, role: 'TUTOR' });
+      useAuth.mockReturnValue({
+        dbUser: { id: 'target' },
+        role: 'TUTOR',
+        isTutor: true,
+        isStaff: false,
+      });
       swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: null }] });
       (action === 'Decline' ? swapsApi.declineSwap : swapsApi.acceptSwap).mockRejectedValue(
         new Error('Decision failed')
@@ -98,7 +114,12 @@ describe('Session swap page integration', () => {
     }
   );
   it('removes recipient actions when decline resolves the request', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'target' }, role: 'TUTOR' });
+    useAuth.mockReturnValue({
+      dbUser: { id: 'target' },
+      role: 'TUTOR',
+      isTutor: true,
+      isStaff: false,
+    });
     swapsApi.getSwaps.mockResolvedValueOnce({ data: [pending] }).mockResolvedValue({
       data: [
         { ...pending, status: 'REJECTED', rejectionReason: 'Declined by the requested tutor' },
@@ -112,7 +133,12 @@ describe('Session swap page integration', () => {
     expect(screen.queryByRole('button', { name: 'Accept swap' })).not.toBeInTheDocument();
   });
   it('lets only the recipient accept or decline a new request', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'target' }, role: 'TUTOR' });
+    useAuth.mockReturnValue({
+      dbUser: { id: 'target' },
+      role: 'TUTOR',
+      isTutor: true,
+      isStaff: false,
+    });
     swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: null }] });
     const user = userEvent.setup();
     render(<SessionSwapPage />);
@@ -123,8 +149,13 @@ describe('Session swap page integration', () => {
     expect(swapsApi.declineSwap).toHaveBeenCalledWith('swap');
     expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
   });
-  it('blocks organiser approval until the partner accepts', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'organiser' }, role: 'ORGANISER' });
+  it('blocks staff approval until the partner accepts', async () => {
+    useAuth.mockReturnValue({
+      dbUser: { id: 'admin' },
+      role: 'ADMIN',
+      isTutor: false,
+      isStaff: true,
+    });
     swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: null }] });
     render(<SessionSwapPage />);
     expect(await screen.findByRole('button', { name: 'Approve' })).toBeDisabled();
@@ -191,8 +222,13 @@ describe('Session swap page integration', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  it('shows organiser controls, warnings and approval failures', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'organiser' }, role: 'ORGANISER' });
+  it('shows staff controls, warnings and approval failures', async () => {
+    useAuth.mockReturnValue({
+      dbUser: { id: 'admin' },
+      role: 'ADMIN',
+      isTutor: false,
+      isStaff: true,
+    });
     swapsApi.approveSwap.mockRejectedValue({
       response: {
         data: {
@@ -211,8 +247,13 @@ describe('Session swap page integration', () => {
     expect(swapsApi.getOptions).not.toHaveBeenCalled();
   });
 
-  it('allows organiser rejection and refreshes the result', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'organiser' }, role: 'ORGANISER' });
+  it('allows staff rejection and refreshes the result', async () => {
+    useAuth.mockReturnValue({
+      dbUser: { id: 'admin' },
+      role: 'ADMIN',
+      isTutor: false,
+      isStaff: true,
+    });
     const user = userEvent.setup();
     render(<SessionSwapPage />);
     await user.click(await screen.findByRole('button', { name: 'Reject' }));
@@ -229,7 +270,12 @@ describe('Session swap page integration', () => {
   });
 
   it('does not show cancellation for the target or requests for a student', async () => {
-    useAuth.mockReturnValue({ dbUser: { id: 'target' }, role: 'STUDENT' });
+    useAuth.mockReturnValue({
+      dbUser: { id: 'target' },
+      role: 'STUDENT',
+      isTutor: false,
+      isStaff: false,
+    });
     render(<SessionSwapPage />);
     await screen.findByText('PENDING');
     expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();

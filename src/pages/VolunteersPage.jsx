@@ -3,7 +3,7 @@
  * @description Volunteer overflow work page with role-split views.
  *
  * Responsibilities:
- * - Organiser view: approval queue with claimant details + open posts grid.
+ * - Staff view: approval queue with claimant details + open posts grid.
  * - Student/tutor view: browse open posts and claim work.
  * - Course filter dropdown for both views.
  * - Claim status badges: Pending (amber), Approved (green), Rejected (red).
@@ -110,7 +110,7 @@ function PostWorkModal({ open, onClose, courses, onCreated }) {
 }
 
 export function VolunteersPage() {
-  const { isOrganiser } = useAuth();
+  const { isStaff } = useAuth();
   const { data, loading, error, refetch } = useApi(overflowApi.getPosts);
   const { data: coursesData } = useApi(coursesApi.getCourses, { immediate: true });
   const [postModalOpen, setPostModalOpen] = useState(false);
@@ -125,7 +125,7 @@ export function VolunteersPage() {
     ? posts.filter((p) => String(p.course?.id ?? p.courseId) === String(courseFilter))
     : posts;
 
-  // Organiser: posts with pending claims
+  // Staff: posts with pending claims
   const pendingClaimsPosts = filteredPosts.filter((p) =>
     p.claims?.some((c) => c.status === 'PENDING' || c.status === 'CLAIMED')
   );
@@ -204,12 +204,12 @@ export function VolunteersPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Volunteer Overflow</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser
+            {isStaff
               ? 'Post work nobody is allocated to and approve claims.'
               : 'Claim overflow work nobody has taken yet.'}
           </p>
         </div>
-        {isOrganiser && (
+        {isStaff && (
           <Button onClick={() => setPostModalOpen(true)}>
             <Plus className="h-4 w-4" /> Post work
           </Button>
@@ -219,9 +219,9 @@ export function VolunteersPage() {
       {courseFilterBar}
 
       {/* ══════════════════════════════════════════════════
-          ORGANISER VIEW
+          STAFF VIEW
           ══════════════════════════════════════════════════ */}
-      {isOrganiser && (
+      {isStaff && (
         <>
           {/* ── Approval Queue ── */}
           <section className="mb-10">
@@ -318,7 +318,7 @@ export function VolunteersPage() {
             )}
           </section>
 
-          {/* ── Open Posts (organiser can see but not claim) ── */}
+          {/* ── Open Posts (staff can see but not claim) ── */}
           <section>
             <h2 className="mb-4 text-lg font-semibold text-slate-800">Open Posts</h2>
             {openPosts.length === 0 ? (
@@ -345,7 +345,7 @@ export function VolunteersPage() {
       {/* ══════════════════════════════════════════════════
           STUDENT / TUTOR VIEW
           ══════════════════════════════════════════════════ */}
-      {!isOrganiser && (
+      {!isStaff && (
         <>
           {openPosts.length === 0 ? (
             <EmptyState
@@ -356,7 +356,7 @@ export function VolunteersPage() {
               description={
                 courseFilter
                   ? 'Try clearing the filter or check back soon.'
-                  : 'Check back soon, or ask your organiser to post new work.'
+                  : 'Check back soon, or ask your course coordinator to post new work.'
               }
             />
           ) : (
@@ -379,7 +379,7 @@ export function VolunteersPage() {
         </>
       )}
 
-      {isOrganiser && (
+      {isStaff && (
         <PostWorkModal
           open={postModalOpen}
           onClose={() => setPostModalOpen(false)}

@@ -6,7 +6,7 @@
  * - `GET    /auth/me`        - Retrieve the authenticated user's profile and database role.
  * - `POST   /auth/callback`  - Sync newly authenticated Auth0 user profile into the PostgreSQL database.
  * - `DELETE /auth/me`        - Delete own user account.
- * - `GET    /users`          - List users (Organiser only).
+ * - `GET    /users`          - List users (Admin only).
  * - `GET    /users/:id`      - Retrieve specific user details.
  * - `PATCH  /users/:id`      - Update user capacity or details.
  */
