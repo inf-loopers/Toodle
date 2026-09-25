@@ -5,7 +5,7 @@
  * Endpoints Managed:
  * - `GET /tutors`                   - List all tutors with marks and current hours.
  * - `GET /tutors/:id`               - Retrieve detailed tutor profile.
- * - `POST /tutors/:id/marks`        - Add/update historical course marks (Organiser only).
+ * - `POST /tutors/:id/marks`        - Add/update historical course marks (Staff only).
  * - `PUT /tutors/:id/availability`  - Set weekly availability time slots (Tutor self-service).
  */
 

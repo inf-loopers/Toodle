@@ -5,7 +5,7 @@
  * Responsibilities:
  * - Lets tutors propose trades using their active allocations and partner options.
  * - Displays incoming/outgoing requests and persisted validation warnings.
- * - Lets organisers approve/reject and requesters cancel pending swaps.
+ * - Lets staff approve/reject and requesters cancel pending swaps.
  * - Surfaces constraint failures returned by the API.
  *
  * Route: `/swaps`
@@ -113,7 +113,7 @@ function RequestSwapModal({
       open={open}
       onClose={submitting ? undefined : onClose}
       title="Request a swap"
-      description="Exchange entire course allocations, including all their sessions and weekly hours. The other tutor must accept, then an organiser must approve."
+      description="Exchange entire course allocations, including all their sessions and weekly hours. The other tutor must accept, then a course coordinator must approve."
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={submitting}>
@@ -172,9 +172,7 @@ function RequestSwapModal({
 }
 
 export function SessionSwapPage() {
-  const { dbUser: user, role } = useAuth();
-  const isOrganiser = role?.toUpperCase() === 'ORGANISER';
-  const isTutor = role?.toUpperCase() === 'TUTOR';
+  const { dbUser: user, isStaff, isTutor } = useAuth();
   const { data, loading, error, refetch } = useApi(swapsApi.getSwaps);
   const {
     data: allocData,
@@ -228,9 +226,9 @@ export function SessionSwapPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Session Swaps</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser
+            {isStaff
               ? 'Requests are checked against the same constraints before you approve.'
-              : 'Exchange course allocations with another tutor, subject to organiser approval.'}
+              : 'Exchange course allocations with another tutor, subject to coordinator approval.'}
           </p>
         </div>
         {isTutor && (
@@ -301,7 +299,7 @@ export function SessionSwapPage() {
                   {swap.status === 'PENDING' && (
                     <span className="text-xs text-slate-500">
                       {swap.requesteeAcceptedAt
-                        ? 'Tutor accepted · awaiting organiser'
+                        ? 'Tutor accepted · awaiting coordinator'
                         : 'Awaiting other tutor’s acceptance'}
                     </span>
                   )}
@@ -327,7 +325,7 @@ export function SessionSwapPage() {
                     </>
                   )}
 
-                  {isOrganiser && swap.status === 'PENDING' && (
+                  {isStaff && swap.status === 'PENDING' && (
                     <>
                       <Button
                         size="sm"
@@ -349,7 +347,7 @@ export function SessionSwapPage() {
                     </>
                   )}
 
-                  {!isOrganiser && swap.status === 'PENDING' && swap.requesterId === user?.id && (
+                  {!isStaff && swap.status === 'PENDING' && swap.requesterId === user?.id && (
                     <Button
                       size="sm"
                       variant="ghost"

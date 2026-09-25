@@ -7,7 +7,7 @@ export const swapsApi = {
     const response = await apiClient.get('/swaps/options');
     return response.data;
   },
-  // GET /swaps — tutors see swaps they're involved in, organisers see all
+  // GET /swaps — tutors see swaps they're involved in, staff see all/coordinated
   getSwaps: async (params) => {
     const response = await apiClient.get('/swaps', { params });
     return response.data;

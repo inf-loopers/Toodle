@@ -3,7 +3,7 @@
  * @description Central dictionary of system-wide constants, enum values, and Auth0 namespace keys.
  *
  * Enums & Constants:
- * - `ROLES`: User roles in the system (`ORGANISER`, `TUTOR`, `STUDENT`).
+ * - `ROLES`: User roles in the system (`ADMIN`, `LECTURER`, `TUTOR`, `STUDENT`).
  * - `AUTH0_NAMESPACE`: Custom claim URI namespace for JWT token role extraction
  *                     (`{VITE_AUTH0_AUDIENCE}/roles`, default `https://toodle-api/roles`).
  * - `CONSTRAINT_TYPES`: Allocation constraint identifiers (`MARK_BELOW_THRESHOLD`, `TIMETABLE_CLASH`, `HOURS_EXCEEDED`).
@@ -14,7 +14,8 @@
  */
 
 export const ROLES = {
-  ORGANISER: 'organiser',
+  ADMIN: 'admin',
+  LECTURER: 'lecturer',
   TUTOR: 'tutor',
   STUDENT: 'student',
 };
@@ -50,7 +51,8 @@ export const DAYS_OF_WEEK = [
 ];
 
 export const ROLE_LABELS = {
-  [ROLES.ORGANISER]: 'Course Organiser',
+  [ROLES.ADMIN]: 'Admin',
+  [ROLES.LECTURER]: 'Lecturer (Course Coordinator)',
   [ROLES.TUTOR]: 'Tutor',
   [ROLES.STUDENT]: 'Student',
 };
@@ -102,7 +104,7 @@ export const SWAP_STATUS_TONE = {
 
 // icon values reference lucide-react component names, resolved in Sidebar.jsx
 export const NAV_SECTIONS = {
-  [ROLES.ORGANISER]: [
+  [ROLES.ADMIN]: [
     {
       heading: 'Overview',
       items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
@@ -127,6 +129,33 @@ export const NAV_SECTIONS = {
     {
       heading: 'Admin',
       items: [{ name: 'Reports', path: '/reports', icon: 'BarChart3' }],
+    },
+    {
+      heading: 'Account',
+      items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
+    },
+  ],
+  [ROLES.LECTURER]: [
+    {
+      heading: 'Overview',
+      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+    },
+    {
+      heading: 'Manage',
+      items: [
+        { name: 'Allocation Board', path: '/allocations', icon: 'LayoutGrid' },
+        { name: 'Tutors', path: '/tutors', icon: 'Users' },
+        { name: 'Courses', path: '/courses', icon: 'BookOpen' },
+      ],
+    },
+    {
+      heading: 'Workflow',
+      items: [
+        { name: 'Timesheets', path: '/timesheets', icon: 'Clock' },
+        { name: 'Excusals', path: '/excusals', icon: 'CalendarX' },
+        { name: 'Swaps', path: '/swaps', icon: 'ArrowLeftRight' },
+        { name: 'Volunteers', path: '/volunteers', icon: 'HandHeart' },
+      ],
     },
     {
       heading: 'Account',

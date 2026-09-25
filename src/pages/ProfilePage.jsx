@@ -68,8 +68,7 @@ export function ProfilePage() {
   const displayName = profile?.name || user?.name || 'User';
   const displayEmail = profile?.email || user?.email || '—';
 
-  const displayRole =
-    roleKey === ROLES.ORGANISER ? 'Course Organiser' : ROLE_LABELS?.[roleKey] || roleKey || '—';
+  const displayRole = ROLE_LABELS?.[roleKey] || roleKey || '—';
 
   useEffect(() => {
     if (profile?.maxHoursPerWeek != null) {

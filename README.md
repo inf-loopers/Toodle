@@ -164,8 +164,9 @@ npm run preview
 
 ## 👥 Roles & Permissions
 
-| Role          | Access Permissions                                                          |
-| ------------- | --------------------------------------------------------------------------- |
-| **ORGANISER** | Full access to Allocation Board, Course Management, Tutor Marks & Directory |
-| **TUTOR**     | View assigned courses, manage weekly availability matrix and hour capacity  |
-| **STUDENT**   | Browse course directory and tutorial schedules                              |
+| Role         | Access Permissions                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| **ADMIN**    | Full access to Allocation Board, Course Management, Tutor Marks & Directory, and user management |
+| **LECTURER** | Manages the courses they coordinate (marks, applications, sessions, and approvals)               |
+| **TUTOR**    | View assigned courses, manage weekly availability matrix and hour capacity                       |
+| **STUDENT**  | Browse course directory and tutorial schedules                                                   |
