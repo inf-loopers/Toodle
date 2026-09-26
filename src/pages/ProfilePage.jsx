@@ -8,6 +8,7 @@
  * - Allows a user to choose and preview a new profile photo.
  * - Tutors can manage their weekly hours cap.
  * - Tutors can manage their weekly availability.
+ * - Tutors and students can view and update their year of study.
  *
  * Route: `/profile`
  *
@@ -18,7 +19,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Camera, Plus, Save, Trash2 } from 'lucide-react';
+import { Camera, Save } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -26,8 +27,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
-import { DAYS_OF_WEEK, ROLES, ROLE_LABELS } from '../utils/constants';
-import { formatDay } from '../utils/helpers';
+import { ROLES, ROLE_LABELS } from '../utils/constants';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -36,6 +36,7 @@ import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 import UserAvatar from '../components/ui/UserAvatar';
+import AvailabilityEditor from '../components/availability/AvailabilityEditor';
 
 export function ProfilePage() {
   const { user, role, updateDbUser } = useAuth();
@@ -46,16 +47,10 @@ export function ProfilePage() {
   const [savingHours, setSavingHours] = useState(false);
   const [hoursSaved, setHoursSaved] = useState(false);
 
-  const [slots, setSlots] = useState([
-    {
-      dayOfWeek: 'MONDAY',
-      startTime: '09:00',
-      endTime: '11:00',
-    },
-  ]);
+  const [yearOfStudy, setYearOfStudy] = useState('');
+  const [savingYear, setSavingYear] = useState(false);
+  const [yearSaved, setYearSaved] = useState(false);
 
-  const [savingAvailability, setSavingAvailability] = useState(false);
-  const [availabilitySaved, setAvailabilitySaved] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
@@ -64,6 +59,7 @@ export function ProfilePage() {
   const roleKey = (role || profile?.role)?.toLowerCase();
   const isTutor = roleKey === ROLES.TUTOR;
   const canManageAvailability = isTutor || roleKey === ROLES.STUDENT;
+  const canManageYearOfStudy = isTutor || roleKey === ROLES.STUDENT;
 
   const displayName = profile?.name || user?.name || 'User';
   const displayEmail = profile?.email || user?.email || '—';
@@ -74,15 +70,11 @@ export function ProfilePage() {
     if (profile?.maxHoursPerWeek != null) {
       setMaxHours(profile.maxHoursPerWeek);
     }
+  }, [profile]);
 
-    if (profile?.availability?.length) {
-      setSlots(
-        profile.availability.map((slot) => ({
-          dayOfWeek: slot.dayOfWeek,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-        }))
-      );
+  useEffect(() => {
+    if (profile?.yearOfStudy != null) {
+      setYearOfStudy(String(profile.yearOfStudy));
     }
   }, [profile]);
 
@@ -157,54 +149,24 @@ export function ProfilePage() {
     }
   };
 
-  const addSlot = () => {
-    setAvailabilitySaved(false);
-
-    setSlots((current) => [
-      ...current,
-      {
-        dayOfWeek: 'MONDAY',
-        startTime: '09:00',
-        endTime: '11:00',
-      },
-    ]);
-  };
-
-  const updateSlot = (index, field, value) => {
-    setAvailabilitySaved(false);
-
-    setSlots((current) =>
-      current.map((slot, slotIndex) =>
-        slotIndex === index
-          ? {
-              ...slot,
-              [field]: value,
-            }
-          : slot
-      )
-    );
-  };
-
-  const removeSlot = (index) => {
-    setAvailabilitySaved(false);
-
-    setSlots((current) => current.filter((_, slotIndex) => slotIndex !== index));
-  };
-
-  const handleSaveAvailability = async () => {
+  const handleSaveYearOfStudy = async () => {
     if (!profile?.id) return;
 
-    setSavingAvailability(true);
-    setAvailabilitySaved(false);
+    setSavingYear(true);
+    setYearSaved(false);
 
     try {
-      await tutorsApi.setAvailability(profile.id, slots);
+      await usersApi.updateUser(profile.id, {
+        yearOfStudy: yearOfStudy === '' ? null : Number(yearOfStudy),
+      });
 
-      setAvailabilitySaved(true);
-
+      const response = await usersApi.getCurrentUser();
+      updateDbUser(response.data);
       await refetch();
+
+      setYearSaved(true);
     } finally {
-      setSavingAvailability(false);
+      setSavingYear(false);
     }
   };
 
@@ -309,6 +271,43 @@ export function ProfilePage() {
               </div>
             )}
           </div>
+
+          {/* Year of study */}
+          {canManageYearOfStudy && (
+            <>
+              <div className="my-6 border-t border-slate-100 dark:border-slate-800" />
+
+              <div className="flex flex-wrap items-end gap-3">
+                <Select
+                  label="Year of study"
+                  value={yearOfStudy}
+                  onChange={(event) => {
+                    setYearOfStudy(event.target.value);
+                    setYearSaved(false);
+                  }}
+                  className="max-w-40"
+                >
+                  <option value="">Not set</option>
+                  {Array.from({ length: 10 }, (_, index) => index + 1).map((year) => (
+                    <option key={year} value={year}>
+                      Year {year}
+                    </option>
+                  ))}
+                </Select>
+
+                <Button onClick={handleSaveYearOfStudy} loading={savingYear}>
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+              </div>
+
+              {yearSaved && (
+                <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  Year of study updated.
+                </p>
+              )}
+            </>
+          )}
         </CardBody>
       </Card>
 
@@ -352,75 +351,21 @@ export function ProfilePage() {
 
         {/* Availability */}
         {canManageAvailability && (
-          <Card>
-            <CardHeader
-              title="Availability"
-              description="When you're free to tutor. Add and save time slots covering all sessions you can attend."
-              action={
-                <Button variant="secondary" size="sm" onClick={addSlot}>
-                  <Plus className="h-3.5 w-3.5" />
-                  Add slot
-                </Button>
+          <AvailabilityEditor
+            initialSlots={
+              profile?.availability?.map((slot) => ({
+                dayOfWeek: slot.dayOfWeek,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+              })) ?? []
+            }
+            onSave={async (slots) => {
+              if (profile?.id) {
+                await tutorsApi.setAvailability(profile.id, slots);
+                await refetch();
               }
-            />
-
-            <CardBody className="space-y-3">
-              {slots.map((slot, index) => (
-                <div
-                  key={`${slot.dayOfWeek}-${index}`}
-                  className="flex flex-col gap-2 sm:flex-row sm:items-end"
-                >
-                  <Select
-                    label="Day"
-                    value={slot.dayOfWeek}
-                    onChange={(event) => updateSlot(index, 'dayOfWeek', event.target.value)}
-                  >
-                    {DAYS_OF_WEEK.map((day) => (
-                      <option key={day} value={day}>
-                        {formatDay(day)}
-                      </option>
-                    ))}
-                  </Select>
-
-                  <Input
-                    label="From"
-                    type="time"
-                    value={slot.startTime}
-                    onChange={(event) => updateSlot(index, 'startTime', event.target.value)}
-                  />
-
-                  <Input
-                    label="To"
-                    type="time"
-                    value={slot.endTime}
-                    onChange={(event) => updateSlot(index, 'endTime', event.target.value)}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => removeSlot(index)}
-                    className="mb-0.5 rounded-lg p-2.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
-                    aria-label="Remove availability slot"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Button onClick={handleSaveAvailability} loading={savingAvailability}>
-                  <Save className="h-4 w-4" />
-                  Save availability
-                </Button>
-
-                {availabilitySaved && (
-                  <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    Availability saved.
-                  </p>
-                )}
-              </div>
-            </CardBody>
-          </Card>
+            }}
+          />
         )}
       </div>
     </>
