@@ -238,7 +238,7 @@ function AssignTutorModal({
           label="Hours per week"
           type="number"
           min={1}
-          max={20}
+          max={40}
           value={hours}
           onChange={(e) => setHours(e.target.value)}
         />
