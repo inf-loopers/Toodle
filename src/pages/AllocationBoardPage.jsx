@@ -194,7 +194,7 @@ function AssignTutorModal({
               hours === '' ||
               !Number.isInteger(Number(hours)) ||
               Number(hours) < 1 ||
-              Number(hours) > 20 ||
+              Number(hours) > 40 ||
               Boolean(validationError) ||
               (warnings.length > 0 && !reason.trim())
             }
@@ -238,7 +238,7 @@ function AssignTutorModal({
           label="Hours per week"
           type="number"
           min={1}
-          max={20}
+          max={40}
           value={hours}
           onChange={(e) => setHours(e.target.value)}
         />

@@ -8,6 +8,7 @@
  * - `PATCH  /allocations/:id`       - Update allocation hours or status.
  * - `DELETE /allocations/:id`       - Remove a tutor from a course.
  * - `GET    /allocations/validate`  - Dry-run validation check for a proposed assignment before saving.
+ *
  */
 
 import apiClient from './client';

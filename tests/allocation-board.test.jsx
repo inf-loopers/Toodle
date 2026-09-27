@@ -66,6 +66,26 @@ async function openAssignment() {
 }
 
 describe('Allocation board verification', () => {
+  it.each([21, 40])('submits %ih within the API range and blocks 41h', async (hours) => {
+    allocationsApi.validateAllocation.mockResolvedValue(valid);
+    const user = userEvent.setup();
+    render(<AllocationBoardPage />);
+    await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
+    await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
+    const field = screen.getByLabelText('Hours per week');
+    await user.clear(field);
+    await user.type(field, '41');
+    expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeDisabled();
+    await user.clear(field);
+    await user.type(field, String(hours));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeEnabled()
+    );
+    await user.click(screen.getByRole('button', { name: 'Confirm assignment' }));
+    expect(allocationsApi.createAllocation).toHaveBeenCalledWith(
+      expect.objectContaining({ hoursPerWeek: hours })
+    );
+  });
   it('reloads transferred allocations and recomputes tutor hours when returning to the board', async () => {
     let board;
     function Probe() {
