@@ -194,7 +194,7 @@ function AssignTutorModal({
               hours === '' ||
               !Number.isInteger(Number(hours)) ||
               Number(hours) < 1 ||
-              Number(hours) > 20 ||
+              Number(hours) > 40 ||
               Boolean(validationError) ||
               (warnings.length > 0 && !reason.trim())
             }
