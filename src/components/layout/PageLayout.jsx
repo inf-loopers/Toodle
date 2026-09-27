@@ -20,9 +20,9 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import { applyTheme, getInitialTheme, persistTheme } from '../../utils/theme';
 
 const SIDEBAR_STORAGE_KEY = 'toodle.sidebarCollapsed';
-const THEME_STORAGE_KEY = 'toodle.theme';
 
 const PAGE_TITLES = [
   { match: '/dashboard', title: 'Dashboard' },
@@ -45,20 +45,6 @@ function getInitialSidebarCollapsed() {
   }
 }
 
-function getInitialTheme() {
-  try {
-    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-
-    if (savedTheme === 'dark' || savedTheme === 'light') {
-      return savedTheme;
-    }
-
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  } catch {
-    return 'light';
-  }
-}
-
 export function PageLayout() {
   const { pathname } = useLocation();
   const current = PAGE_TITLES.find((p) => pathname.startsWith(p.match));
@@ -68,14 +54,8 @@ export function PageLayout() {
   const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    document.documentElement.style.colorScheme = theme;
-
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {
-      // Storage can be unavailable in private browsing or embedded contexts.
-    }
+    applyTheme(theme);
+    persistTheme(theme);
   }, [theme]);
 
   useEffect(() => {
