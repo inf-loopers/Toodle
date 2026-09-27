@@ -9,11 +9,11 @@
  * (e.g. redirect Tutors away from AllocationBoardPage), not here.
  *
  * Usage:
- *   <RoleGate allow={['Organiser']}>
+ *   <RoleGate allow={['admin']}>
  *     <Button onClick={createCourse}>Create Course</Button>
  *   </RoleGate>
  *
- *   <RoleGate allow={['Organiser', 'Tutor']} fallback={<p>Not available</p>}>
+ *   <RoleGate allow={['admin', 'lecturer']} fallback={<p>Not available</p>}>
  *     <AllocationBoard />
  *   </RoleGate>
  */

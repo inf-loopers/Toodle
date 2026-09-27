@@ -75,9 +75,9 @@ function Welcome({ name, tagline }) {
   );
 }
 
-// ── Organiser ────────────────────────────────────────────────────────────
+// ── Staff (admin & lecturer) ─────────────────────────────────────────────
 
-function OrganiserDashboard({ user }) {
+function StaffDashboard({ user }) {
   const {
     data: courses,
     loading: coursesLoading,
@@ -444,7 +444,7 @@ function StudentDashboard({ user }) {
       <Card>
         <CardHeader
           title="Overflow work"
-          description="First come, first served — an organiser approves each claim."
+          description="First come, first served — a course coordinator approves each claim."
           action={
             <Link to="/volunteers">
               <Button size="sm" variant="secondary">
@@ -485,9 +485,9 @@ function StudentDashboard({ user }) {
 }
 
 export function DashboardPage() {
-  const { user, role } = useAuth();
+  const { user, role, isStaff } = useAuth();
 
-  if (role === ROLES.ORGANISER) return <OrganiserDashboard user={user} />;
+  if (isStaff) return <StaffDashboard user={user} />;
   if (role === ROLES.TUTOR) return <TutorDashboard user={user} />;
   return <StudentDashboard user={user} />;
 }

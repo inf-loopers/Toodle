@@ -5,13 +5,15 @@
  * Endpoints Managed:
  * - `GET    /courses`               - List all registered courses with staffing metadata.
  * - `GET    /courses/:id`           - Retrieve single course details, allocations, and sessions.
- * - `POST   /courses`               - Create a new course offering (Organiser only).
+ * - `POST   /courses`               - Create a new course offering (Admin only).
  * - `PATCH  /courses/:id`           - Update course quotas or prerequisite thresholds.
- * - `DELETE /courses/:id`           - Delete a course offering (Organiser only).
+ * - `DELETE /courses/:id`           - Delete a course offering (Admin only).
  * - `GET    /courses/:id/sessions`  - List tutorial & lab contact slots for a course.
  * - `POST   /courses/:id/sessions`  - Create a new contact session slot.
  * - `PATCH  /sessions/:id`          - Update session timing or venue.
  * - `DELETE /sessions/:id`          - Delete a session slot.
+ * - `GET    /courses/:id/coordinators` - List lecturers assigned to a course.
+ * - `PUT    /courses/:id/coordinators` - Replace the lecturers assigned to a course (Admin only).
  */
 
 import apiClient from './client';
@@ -74,6 +76,18 @@ export const coursesApi = {
   // DELETE /sessions/:id
   deleteSession: async (sessionId) => {
     const response = await apiClient.delete(`/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // GET /courses/:id/coordinators
+  getCoordinators: async (courseId) => {
+    const response = await apiClient.get(`/courses/${courseId}/coordinators`);
+    return response.data;
+  },
+
+  // PUT /courses/:id/coordinators
+  setCoordinators: async (courseId, userIds) => {
+    const response = await apiClient.put(`/courses/${courseId}/coordinators`, { userIds });
     return response.data;
   },
 };

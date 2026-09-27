@@ -34,7 +34,8 @@ describe('Utility Helpers', () => {
   });
 
   it('getRoleBadgeStyle should return appropriate classes', () => {
-    expect(getRoleBadgeStyle(ROLES.ORGANISER)).toContain('text-blue-800');
+    expect(getRoleBadgeStyle(ROLES.ADMIN)).toContain('text-blue-800');
+    expect(getRoleBadgeStyle(ROLES.LECTURER)).toContain('text-indigo-800');
     expect(getRoleBadgeStyle(ROLES.TUTOR)).toContain('text-emerald-800');
     expect(getRoleBadgeStyle(ROLES.STUDENT)).toContain('text-purple-800');
   });

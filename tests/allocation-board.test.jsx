@@ -66,6 +66,32 @@ async function openAssignment() {
 }
 
 describe('Allocation board verification', () => {
+  it('reloads transferred allocations and recomputes tutor hours when returning to the board', async () => {
+    let board;
+    function Probe() {
+      board = useAllocationContext();
+      return null;
+    }
+    const original = [
+      { id: 'a1', courseId: 'c1', userId: 't1', status: 'ACTIVE', hoursPerWeek: 2 },
+      { id: 'a2', courseId: 'c2', userId: 't2', status: 'ACTIVE', hoursPerWeek: 5 },
+    ];
+    allocationsApi.getAllocations.mockResolvedValue({ data: original });
+    render(
+      <AllocationProvider>
+        <Probe />
+      </AllocationProvider>
+    );
+    await waitFor(() => expect(board.allocatedHoursMap).toEqual({ t1: 2, t2: 5 }));
+    allocationsApi.getAllocations.mockResolvedValue({
+      data: original.map((a) => ({ ...a, userId: a.userId === 't1' ? 't2' : 't1' })),
+    });
+    act(() => window.dispatchEvent(new Event('focus')));
+    await waitFor(() => expect(board.allocatedHoursMap).toEqual({ t1: 5, t2: 2 }));
+    expect(board.courseAllocMap.c1[0].userId).toBe('t2');
+    expect(board.courseAllocMap.c2[0].userId).toBe('t1');
+    expect(board.allocationCountMap).toEqual({ t1: 1, t2: 1 });
+  });
   it('records a mark for a tutor who has never submitted one', async () => {
     tutorsApi.getTutors.mockResolvedValue({ data: [{ ...tutor, tutorMarks: [] }] });
     const user = await openAssignment();

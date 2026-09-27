@@ -31,7 +31,8 @@ This document outlines the step-by-step roadmap for building out the frontend Si
 
 ### System Roles
 
-- 👑 **`ORGANISER`** (Staff/Course Coordinators): Full access to Course Management, Tutor Directory & Marks, and the **Allocation Board**.
+- 👑 **`ADMIN`**: Full access to Course Management, Tutor Directory & Marks, user management, and the **Allocation Board**.
+- 🧑‍🏫 **`LECTURER`** (Course Coordinator): Manages the courses they coordinate — sessions, applications, marks, and allocations.
 - 🧑‍🏫 **`TUTOR`**: View assigned courses, set maximum hours, and manage weekly availability schedules.
 - 🎓 **`STUDENT`**: Browse course directory and contact schedules.
 
@@ -93,17 +94,17 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 You do **not** need to recreate API clients or auth token handling — they are ready to import:
 
-| Module              | Location                 | What It Provides                                                                                   |
-| ------------------- | ------------------------ | -------------------------------------------------------------------------------------------------- |
-| **API Client**      | `src/api/client.js`      | Configured Axios instance with Auth0 Bearer token interceptor.                                     |
-| **Course API**      | `src/api/courses.js`     | `getCourses()`, `getCourse(id)`, `createCourse(data)`, `deleteCourse(id)`, `getCourseSessions(id)` |
-| **Tutor API**       | `src/api/tutors.js`      | `getTutors()`, `getTutor(id)`, `addOrUpdateMark(id, data)`, `setAvailability(id, slots)`           |
-| **Allocation API**  | `src/api/allocations.js` | `getAllocations()`, `createAllocation(data)`, `deleteAllocation(id)`, `validateAllocation(params)` |
-| **User API**        | `src/api/users.js`       | `getCurrentUser()`, `syncUser(data)`, `updateUser(id, data)`                                       |
-| **useAuth Hook**    | `src/hooks/useAuth.js`   | `{ user, role, isAuthenticated, isOrganiser, isTutor, isStudent, login, logout, getToken }`        |
-| **useApi Hook**     | `src/hooks/useApi.js`    | `{ data, loading, error, refetch, execute } = useApi(apiFn)`                                       |
-| **Helpers & Utils** | `src/utils/helpers.js`   | `cn()` (Tailwind merge), `formatTime()`, `formatDay()`, `getRoleBadgeStyle()`                      |
-| **Constants**       | `src/utils/constants.js` | `ROLES`, `CONSTRAINT_TYPES`, `SESSION_TYPES`, `DAYS_OF_WEEK`                                       |
+| Module              | Location                 | What It Provides                                                                                             |
+| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| **API Client**      | `src/api/client.js`      | Configured Axios instance with Auth0 Bearer token interceptor.                                               |
+| **Course API**      | `src/api/courses.js`     | `getCourses()`, `getCourse(id)`, `createCourse(data)`, `deleteCourse(id)`, `getCourseSessions(id)`           |
+| **Tutor API**       | `src/api/tutors.js`      | `getTutors()`, `getTutor(id)`, `addOrUpdateMark(id, data)`, `setAvailability(id, slots)`                     |
+| **Allocation API**  | `src/api/allocations.js` | `getAllocations()`, `createAllocation(data)`, `deleteAllocation(id)`, `validateAllocation(params)`           |
+| **User API**        | `src/api/users.js`       | `getCurrentUser()`, `syncUser(data)`, `updateUser(id, data)`                                                 |
+| **useAuth Hook**    | `src/hooks/useAuth.js`   | `{ user, role, isAuthenticated, isAdmin, isLecturer, isStaff, isTutor, isStudent, login, logout, getToken }` |
+| **useApi Hook**     | `src/hooks/useApi.js`    | `{ data, loading, error, refetch, execute } = useApi(apiFn)`                                                 |
+| **Helpers & Utils** | `src/utils/helpers.js`   | `cn()` (Tailwind merge), `formatTime()`, `formatDay()`, `getRoleBadgeStyle()`                                |
+| **Constants**       | `src/utils/constants.js` | `ROLES`, `CONSTRAINT_TYPES`, `SESSION_TYPES`, `DAYS_OF_WEEK`                                                 |
 
 ---
 
@@ -139,18 +140,18 @@ flowchart TD
 
 > **Why second**: Establishes the layout frame, route guarding, and navigation for all protected pages.
 
-| File                                     | Responsibilities                                                            | Dependencies                                  |
-| ---------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------- |
-| `src/components/auth/LoginButton.jsx`    | Triggers `useAuth().login()`.                                               | `Button.jsx`, `useAuth.js`                    |
-| `src/components/auth/LogoutButton.jsx`   | Triggers `useAuth().logout()`.                                              | `Button.jsx`, `useAuth.js`                    |
-| `src/components/auth/ProtectedRoute.jsx` | Checks `isAuthenticated`; redirects unauthenticated users to `/login`.      | `Spinner.jsx`, `useAuth.js`                   |
-| `src/components/auth/RoleGate.jsx`       | Restricts components/routes by role (`allowedRoles={[ROLES.ORGANISER]}`).   | `useAuth.js`                                  |
-| `src/components/layout/Navbar.jsx`       | Top header with logo, user profile avatar, role badge, and logout.          | `Badge.jsx`, `LogoutButton.jsx`, `useAuth.js` |
-| `src/components/layout/Sidebar.jsx`      | Role-filtered side menu (Organiser vs. Tutor vs. Student).                  | `useAuth.js`, `lucide-react`                  |
-| `src/components/layout/Footer.jsx`       | University attribution footer.                                              | None                                          |
-| `src/components/layout/PageLayout.jsx`   | Composes `Navbar` + `Sidebar` + `<Outlet />` + `Footer`.                    | `Navbar`, `Sidebar`, `Footer`                 |
-| `src/routes/AppRoutes.jsx`               | Configures React Router route tree and protected route hierarchy.           | `ProtectedRoute`, `RoleGate`, `PageLayout`    |
-| `src/App.jsx`                            | Wraps app in `Auth0Provider`, `BrowserRouter`, and renders `<AppRoutes />`. | `AppRoutes.jsx`                               |
+| File                                     | Responsibilities                                                                      | Dependencies                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `src/components/auth/LoginButton.jsx`    | Triggers `useAuth().login()`.                                                         | `Button.jsx`, `useAuth.js`                    |
+| `src/components/auth/LogoutButton.jsx`   | Triggers `useAuth().logout()`.                                                        | `Button.jsx`, `useAuth.js`                    |
+| `src/components/auth/ProtectedRoute.jsx` | Checks `isAuthenticated`; redirects unauthenticated users to `/login`.                | `Spinner.jsx`, `useAuth.js`                   |
+| `src/components/auth/RoleGate.jsx`       | Restricts components/routes by role (`allowedRoles={[ROLES.ADMIN, ROLES.LECTURER]}`). | `useAuth.js`                                  |
+| `src/components/layout/Navbar.jsx`       | Top header with logo, user profile avatar, role badge, and logout.                    | `Badge.jsx`, `LogoutButton.jsx`, `useAuth.js` |
+| `src/components/layout/Sidebar.jsx`      | Role-filtered side menu (Admin vs. Lecturer vs. Tutor vs. Student).                   | `useAuth.js`, `lucide-react`                  |
+| `src/components/layout/Footer.jsx`       | University attribution footer.                                                        | None                                          |
+| `src/components/layout/PageLayout.jsx`   | Composes `Navbar` + `Sidebar` + `<Outlet />` + `Footer`.                              | `Navbar`, `Sidebar`, `Footer`                 |
+| `src/routes/AppRoutes.jsx`               | Configures React Router route tree and protected route hierarchy.                     | `ProtectedRoute`, `RoleGate`, `PageLayout`    |
+| `src/App.jsx`                            | Wraps app in `Auth0Provider`, `BrowserRouter`, and renders `<AppRoutes />`.           | `AppRoutes.jsx`                               |
 
 ---
 
@@ -158,11 +159,11 @@ flowchart TD
 
 > **Why third**: Creates the core landing points for all three roles upon login.
 
-| File                          | Responsibilities                                                                         | Dependencies                                        |
-| ----------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `src/pages/LoginPage.jsx`     | Welcome banner, university branding, login trigger, and auth error display.              | `LoginButton.jsx`, `Card.jsx`                       |
-| `src/pages/DashboardPage.jsx` | Role-tailored home screen: Organiser metrics, Tutor schedule/hours, Student course list. | `Card.jsx`, `Badge.jsx`, `Button.jsx`, `useAuth.js` |
-| `src/pages/NotFoundPage.jsx`  | 404 error page with button to return to dashboard.                                       | `Button.jsx`                                        |
+| File                          | Responsibilities                                                                                               | Dependencies                                        |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `src/pages/LoginPage.jsx`     | Welcome banner, university branding, login trigger, and auth error display.                                    | `LoginButton.jsx`, `Card.jsx`                       |
+| `src/pages/DashboardPage.jsx` | Role-tailored home screen: Admin metrics, Lecturer course overview, Tutor schedule/hours, Student course list. | `Card.jsx`, `Badge.jsx`, `Button.jsx`, `useAuth.js` |
+| `src/pages/NotFoundPage.jsx`  | 404 error page with button to return to dashboard.                                                             | `Button.jsx`                                        |
 
 ---
 
@@ -170,10 +171,10 @@ flowchart TD
 
 > **Why fourth**: Manages the course data and session times that the Allocation Board will assign tutors to.
 
-| File                             | Responsibilities                                                                                       | Dependencies                                        |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `src/pages/CoursesPage.jsx`      | Searchable course catalog, staffing progress (e.g. 3/4 tutors), and "Add Course" modal for Organisers. | `coursesApi`, `Card.jsx`, `Modal.jsx`, `Button.jsx` |
-| `src/pages/CourseDetailPage.jsx` | Scheduled sessions (days, times, venues), assigned tutors, prerequisite minimum mark requirements.     | `coursesApi`, `Card.jsx`, `Badge.jsx`               |
+| File                             | Responsibilities                                                                                   | Dependencies                                        |
+| -------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `src/pages/CoursesPage.jsx`      | Searchable course catalog, staffing progress (e.g. 3/4 tutors), and "Add Course" modal for Admins. | `coursesApi`, `Card.jsx`, `Modal.jsx`, `Button.jsx` |
+| `src/pages/CourseDetailPage.jsx` | Scheduled sessions (days, times, venues), assigned tutors, prerequisite minimum mark requirements. | `coursesApi`, `Card.jsx`, `Badge.jsx`               |
 
 ---
 
@@ -183,14 +184,14 @@ flowchart TD
 
 | File                        | Responsibilities                                                                                            | Dependencies                          |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `src/pages/TutorsPage.jsx`  | Organiser view: lists all tutors, historical course marks, allocated vs. max hours.                         | `tutorsApi`, `Card.jsx`, `Badge.jsx`  |
+| `src/pages/TutorsPage.jsx`  | Staff view: lists all tutors, historical course marks, allocated vs. max hours.                             | `tutorsApi`, `Card.jsx`, `Badge.jsx`  |
 | `src/pages/ProfilePage.jsx` | Tutor self-service view: max weekly hours setting and **interactive weekly availability matrix** (Mon–Fri). | `tutorsApi`, `Card.jsx`, `Button.jsx` |
 
 ---
 
 ### Phase 6: The Core Feature — Allocation Board
 
-> **The heart of Sprint 1**: The Organiser's single-board workspace for staffing courses with real-time constraint validation.
+> **The heart of Sprint 1**: The staff single-board workspace for staffing courses with real-time constraint validation.
 
 #### File: `src/pages/AllocationBoardPage.jsx`
 
@@ -286,15 +287,15 @@ import useAuth from '../hooks/useAuth';
 import { ROLES } from '../utils/constants';
 
 export default function CourseActions({ courseId }) {
-  const { isOrganiser, isTutor, hasRole } = useAuth();
+  const { isAdmin, isStaff, isTutor, hasRole } = useAuth();
 
   return (
     <div>
-      {/* Visible only to Organisers */}
-      {isOrganiser && <Button variant="danger">Delete Course</Button>}
+      {/* Visible only to Admins */}
+      {isAdmin && <Button variant="danger">Delete Course</Button>}
 
-      {/* Visible to Tutors and Organisers */}
-      {hasRole([ROLES.ORGANISER, ROLES.TUTOR]) && <Button>View Roster</Button>}
+      {/* Visible to Tutors and Staff */}
+      {hasRole([ROLES.ADMIN, ROLES.LECTURER, ROLES.TUTOR]) && <Button>View Roster</Button>}
     </div>
   );
 }

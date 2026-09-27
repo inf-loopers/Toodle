@@ -1,7 +1,7 @@
 import apiClient from './client';
 
 export const timesheetsApi = {
-  // GET /timesheets — organisers see all (optionally filtered), tutors see their own
+  // GET /timesheets — staff see all (optionally filtered), tutors see their own
   getTimesheets: async (params) => {
     const response = await apiClient.get('/timesheets', { params });
     return response.data;
@@ -37,7 +37,7 @@ export const timesheetsApi = {
     return response.data;
   },
 
-  // POST /timesheets/:id/approve — SUBMITTED -> APPROVED (organiser only)
+  // POST /timesheets/:id/approve — SUBMITTED -> APPROVED (staff only)
   approveTimesheet: async (id) => {
     const response = await apiClient.post(`/timesheets/${id}/approve`);
     return response.data;

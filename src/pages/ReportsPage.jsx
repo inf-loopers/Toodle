@@ -1,6 +1,6 @@
 /**
  * @file ReportsPage.jsx
- * @description Analytics and reporting dashboard for the Organiser.
+ * @description Analytics and reporting dashboard for the Admin.
  *
  * Responsibilities:
  * - Fetches real records from the API: courses, allocations, and approved timesheets.
@@ -11,7 +11,7 @@
  *
  * All totals are calculated client-side from live API records — no mock numbers.
  *
- * Route: `/reports` (Organiser only)
+ * Route: `/reports` (Admin only)
  */
 
 import { useMemo, useState } from 'react';

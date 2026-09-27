@@ -8,7 +8,7 @@
  * - Shows logged hours against allocated weekly hours.
  * - Displays the timesheet status flow.
  * - Allows disputed timesheets to be corrected and re-submitted.
- * - Allows organisers to approve or dispute submitted timesheets.
+ * - Allows staff to approve or dispute submitted timesheets.
  *
  * Route: `/timesheets`
  */
@@ -560,20 +560,18 @@ function DisputeModal({ timesheet, open, onClose, onDisputed }) {
 }
 
 export function TimesheetsPage() {
-  const { dbUser: user, role } = useAuth();
-
-  const isOrganiser = role?.toUpperCase() === 'ORGANISER';
+  const { dbUser: user, isStaff } = useAuth();
 
   const { data, loading, error, refetch } = useApi(timesheetsApi.getTimesheets);
 
   /*
-   * Allocations are loaded for both Tutors and Organisers.
+   * Allocations are loaded for both Tutors and staff.
    *
    * Tutors use these to:
    * - restrict the New Timesheet course dropdown
    * - show their weekly allocated hours
    *
-   * Organisers use these to:
+   * Staff use these to:
    * - compare each Tutor's logged hours with their allocation
    */
   const { data: allocationsData, error: allocationsError } = useApi(allocationsApi.getAllocations);
@@ -597,7 +595,7 @@ export function TimesheetsPage() {
   /*
    * All ACTIVE allocations.
    *
-   * Organisers need the full list so we can match each
+   * Staff need the full list so we can match each
    * timesheet to the correct Tutor allocation.
    */
   const activeAllocations = allocations.filter((allocation) => allocation.status === 'ACTIVE');
@@ -618,7 +616,7 @@ export function TimesheetsPage() {
   /*
    * Match both the Tutor and Course.
    *
-   * This is important on the Organiser page because multiple
+   * This is important on the staff page because multiple
    * Tutors can have allocations for the same course.
    */
   const getAllocationForTimesheet = (timesheet) =>
@@ -681,13 +679,13 @@ export function TimesheetsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Timesheets</h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser
+            {isStaff
               ? 'Approve, dispute or track submitted hours.'
               : 'Log your hours and submit them for approval.'}
           </p>
         </div>
 
-        {!isOrganiser && (
+        {!isStaff && (
           <Button onClick={() => setNewOpen(true)} disabled={tutorActiveAllocations.length === 0}>
             <Plus className="h-4 w-4" />
             New timesheet
@@ -701,7 +699,7 @@ export function TimesheetsPage() {
         </p>
       )}
 
-      {!isOrganiser && tutorActiveAllocations.length === 0 && !allocationErrorMessage && (
+      {!isStaff && tutorActiveAllocations.length === 0 && !allocationErrorMessage && (
         <p className="mb-4 text-sm text-slate-500">
           You need an active allocation before you can create a timesheet.
         </p>
@@ -712,7 +710,7 @@ export function TimesheetsPage() {
           icon={Clock}
           title="No timesheets yet"
           description={
-            isOrganiser
+            isStaff
               ? 'Nothing has been submitted yet.'
               : 'Start one to log your hours for the week.'
           }
@@ -753,7 +751,7 @@ export function TimesheetsPage() {
 
                       <p className="mt-2 text-xs text-slate-400">
                         Week of {formatShortDate(timesheet.weekStartDate)}
-                        {isOrganiser && timesheet.user?.name ? ` · ${timesheet.user.name}` : ''}
+                        {isStaff && timesheet.user?.name ? ` · ${timesheet.user.name}` : ''}
                       </p>
 
                       <p className="mt-2 text-sm font-medium text-slate-700">
@@ -787,7 +785,7 @@ export function TimesheetsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {!isOrganiser &&
+                      {!isStaff &&
                         (timesheet.status === 'DRAFT' || timesheet.status === 'DISPUTED') && (
                           <>
                             <Button
@@ -820,7 +818,7 @@ export function TimesheetsPage() {
                           </>
                         )}
 
-                      {isOrganiser && timesheet.status === 'SUBMITTED' && (
+                      {isStaff && timesheet.status === 'SUBMITTED' && (
                         <>
                           <Button
                             size="sm"
@@ -850,7 +848,7 @@ export function TimesheetsPage() {
         </Card>
       )}
 
-      {!isOrganiser && (
+      {!isStaff && (
         <>
           <NewTimesheetModal
             open={newOpen}
@@ -875,7 +873,7 @@ export function TimesheetsPage() {
         </>
       )}
 
-      {isOrganiser && (
+      {isStaff && (
         <DisputeModal
           timesheet={disputeTarget}
           open={Boolean(disputeTarget)}

@@ -7,7 +7,7 @@
  *
  * Usage:
  *   const { isAuthenticated, isLoading, role, login, logout } = useAuth();
- *   if (role === 'organiser') { ... }
+ *   if (isAdmin) { ... }
  */
 
 import { useAuth0 } from '@auth0/auth0-react';
@@ -63,7 +63,9 @@ export function useAuth() {
     dbUser,
     updateDbUser,
     role,
-    isOrganiser: role === 'organiser',
+    isAdmin: role === 'admin',
+    isLecturer: role === 'lecturer',
+    isStaff: role === 'admin' || role === 'lecturer',
     isTutor: role === 'tutor',
     isStudent: role === 'student',
     error,

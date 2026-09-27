@@ -24,7 +24,7 @@ import LogoutButton from '../auth/LogoutButton';
 
 /**
  * Wrap protected route trees with this. Optionally pass `allowedRoles` to
- * restrict access further (e.g. ['organiser']) — unauthorised users see an
+ * restrict access further (e.g. ['admin']) — unauthorised users see an
  * in-place notice rather than being bounced, since they are still logged in.
  */
 export function ProtectedRoute({ allowedRoles }) {

@@ -52,7 +52,7 @@ const show = (props = {}) => {
 };
 beforeEach(() => {
   vi.resetAllMocks();
-  useAuth.mockReturnValue({ isOrganiser: false });
+  useAuth.mockReturnValue({ isAdmin: false });
   coursesApi.getApplications.mockResolvedValue({ data: [] });
   usersApi.getCurrentUser.mockResolvedValue({ data: { tutorMarks: [] } });
 });
@@ -79,7 +79,7 @@ describe('Course application workflow', () => {
     expect(screen.queryByRole('button', { name: 'Remove course' })).not.toBeInTheDocument();
   });
   it('blocks approval until marks are verified and requires a reason', async () => {
-    useAuth.mockReturnValue({ isOrganiser: true });
+    useAuth.mockReturnValue({ isAdmin: true });
     coursesApi.getApplications.mockResolvedValue({ data: [application] });
     const user = userEvent.setup();
     show();
@@ -117,7 +117,7 @@ describe('Course application workflow', () => {
     expect(screen.queryByRole('button', { name: 'Apply to tutor' })).not.toBeInTheDocument();
   });
   it('requires confirmation for removal and displays history protection errors', async () => {
-    useAuth.mockReturnValue({ isOrganiser: true });
+    useAuth.mockReturnValue({ isAdmin: true });
     coursesApi.deleteCourse.mockRejectedValue({
       response: { data: { error: 'Close applications instead to preserve history' } },
     });
@@ -135,8 +135,8 @@ describe('Course application workflow', () => {
     await user.click(await screen.findByRole('button', { name: 'Withdraw application' }));
     await waitFor(() => expect(coursesApi.withdrawApplication).toHaveBeenCalledWith('c1', 'a1'));
   });
-  it('allows an organiser to open applications when currently closed', async () => {
-    useAuth.mockReturnValue({ isOrganiser: true });
+  it('allows an admin to open applications when currently closed', async () => {
+    useAuth.mockReturnValue({ isAdmin: true });
     coursesApi.updateCourse.mockResolvedValue({ data: { ...course, applicationsOpen: true } });
     const onUpdated = vi.fn().mockResolvedValue();
     const user = userEvent.setup();
@@ -148,8 +148,8 @@ describe('Course application workflow', () => {
       expect(onUpdated).toHaveBeenCalled();
     });
   });
-  it('allows an organiser to close applications when currently open', async () => {
-    useAuth.mockReturnValue({ isOrganiser: true });
+  it('allows an admin to close applications when currently open', async () => {
+    useAuth.mockReturnValue({ isAdmin: true });
     coursesApi.updateCourse.mockResolvedValue({ data: { ...course, applicationsOpen: false } });
     const onUpdated = vi.fn().mockResolvedValue();
     const user = userEvent.setup();

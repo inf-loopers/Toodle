@@ -6,7 +6,7 @@
  * - Lists all active computer science courses with staffing status.
  * - Real-time client-side search and filtering by code or title.
  * - Displays staffing status badges and prerequisite minimum marks.
- * - "Add New Course" button for Organiser.
+ * - "Add New Course" button for Admin.
  *
  * Route: `/courses`
  */
@@ -81,7 +81,7 @@ function CreateCourseModal({ open, onClose, onCreated }) {
       open={open}
       onClose={onClose}
       title="New course"
-      description="Add a course for organisers to allocate tutors against."
+      description="Add a course for staff to allocate tutors against."
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -151,7 +151,7 @@ function CreateCourseModal({ open, onClose, onCreated }) {
 }
 
 export function CoursesPage() {
-  const { isOrganiser } = useAuth();
+  const { isAdmin } = useAuth();
   const { data, loading, error, refetch } = useApi(coursesApi.getCourses);
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -179,7 +179,7 @@ export function CoursesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Courses</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser
+            {isAdmin
               ? 'Everything the school is running this semester.'
               : 'Browse courses, check requirements and apply to tutor.'}
           </p>
@@ -194,7 +194,7 @@ export function CoursesPage() {
               className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
-          {isOrganiser && (
+          {isAdmin && (
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> New course
             </Button>
@@ -246,7 +246,7 @@ export function CoursesPage() {
         </div>
       )}
 
-      {isOrganiser && (
+      {isAdmin && (
         <CreateCourseModal
           open={createOpen}
           onClose={() => setCreateOpen(false)}

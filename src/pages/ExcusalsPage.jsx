@@ -1,10 +1,10 @@
 /**
  * @file ExcusalsPage.jsx
- * @description Tutor and organiser workflow for excusal requests.
+ * @description Tutor and staff workflow for excusal requests.
  *
  * Responsibilities:
  * - Tutors can create and track excusal requests.
- * - Organisers can review pending excusal requests.
+ * - Staff can review pending excusal requests.
  * - Displays pending, approved and declined states.
  *
  * Route: `/excusals`
@@ -197,10 +197,7 @@ function DeclineExcusalModal({ excusal, onClose, onDeclined }) {
 }
 
 export function ExcusalsPage() {
-  const { dbUser: user, role } = useAuth();
-
-  const isOrganiser = role?.toUpperCase() === 'ORGANISER';
-  const isTutor = role?.toUpperCase() === 'TUTOR';
+  const { dbUser: user, isStaff, isTutor } = useAuth();
 
   const { data, loading, error, refetch } = useApi(excusalsApi.getExcusals);
 
@@ -249,7 +246,7 @@ export function ExcusalsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Excusals</h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            {isOrganiser
+            {isStaff
               ? 'Review and manage tutor excusal requests.'
               : 'Request an excusal and track the status of your requests.'}
           </p>
@@ -308,7 +305,7 @@ export function ExcusalsPage() {
                     <p className="mt-1 text-sm text-slate-500">{excusal.allocation.course.name}</p>
                   )}
 
-                  {isOrganiser && (
+                  {isStaff && (
                     <p className="mt-1 text-sm text-slate-600">
                       {excusal.user?.name || excusal.user?.email || 'Tutor'}
                     </p>
@@ -332,7 +329,7 @@ export function ExcusalsPage() {
                   )}
                 </div>
 
-                {isOrganiser && excusal.status === 'PENDING' && (
+                {isStaff && excusal.status === 'PENDING' && (
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -369,7 +366,7 @@ export function ExcusalsPage() {
         />
       )}
 
-      {isOrganiser && (
+      {isStaff && (
         <DeclineExcusalModal
           excusal={declineTarget}
           onClose={() => setDeclineTarget(null)}

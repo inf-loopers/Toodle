@@ -1,6 +1,6 @@
 /**
  * @file TutorsPage.jsx
- * @description Organiser's tutor directory, marks, and capacity inspection view.
+ * @description Staff tutor directory, marks, and capacity inspection view.
  *
  * Responsibilities:
  * - Lists all registered tutors with student numbers and contact info.
@@ -9,7 +9,7 @@
  * - Displays weekly allocated hours vs. maximum hour capacity.
  * - Displays available weekdays based on tutor availability schedules.
  *
- * Role: Organiser Only
+ * Role: Staff Only (Admin, Lecturer)
  * Route: `/tutors`
  */
 

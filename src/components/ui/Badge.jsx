@@ -3,7 +3,7 @@
  * @description Accessible status chip and pill component.
  *
  * Responsibilities:
- * - Visually communicates roles (e.g. Organiser, Tutor, Student), course statuses (Full, Understaffed), and constraint states (Warning, Error, Valid).
+ * - Visually communicates roles (e.g. Admin, Lecturer, Tutor, Student), course statuses (Full, Understaffed), and constraint states (Warning, Error, Valid).
  * - Supports color variants: `neutral`, `primary`, `success`, `warning`, `danger`, `purple`.
  * - Optional status dot indicator (`dot={true}`).
  * - Sizes: `sm`, `md`, `lg`.
