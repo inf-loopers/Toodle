@@ -22,6 +22,7 @@ import { ROLES } from '../utils/constants';
 
 import PageLayout from '../components/layout/PageLayout';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
+import OnboardingGate from '../components/auth/OnboardingGate';
 
 import LandingPage from '../pages/LandingPage';
 import CallbackPage from '../pages/CallbackPage';
@@ -35,6 +36,7 @@ import TimesheetsPage from '../pages/TimesheetsPage';
 import SessionSwapPage from '../pages/SessionSwapPage';
 import ReportsPage from '../pages/ReportsPage';
 import ProfilePage from '../pages/ProfilePage';
+import OnboardingPage from '../pages/OnboardingPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ExcusalsPage from '../pages/ExcusalsPage';
 
@@ -48,31 +50,36 @@ export default function AppRoutes() {
 
       {/* Authenticated shell */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<PageLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/courses/:id" element={<CourseDetailPage />} />
-          <Route path="/timesheets" element={<TimesheetsPage />} />
-          <Route path="/swaps" element={<SessionSwapPage />} />
-          <Route path="/volunteers" element={<VolunteersPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+        <Route element={<OnboardingGate />}>
+          {/* First-time onboarding (outside the page layout, no sidebar) */}
+          <Route path="/onboarding" element={<OnboardingPage />} />
 
-          {/* Tutor + staff */}
-          <Route
-            element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.ADMIN, ROLES.LECTURER]} />}
-          >
-            <Route path="/excusals" element={<ExcusalsPage />} />
-          </Route>
+          <Route element={<PageLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/courses/:id" element={<CourseDetailPage />} />
+            <Route path="/timesheets" element={<TimesheetsPage />} />
+            <Route path="/swaps" element={<SessionSwapPage />} />
+            <Route path="/volunteers" element={<VolunteersPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
 
-          {/* Staff (admin + lecturer) */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.LECTURER]} />}>
-            <Route path="/allocations" element={<AllocationBoardPage />} />
-            <Route path="/tutors" element={<TutorsPage />} />
-          </Route>
+            {/* Tutor + staff */}
+            <Route
+              element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.ADMIN, ROLES.LECTURER]} />}
+            >
+              <Route path="/excusals" element={<ExcusalsPage />} />
+            </Route>
 
-          {/* Admin-only */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
-            <Route path="/reports" element={<ReportsPage />} />
+            {/* Staff (admin + lecturer) */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.LECTURER]} />}>
+              <Route path="/allocations" element={<AllocationBoardPage />} />
+              <Route path="/tutors" element={<TutorsPage />} />
+            </Route>
+
+            {/* Admin-only */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
+              <Route path="/reports" element={<ReportsPage />} />
+            </Route>
           </Route>
         </Route>
       </Route>
