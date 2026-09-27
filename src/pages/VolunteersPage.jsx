@@ -12,7 +12,8 @@
  */
 
 import { useState } from 'react';
-import { Plus, HandHeart, CheckCircle2, Mail, CalendarClock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, HandHeart, CheckCircle2, XCircle, Clock, Mail, CalendarClock } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { overflowApi } from '../api/overflow';
 import { coursesApi } from '../api/courses';
@@ -110,7 +111,7 @@ function PostWorkModal({ open, onClose, courses, onCreated }) {
 }
 
 export function VolunteersPage() {
-  const { isStaff } = useAuth();
+  const { isStaff, dbUser } = useAuth();
   const { data, loading, error, refetch } = useApi(overflowApi.getPosts);
   const { data: coursesData } = useApi(coursesApi.getCourses, { immediate: true });
   const [postModalOpen, setPostModalOpen] = useState(false);
@@ -130,8 +131,21 @@ export function VolunteersPage() {
     p.claims?.some((c) => c.status === 'PENDING' || c.status === 'CLAIMED')
   );
 
-  // Student/tutor: only OPEN posts
-  const openPosts = filteredPosts.filter((p) => p.status === 'OPEN');
+  // Posts the current user has personally claimed (non-staff see these
+  // alongside open posts so they can track their claim and record work
+  // once it is approved).
+  const myClaimedPosts = filteredPosts
+    .map((post) => ({
+      post,
+      claim: post.claims?.find((c) => c.user?.id === dbUser?.id),
+    }))
+    .filter(({ claim }) => claim);
+
+  // Student/tutor: only OPEN posts they have not already claimed (those
+  // appear under My claims instead).
+  const openPosts = filteredPosts.filter(
+    (p) => p.status === 'OPEN' && !p.claims?.some((c) => c.user?.id === dbUser?.id)
+  );
 
   const handleClaim = async (postId) => {
     setBusyId(postId);
@@ -147,6 +161,16 @@ export function VolunteersPage() {
     setBusyId(claimId);
     try {
       await overflowApi.approveClaim(claimId);
+      refetch();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleRejectClaim = async (claimId) => {
+    setBusyId(`reject-${claimId}`);
+    try {
+      await overflowApi.rejectClaim(claimId);
       refetch();
     } finally {
       setBusyId(null);
@@ -295,9 +319,18 @@ export function VolunteersPage() {
                               </Badge>
                             </div>
 
-                            {/* Approve action (only for pending claims) */}
+                            {/* Approve / reject actions (only for pending claims) */}
                             {isPending && (
-                              <div className="mt-3 flex justify-end">
+                              <div className="mt-3 flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={() => handleRejectClaim(claim.id)}
+                                  loading={busyId === `reject-${claim.id}`}
+                                >
+                                  <XCircle className="h-3.5 w-3.5" /> Reject
+                                </Button>
+
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -347,6 +380,54 @@ export function VolunteersPage() {
           ══════════════════════════════════════════════════ */}
       {!isStaff && (
         <>
+          {/* ── My claims ── */}
+          <section className="mb-10">
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">My claims</h2>
+
+            {myClaimedPosts.length === 0 ? (
+              <EmptyState
+                icon={HandHeart}
+                title="You haven't claimed any work yet"
+                description="Claim open overflow work below and track its review status here."
+              />
+            ) : (
+              <div className="space-y-4">
+                {myClaimedPosts.map(({ post, claim }) => (
+                  <Card key={post.id}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                        <HandHeart className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-semibold text-slate-900">
+                          {post.course?.code || post.courseId}
+                        </span>
+                        <span className="ml-2 text-sm text-slate-500">{post.course?.name}</span>
+                        {post.description && (
+                          <p className="mt-1 text-xs text-slate-400">{post.description}</p>
+                        )}
+                      </div>
+                      <Badge tone={CLAIM_STATUS_TONE[claim.status] || 'neutral'}>
+                        {CLAIM_STATUS_LABEL[claim.status] || claim.status}
+                      </Badge>
+                    </div>
+
+                    {claim.status === 'APPROVED' && (
+                      <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
+                        <Link to="/timesheets">
+                          <Button size="sm">
+                            <Clock className="h-3.5 w-3.5" /> Record hours
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* ── Open posts ── */}
           {openPosts.length === 0 ? (
             <EmptyState
               icon={HandHeart}
