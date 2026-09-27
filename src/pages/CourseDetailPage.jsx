@@ -16,12 +16,13 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Plus, MapPin, Wallet, Pencil, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, Plus, MapPin, Wallet, Pencil, Users, FileUp } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { usersApi } from '../api/users';
 import CourseApplications from '../components/CourseApplications';
 import EditCourseModal from '../components/EditCourseModal';
+import MarkImportModal from '../components/MarkImportModal';
 import { useAuth } from '../hooks/useAuth';
 import { formatDay, formatTime, getInitials, formatHours } from '../utils/helpers';
 import { SESSION_TYPES, DAYS_OF_WEEK } from '../utils/constants';
@@ -218,6 +219,7 @@ export function CourseDetailPage() {
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [coordinatorModalOpen, setCoordinatorModalOpen] = useState(false);
+  const [markImportModalOpen, setMarkImportModalOpen] = useState(false);
 
   if (loading) return <Spinner fullPage label="Loading course…" />;
   if (error) return <ErrorState title="Couldn't load this course" description={error} />;
@@ -260,6 +262,9 @@ export function CourseDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" onClick={() => setEditModalOpen(true)}>
               <Pencil className="h-4 w-4" /> Edit course
+            </Button>
+            <Button variant="secondary" onClick={() => setMarkImportModalOpen(true)}>
+              <FileUp className="h-4 w-4" /> Import marks (CSV)
             </Button>
             <Link to="/allocations">
               <Button variant="secondary">Manage on Allocation Board</Button>
@@ -413,6 +418,14 @@ export function CourseDetailPage() {
           onClose={() => setEditModalOpen(false)}
           course={courseData}
           onUpdated={refetch}
+        />
+      )}
+      {canManageCourse && courseData && (
+        <MarkImportModal
+          open={markImportModalOpen}
+          onClose={() => setMarkImportModalOpen(false)}
+          course={courseData}
+          onImported={refetch}
         />
       )}
       {isAdmin && courseData && (
