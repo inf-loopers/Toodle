@@ -25,6 +25,12 @@ export const overflowApi = {
     return response.data;
   },
 
+  // POST /overflow-claims/:id/reject (staff rejects a claim; post stays open)
+  rejectClaim: async (claimId) => {
+    const response = await apiClient.post(`/overflow-claims/${claimId}/reject`);
+    return response.data;
+  },
+
   cancelPost: async (postId) => {
     const response = await apiClient.delete(`/overflow-posts/${postId}`);
     return response.data;
