@@ -195,6 +195,13 @@ export const NAV_SECTIONS = {
       ],
     },
     {
+      heading: 'My Work',
+      // Students gain ACTIVE allocations when their overflow volunteer
+      // claims are approved, so they need timesheet access to record the
+      // work they completed.
+      items: [{ name: 'Timesheets', path: '/timesheets', icon: 'Clock' }],
+    },
+    {
       heading: 'Account',
       items: [{ name: 'Profile', path: '/profile', icon: 'Users' }],
     },
