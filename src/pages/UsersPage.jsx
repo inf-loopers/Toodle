@@ -40,7 +40,7 @@ function transitionHints(user, nextRole) {
   const hints = [];
   if (current === ROLES.TUTOR && nextRole !== ROLES.TUTOR) {
     hints.push(
-      'Their allocations, marks and timesheets stay on record, but they will no longer appear in tutor pools.',
+      'Their allocations, marks and timesheets stay on record, but they will no longer appear in tutor pools.'
     );
   }
   if (nextRole === ROLES.TUTOR && current !== ROLES.TUTOR) {

@@ -28,7 +28,7 @@ function changeRoleButtonFor(name) {
   return within(row).getByRole('button', { name: 'Change role' });
 }
 
-test('lists every user with their role, and hides the action on the admin\'s own row', async () => {
+test("lists every user with their role, and hides the action on the admin's own row", async () => {
   render(<UsersPage />);
 
   expect(await screen.findByText('Ada Admin')).toBeInTheDocument();
@@ -57,7 +57,7 @@ test('filters users by search text and by role chip', async () => {
   expect(screen.queryByText('Sam Student')).not.toBeInTheDocument();
 });
 
-test('changes a user\'s role, warns about consequences, and refreshes the list', async () => {
+test("changes a user's role, warns about consequences, and refreshes the list", async () => {
   render(<UsersPage />);
   await screen.findByText('Tessa Tutor');
 
@@ -68,15 +68,11 @@ test('changes a user\'s role, warns about consequences, and refreshes the list',
   expect(screen.getByRole('button', { name: 'Save role' })).toBeDisabled();
 
   fireEvent.change(screen.getByRole('combobox'), { target: { value: 'admin' } });
-  expect(
-    screen.getByText(/Admins can manage users, courses and allocations/),
-  ).toBeInTheDocument();
+  expect(screen.getByText(/Admins can manage users, courses and allocations/)).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'Save role' }));
 
-  await waitFor(() =>
-    expect(usersApi.updateUser).toHaveBeenCalledWith('tut-1', { role: 'ADMIN' }),
-  );
+  await waitFor(() => expect(usersApi.updateUser).toHaveBeenCalledWith('tut-1', { role: 'ADMIN' }));
   // Initial load + refetch after the successful change.
   expect(usersApi.getUsers).toHaveBeenCalledTimes(2);
 });
@@ -94,7 +90,7 @@ test('surfaces the server conflict message when the change is refused', async ()
   fireEvent.click(screen.getByRole('button', { name: 'Save role' }));
 
   expect(
-    await screen.findByText('At least one administrator account must remain.'),
+    await screen.findByText('At least one administrator account must remain.')
   ).toBeInTheDocument();
   // No refetch after a failed change.
   expect(usersApi.getUsers).toHaveBeenCalledTimes(1);
