@@ -109,11 +109,14 @@ function StaffDashboard({ user }) {
   const tutorList = tutors?.data ?? tutors ?? [];
   const allocationList = allocations?.data ?? allocations ?? [];
 
-  const activeAllocations = allocationList.filter(
-    (a) => a.status === 'ACTIVE' || a.status === 'PENDING'
-  );
+  // Only ACTIVE allocations staff a course — PENDING rows await activation
+  // and must not count toward staffing, matching the allocation board.
+  const activeAllocations = allocationList.filter((a) => a.status === 'ACTIVE');
+  const pendingCount = allocationList.filter((a) => a.status === 'PENDING').length;
   const unfilled = courseList.filter(
-    (c) => allocationList.filter((a) => a.courseId === c.id).length < (c.requiredTutors ?? 1)
+    (c) =>
+      allocationList.filter((a) => a.courseId === c.id && a.status === 'ACTIVE').length <
+      (c.requiredTutors ?? 1)
   );
 
   return (
@@ -142,7 +145,9 @@ function StaffDashboard({ user }) {
           label="Allocations"
           value={activeAllocations.length}
           tone="primary"
-          description="Active or pending assignments"
+          description={
+            pendingCount > 0 ? `${pendingCount} pending activation` : 'Active assignments'
+          }
         />
         <StatCard
           icon={AlertTriangle}
