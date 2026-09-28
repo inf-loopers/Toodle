@@ -128,7 +128,10 @@ export const NAV_SECTIONS = {
     },
     {
       heading: 'Admin',
-      items: [{ name: 'Reports', path: '/reports', icon: 'BarChart3' }],
+      items: [
+        { name: 'Users', path: '/users', icon: 'UserCog' },
+        { name: 'Reports', path: '/reports', icon: 'BarChart3' },
+      ],
     },
     {
       heading: 'Account',

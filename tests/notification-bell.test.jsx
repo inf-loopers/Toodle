@@ -97,4 +97,26 @@ describe('NotificationBell integration', () => {
 
     expect(notificationsApi.markAllAsRead).toHaveBeenCalled();
   });
+
+  it('uses a viewport-fitted notification panel on mobile', async () => {
+    const user = userEvent.setup();
+
+    notificationsApi.getNotifications.mockResolvedValue({ success: true, data: [] });
+
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>
+    );
+
+    const bellBtn = screen.getByRole('button', { name: /notifications/i });
+    await user.click(bellBtn);
+
+    const panel = screen.getByRole('region', { name: /notifications panel/i });
+    expect(panel).toHaveClass('fixed', 'inset-x-3', 'top-20', 'max-h-[calc(100dvh-5.5rem)]');
+    expect(panel).toHaveClass('sm:absolute', 'sm:w-96');
+
+    await user.click(screen.getByRole('button', { name: /close notification panel/i }));
+    expect(screen.queryByRole('region', { name: /notifications panel/i })).not.toBeInTheDocument();
+  });
 });

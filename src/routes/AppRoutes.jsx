@@ -10,6 +10,7 @@
  *   - `/tutors` (Admin, Lecturer)
  *   - `/profile` (All authenticated roles)
  *   - `/reports` (Admin)
+ *   - `/users` (Admin)
  *   - `/courses`, `/courses/:id`, `/dashboard` (All authenticated roles)
  * - Defines 404 catch-all route (`*`).
  *
@@ -36,6 +37,7 @@ import VolunteersPage from '../pages/VolunteersPage';
 import TimesheetsPage from '../pages/TimesheetsPage';
 import SessionSwapPage from '../pages/SessionSwapPage';
 import ReportsPage from '../pages/ReportsPage';
+import UsersPage from '../pages/UsersPage';
 import ProfilePage from '../pages/ProfilePage';
 import OnboardingPage from '../pages/OnboardingPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -80,6 +82,7 @@ export default function AppRoutes() {
             {/* Admin-only */}
             <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/users" element={<UsersPage />} />
             </Route>
           </Route>
         </Route>
