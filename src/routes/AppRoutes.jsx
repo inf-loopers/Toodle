@@ -17,7 +17,7 @@
  * Rendered inside `<BrowserRouter>` in `App.jsx`.
  */
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ROLES } from '../utils/constants';
 
 import PageLayout from '../components/layout/PageLayout';
@@ -25,6 +25,7 @@ import ProtectedRoute from '../components/auth/ProtectedRoute';
 import OnboardingGate from '../components/auth/OnboardingGate';
 
 import LandingPage from '../pages/LandingPage';
+import LoginPage from '../pages/LoginPage';
 import CallbackPage from '../pages/CallbackPage';
 import DashboardPage from '../pages/DashboardPage';
 import AllocationBoardPage from '../pages/AllocationBoardPage';
@@ -45,7 +46,7 @@ export default function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/callback" element={<CallbackPage />} />
 
       {/* Authenticated shell */}

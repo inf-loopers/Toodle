@@ -8,6 +8,7 @@
  * - Locks the shell to the viewport (`h-screen overflow-hidden`): the sidebar stays
  *   pinned while `<main>` scrolls independently, and the content column (`min-w-0`)
  *   can shrink below wide content so pages never scroll horizontally at body level.
+ * - Keeps the top navigation as one continuous app bar above the sidebar and content.
  *
  * Expected Usage:
  * Used as the layout element in React Router protected routes:
@@ -70,6 +71,12 @@ export function PageLayout() {
 
   return (
     <div className="toodle-app flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
+      <Navbar
+        title={title}
+        isSidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+      />
+
       <div className="flex min-h-0 flex-1">
         <Sidebar
           isOpen={sidebarOpen}
@@ -81,12 +88,6 @@ export function PageLayout() {
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <Navbar
-            title={title}
-            isSidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen((v) => !v)}
-          />
-
           <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8">
             <Outlet />
           </main>

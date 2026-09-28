@@ -39,7 +39,6 @@ import {
   Sun,
   Users,
   Wifi,
-  X,
 } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -120,7 +119,7 @@ export function Sidebar({
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          className="fixed bottom-0 left-0 right-0 top-16 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -128,7 +127,7 @@ export function Sidebar({
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
+          'fixed bottom-0 left-0 top-16 z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
           'lg:sticky lg:top-0 lg:z-40 lg:h-full lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           isCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64'
@@ -138,7 +137,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={onToggleCollapsed}
-          className="absolute -right-3 top-6 z-50 hidden h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+          className="absolute -right-3 top-12 z-50 hidden h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-pressed={isCollapsed}
         >
@@ -149,36 +148,13 @@ export function Sidebar({
           )}
         </button>
 
-        {/* Branding */}
-        <div
+        {/* Navigation */}
+        <nav
           className={cn(
-            'relative flex h-20 items-center gap-3 border-b border-slate-100 px-6 dark:border-slate-800',
-            isCollapsed && 'lg:justify-center lg:px-3'
+            'flex-1 overflow-y-auto overflow-x-hidden px-3 py-6',
+            isCollapsed && 'lg:px-2'
           )}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
-            T
-          </div>
-
-          <div className={cn(isCollapsed && 'lg:hidden')}>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Toodle</h1>
-
-            <p className="text-xs text-slate-400">Tutor Management</p>
-          </div>
-
-          {/* Mobile close */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            aria-label="Close sidebar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className={cn('flex-1 overflow-y-auto px-3 py-6', isCollapsed && 'lg:px-2')}>
           {sections.map((section) => (
             <div key={section.heading} className="sidebar-section">
               <p
@@ -230,12 +206,6 @@ export function Sidebar({
                           {badge}
                         </span>
                       )}
-
-                      {isCollapsed && (
-                        <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 lg:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                          {item.name}
-                        </span>
-                      )}
                     </NavLink>
                   );
                 })}
@@ -268,12 +238,6 @@ export function Sidebar({
               </span>
 
               <span className={cn('truncate', isCollapsed && 'lg:hidden')}>Report a problem</span>
-
-              {isCollapsed && (
-                <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 lg:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                  Report a problem
-                </span>
-              )}
             </button>
           </div>
 
@@ -281,14 +245,12 @@ export function Sidebar({
           <div className="mb-3">
             <button
               type="button"
-              role="switch"
-              aria-checked={isDark}
               aria-label={themeTooltip}
               title={isCollapsed ? themeTooltip : undefined}
               onClick={onToggleTheme}
               className={cn(
                 'sidebar-theme-button group relative',
-                isCollapsed && 'lg:flex-col lg:justify-center lg:gap-1 lg:px-2'
+                isCollapsed && 'lg:justify-center lg:gap-0 lg:px-2'
               )}
             >
               <span className="icon-box">
@@ -296,23 +258,6 @@ export function Sidebar({
               </span>
 
               <span className={cn('truncate', isCollapsed && 'lg:hidden')}>{themeLabel}</span>
-
-              <span
-                className={cn(
-                  'theme-switch',
-                  isDark && 'theme-switch-on',
-                  isCollapsed && 'theme-switch-compact lg:ml-0'
-                )}
-                aria-hidden="true"
-              >
-                <span className="theme-switch-thumb" />
-              </span>
-
-              {isCollapsed && (
-                <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 lg:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                  {themeTooltip}
-                </span>
-              )}
             </button>
           </div>
 
@@ -343,13 +288,6 @@ export function Sidebar({
           {/* Collapsed account status */}
           {isCollapsed && (
             <div className="hidden flex-col items-center gap-2 lg:flex">
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-200"
-                title={roleLabel}
-              >
-                {roleLabel.charAt(0)}
-              </div>
-
               <div
                 className="flex h-8 w-8 items-center justify-center text-emerald-600"
                 title="Connected"
