@@ -3,7 +3,7 @@
  * @description Top navigation bar component.
  *
  * Responsibilities:
- * - Displays the current page title and Toodle branding on mobile.
+ * - Displays Toodle branding and the current page title.
  * - Mobile hamburger toggle button to open/close the responsive Sidebar.
  * - Displays the notification bell and notification dropdown.
  * - Authenticated user section with profile dropdown.
@@ -26,6 +26,7 @@ import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import NotificationBell from './NotificationBell';
 import UserAvatar from '../ui/UserAvatar';
+import toodleLogo from '../../assets/toodle_tutor_management_logo.png';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, dbUser, role, logout } = useAuth();
@@ -92,7 +93,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#0b1220]/85 lg:px-8">
         {/* Left section */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={onToggleSidebar}
@@ -102,18 +103,13 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
             {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
-          {/* Mobile logo */}
-          <div className="flex items-center gap-2 md:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white">
-              T
-            </div>
-
-            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Toodle</span>
+          <div className="flex shrink-0 items-center gap-2">
+            <img src={toodleLogo} alt="" className="h-9 w-9 object-contain" />
           </div>
 
           {/* Desktop page title */}
           {title && (
-            <h2 className="hidden text-lg font-semibold text-slate-900 dark:text-slate-100 md:block">
+            <h2 className="hidden truncate text-lg font-semibold text-slate-900 dark:text-slate-100 md:block">
               {title}
             </h2>
           )}
