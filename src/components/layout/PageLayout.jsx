@@ -5,7 +5,7 @@
  * Responsibilities:
  * - Coordinates state for mobile responsive sidebar navigation.
  * - Composes `<Navbar />`, `<Sidebar />`, dynamic main `<Outlet />`, and `<Footer />`.
- * - Locks the shell to the viewport (`h-screen overflow-hidden`): the sidebar stays
+ * - Locks the shell to the viewport (`h-screen h-[100dvh] overflow-hidden`): the sidebar stays
  *   pinned while `<main>` scrolls independently, and the content column (`min-w-0`)
  *   can shrink below wide content so pages never scroll horizontally at body level.
  * - Keeps the top navigation as one continuous app bar above the sidebar and content.
@@ -71,14 +71,14 @@ export function PageLayout() {
   }, [sidebarCollapsed]);
 
   return (
-    <div className="toodle-app flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
+    <div className="toodle-app flex h-screen h-[100dvh] flex-col overflow-hidden overscroll-none bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
       <Navbar
         title={title}
         isSidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 overflow-hidden bg-slate-50 dark:bg-[#0b1220]">
         <Sidebar
           isOpen={sidebarOpen}
           isCollapsed={sidebarCollapsed}
@@ -88,8 +88,8 @@ export function PageLayout() {
           onToggleTheme={() => setTheme((value) => (value === 'dark' ? 'light' : 'dark'))}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-50 p-4 dark:bg-[#0b1220] sm:p-6 lg:p-8">
             <Outlet />
           </main>
         </div>

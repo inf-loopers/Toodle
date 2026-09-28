@@ -13,7 +13,7 @@
  * Route: `/tutors`
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Users, Clock, Award, Plus } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { tutorsApi } from '../api/tutors';
@@ -26,22 +26,37 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Select, Input } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
+import FormError from '../components/ui/FormError';
+import { getApiErrorMessage } from '../utils/apiError';
 
 function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
   const [courseId, setCourseId] = useState('');
   const [mark, setMark] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const tutorId = tutor?.id;
+
+  // Clear the mark form when a different tutor is opened. A failed save keeps
+  // whatever was typed so the staff member can correct it and retry.
+  useEffect(() => {
+    setCourseId('');
+    setMark('');
+    setError('');
+  }, [tutorId]);
 
   if (!tutor) return null;
 
   const handleAddMark = async () => {
     if (!courseId || mark === '') return;
     setSubmitting(true);
+    setError('');
     try {
       await tutorsApi.addOrUpdateMark(tutor.id, { courseId, mark: Number(mark) });
       onUpdated();
       setCourseId('');
       setMark('');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not save the mark.'));
     } finally {
       setSubmitting(false);
     }
@@ -70,6 +85,7 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
           </div>
 
           <div className="mt-4 space-y-3 rounded-xl border border-slate-100 p-3">
+            <FormError message={error} />
             <Select
               label="Add / update a mark"
               value={courseId}
@@ -141,7 +157,14 @@ export function TutorsPage() {
   );
 
   if (loading) return <Spinner fullPage label="Loading tutors…" />;
-  if (error) return <ErrorState title="Couldn't load tutors" description={error} />;
+  if (error)
+    return (
+      <ErrorState
+        title="Couldn't load tutors"
+        description={error}
+        action={<Button onClick={refetch}>Try again</Button>}
+      />
+    );
 
   return (
     <>

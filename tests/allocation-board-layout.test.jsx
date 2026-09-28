@@ -124,17 +124,29 @@ describe('App shell scrolling', () => {
   it('locks the shell to the viewport so the page itself never scrolls', () => {
     const { container } = renderShell();
 
-    expect(container.firstChild).toHaveClass('h-screen', 'overflow-hidden');
+    expect(container.firstChild).toHaveClass(
+      'h-screen',
+      'h-[100dvh]',
+      'overflow-hidden',
+      'overscroll-none'
+    );
   });
 
   it('scrolls main independently and keeps the sidebar outside the scroller', () => {
     renderShell();
 
     const main = screen.getByTestId('page-content').closest('main');
-    expect(main).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto', 'overflow-x-hidden');
+    expect(main).toHaveClass(
+      'min-h-0',
+      'flex-1',
+      'overflow-y-auto',
+      'overflow-x-hidden',
+      'overscroll-contain'
+    );
     expect(main.contains(screen.getByTestId('sidebar'))).toBe(false);
     // The content column can shrink below wide content — pages with wide
     // inner regions (like the board) scroll inside, never at body level.
-    expect(main.parentElement).toHaveClass('min-w-0', 'flex-1');
+    expect(main.parentElement).toHaveClass('min-h-0', 'min-w-0', 'flex-1');
+    expect(main.parentElement.parentElement).toHaveClass('overflow-hidden');
   });
 });

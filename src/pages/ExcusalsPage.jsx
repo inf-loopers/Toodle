@@ -26,10 +26,8 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
-
-function getErrorMessage(err, fallback) {
-  return err?.response?.data?.message || err?.response?.data?.error || err?.message || fallback;
-}
+import FormError from '../components/ui/FormError';
+import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
 
 function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
   const [allocationId, setAllocationId] = useState('');
@@ -121,11 +119,7 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
           onChange={(e) => setReason(e.target.value)}
         />
 
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
       </div>
     </Modal>
   );
@@ -186,11 +180,7 @@ function DeclineExcusalModal({ excusal, onClose, onDeclined }) {
           onChange={(e) => setReason(e.target.value)}
         />
 
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
       </div>
     </Modal>
   );
@@ -236,7 +226,13 @@ export function ExcusalsPage() {
   }
 
   if (error) {
-    return <ErrorState title="Couldn't load excusals" description={error} />;
+    return (
+      <ErrorState
+        title="Couldn't load excusals"
+        description={error}
+        action={<Button onClick={refetch}>Try again</Button>}
+      />
+    );
   }
 
   return (
