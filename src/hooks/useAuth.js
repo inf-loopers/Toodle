@@ -49,7 +49,7 @@ export function useAuth() {
   const role = (dbUser?.role || jwtRole)?.toLowerCase() ?? null;
   const error = syncError || auth0Error?.message || null;
 
-  const login = () => loginWithRedirect();
+  const login = (options) => loginWithRedirect(options);
 
   const logout = () => auth0Logout({ logoutParams: { returnTo: window.location.origin } });
 

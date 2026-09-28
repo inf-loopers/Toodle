@@ -1,43 +1,52 @@
 import React from 'react';
-import { LayoutGrid, PenLine, HandHeart } from 'lucide-react';
+import { LayoutDashboard, Clock3, HandHeart } from 'lucide-react';
 import FeatureCard from './FeatureCard';
 
 const FEATURES = [
   {
-    icon: LayoutGrid,
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
+    icon: LayoutDashboard,
     title: 'Lecturers & Admins',
     description:
-      'Optimise allocations with real-time validation and AI assistance. Manage large cohorts with confidence using our high-density scheduling board.',
+      'Manage tutor allocations, monitor academic support, and coordinate large course teams from one organised workspace.',
   },
   {
-    icon: PenLine,
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600',
+    icon: Clock3,
     title: 'Tutors',
     description:
-      'Manage your schedule, log hours, and track payments seamlessly. Keep your timesheets organised and verified in one central location.',
+      'Keep track of sessions, timesheets, allocations and academic responsibilities in one convenient place.',
   },
   {
     icon: HandHeart,
-    iconBg: 'bg-purple-100',
-    iconColor: 'text-purple-600',
     title: 'Volunteers',
     description:
-      'Find and claim overflow work to support your academic community. Contribute to peer success while building your academic portfolio.',
+      'Discover overflow opportunities, support students and contribute where extra academic assistance is needed.',
   },
 ];
 
 export default function FeatureSection() {
   return (
-    <section className="relative bg-white">
-      <div className="max-w-6xl mx-auto px-6 -mt-24 pb-20 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <section id="features" className="bg-slate-50 py-20">
+      <div className="mx-auto max-w-7xl px-6 md:px-10">
+        <header className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#f6b81a]">
+            Built for every role
+          </p>
+
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#0b3b70] md:text-4xl">
+            One space for the whole tutoring community.
+          </h2>
+
+          <p className="mt-4 text-base leading-relaxed text-slate-500">
+            Whether you coordinate tutors, teach students or volunteer your time, Toodle keeps
+            everything connected.
+          </p>
+        </header>
+
+        <section className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
           {FEATURES.map((feature) => (
             <FeatureCard key={feature.title} {...feature} />
           ))}
-        </div>
+        </section>
       </div>
     </section>
   );

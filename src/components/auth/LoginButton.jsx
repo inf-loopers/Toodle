@@ -1,8 +1,25 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { cn } from '../../utils/helpers';
 
-export default function LoginButton() {
+export default function LoginButton({
+  className,
+  children = 'Continue to sign in or sign up',
+  screenHint,
+  ...props
+}) {
   const { isAuthenticated, isLoading, user, login, logout } = useAuth();
+  const location = useLocation();
+
+  const returnTo = typeof location.state?.from === 'string' ? location.state.from : '/dashboard';
+
+  const handleLogin = () => {
+    login({
+      appState: { returnTo },
+      ...(screenHint ? { authorizationParams: { screen_hint: screenHint } } : {}),
+    });
+  };
 
   if (isLoading) return null;
 
@@ -22,10 +39,15 @@ export default function LoginButton() {
 
   return (
     <button
-      onClick={login}
-      className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl px-5 py-2.5"
+      type="button"
+      onClick={handleLogin}
+      className={cn(
+        'rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800',
+        className
+      )}
+      {...props}
     >
-      Sign In to Portal
+      {children}
     </button>
   );
 }

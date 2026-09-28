@@ -21,7 +21,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, GraduationCap, Moon, PartyPopper, Sun } from 'lucide-react';
+import { Check, ChevronRight, Moon, PartyPopper, Sun } from 'lucide-react';
 
 import { useAuth } from '../hooks/useAuth';
 import { usersApi } from '../api/users';
@@ -37,6 +37,7 @@ import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
+import toodleLogo from '../assets/toodle_tutor_management_logo.png';
 
 const STEPS = [
   { key: 'yearOfStudy', label: 'Year of study' },
@@ -182,9 +183,12 @@ export function OnboardingPage() {
 
         {/* Heading */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <GraduationCap className="h-6 w-6" />
-          </div>
+          <img
+            src={toodleLogo}
+            alt="Toodle logo"
+            className="mx-auto mb-4 h-16 w-16 object-contain"
+          />
+
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Welcome to Toodle
           </h1>
