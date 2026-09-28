@@ -44,7 +44,7 @@ function getCurrentMonday() {
   const monday = new Date(
     today.getFullYear(),
     today.getMonth(),
-    today.getDate() - ((today.getDay() + 6) % 7),
+    today.getDate() - ((today.getDay() + 6) % 7)
   );
 
   // Format from local calendar parts — toISOString() shifts the date in
