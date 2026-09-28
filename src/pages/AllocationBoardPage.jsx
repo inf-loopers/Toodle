@@ -73,6 +73,7 @@ import { Select, Input, Textarea } from '../components/ui/Input';
 import { ErrorState, EmptyState } from '../components/ui/EmptyState';
 import AllocationMarkVerification from '../components/AllocationMarkVerification';
 import { allocationCollisionDetection } from '../utils/allocationCollision';
+import { describeAllocationError, isStaleAllocationError } from '../utils/allocationErrors';
 
 // ── Stat Chip ──────────────────────────────────────────────────────────
 
@@ -96,6 +97,7 @@ function AssignTutorModal({
   initialValidation,
   onAssigned,
   onMarkSaved,
+  onStale,
 }) {
   const [tutorId, setTutorId] = useState('');
   const [hours, setHours] = useState(DEFAULT_HOURS);
@@ -161,13 +163,10 @@ function AssignTutorModal({
       onAssigned();
       onClose();
     } catch (err) {
-      // Backend error responses use the `error` key ({ success: false, error })
-      setSubmitError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          'Could not create the allocation.'
-      );
+      setSubmitError(describeAllocationError(err, 'Could not create the allocation.'));
+      // 404/409 mean the board moved on while this dialog was open — refresh
+      // it in the background so the next attempt uses the latest state.
+      if (isStaleAllocationError(err)) onStale?.();
     } finally {
       setSubmitting(false);
     }
@@ -441,8 +440,13 @@ function DragOverlayCard({ tutor, usedHours }) {
 
 function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
   const user = allocation.user;
+  const locked = Boolean(allocation.isLocked);
   return (
-    <div className="group rounded-lg border border-slate-200 bg-white p-2.5 transition-colors hover:border-slate-300">
+    <div
+      className={`group rounded-lg border p-2.5 transition-colors ${
+        locked ? 'border-slate-300 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-300'
+      }`}
+    >
       <div className="flex items-center gap-2">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-[10px] font-bold text-primary">
           {getInitials(user?.name)}
@@ -452,22 +456,32 @@ function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
             {user?.name || allocation.userId}
           </p>
           <p className="text-[10px] text-slate-400">{formatHours(allocation.hoursPerWeek)}/wk</p>
-          <Badge tone={allocation.status === 'ACTIVE' ? 'success' : 'warning'}>
-            {allocation.status}
-          </Badge>
+          <span className="inline-flex items-center gap-1">
+            <span
+              title={
+                allocation.status === 'PENDING' ? 'Pending — not counted as staffed' : undefined
+              }
+            >
+              <Badge tone={allocation.status === 'ACTIVE' ? 'success' : 'warning'}>
+                {allocation.status}
+              </Badge>
+            </span>
+            {locked && <Lock className="h-3 w-3 text-slate-400" aria-label="Locked" />}
+          </span>
         </div>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             onClick={() => onToggleLock(allocation)}
             className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            title={allocation.isLocked ? 'Unlock' : 'Lock'}
+            title={locked ? 'Unlock' : 'Lock'}
           >
-            {allocation.isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+            {locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
           <button
             onClick={() => onRemove(allocation)}
-            className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500"
-            title="Remove"
+            disabled={locked}
+            className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+            title={locked ? 'Unlock this allocation before removing it' : 'Remove'}
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -643,6 +657,7 @@ function AllocationBoard() {
     updateTutorMark,
     allocationList,
     loading,
+    hasData,
     coursesError,
     allocatedHoursMap,
     allocationCountMap,
@@ -724,7 +739,7 @@ function AllocationBoard() {
   const handleDragCancel = useCallback(() => cancelDrag(), [cancelDrag]);
 
   if (loading) return <Spinner fullPage label="Loading the allocation board…" />;
-  if (coursesError)
+  if (!hasData && coursesError)
     return <ErrorState title="Couldn't load the board" description={coursesError} />;
 
   return (
@@ -760,6 +775,22 @@ function AllocationBoard() {
           </span>
         </div>
       </div>
+
+      {/* Background refresh failure — the board keeps the last good state */}
+      {hasData && coursesError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Board refresh failed</p>
+            <p className="mt-0.5 text-sm text-amber-700">
+              Showing the last loaded state — the board retries automatically. ({coursesError})
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Mutation error banner (lock/unlock/remove failures) */}
       {mutationError && (
@@ -908,6 +939,7 @@ function AllocationBoard() {
         onClose={closeAssignModal}
         onAssigned={refetchAll}
         onMarkSaved={updateTutorMark}
+        onStale={refetchAll}
       />
     </>
   );
