@@ -37,6 +37,7 @@ const PAGE_TITLES = [
   { match: '/excusals', title: 'Excusals' },
   { match: '/swaps', title: 'Session Swaps' },
   { match: '/reports', title: 'Reports' },
+  { match: '/users', title: 'Users' },
   { match: '/profile', title: 'My Profile' },
 ];
 
