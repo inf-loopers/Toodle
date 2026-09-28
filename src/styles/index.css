@@ -184,55 +184,6 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   color: #1d4ed8;
 }
 
-.theme-switch {
-  margin-left: auto;
-  display: inline-flex;
-  width: 2.25rem;
-  height: 1.25rem;
-  align-items: center;
-  border-radius: 9999px;
-  background-color: #e2e8f0;
-  padding: 0.125rem;
-  flex-shrink: 0;
-  transition: background-color 180ms ease;
-}
-
-.theme-switch-thumb {
-  display: block;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 9999px;
-  background-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
-  transform: translateX(0);
-  transition: transform 180ms ease;
-}
-
-.theme-switch-on {
-  background-color: var(--color-wits-gold);
-}
-
-.theme-switch-on .theme-switch-thumb {
-  transform: translateX(1rem);
-}
-
-@media (min-width: 1024px) {
-  .theme-switch-compact {
-    width: 1.75rem;
-    height: 0.875rem;
-    padding: 0.125rem;
-  }
-
-  .theme-switch-compact .theme-switch-thumb {
-    width: 0.625rem;
-    height: 0.625rem;
-  }
-
-  .theme-switch-compact.theme-switch-on .theme-switch-thumb {
-    transform: translateX(0.875rem);
-  }
-}
-
 html.dark .sidebar-heading {
   color: #64748b;
 }
@@ -274,14 +225,6 @@ html.dark .sidebar-nav-item.active .icon-box {
 html.dark .sidebar-badge {
   background-color: rgba(59, 130, 246, 0.22);
   color: #bfdbfe;
-}
-
-html.dark .theme-switch {
-  background-color: #334155;
-}
-
-html.dark .theme-switch-on {
-  background-color: var(--color-wits-gold);
 }
 
 @layer utilities {

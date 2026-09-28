@@ -30,7 +30,8 @@ describe('App Smoke Test', () => {
         <App />
       </MemoryRouter>
     );
-    expect(screen.getByText('Toodle - Wits Tutor Management')).toBeInTheDocument();
-    expect(screen.getByText(/Empowering Academic Excellence/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Toodle' })).toBeInTheDocument();
+    expect(screen.getByText(/Tutor Management Made Simple/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Get Started/i })).toBeInTheDocument();
   });
 });
