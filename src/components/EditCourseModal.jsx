@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react';
 import { coursesApi } from '../api/courses';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
+import FormError from './ui/FormError';
 import { Input, Textarea, Select } from './ui/Input';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export function EditCourseModal({ open, onClose, course, onUpdated }) {
   const [form, setForm] = useState({
@@ -91,12 +93,7 @@ export function EditCourseModal({ open, onClose, course, onUpdated }) {
       await onUpdated?.();
       onClose();
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err.message ||
-          'Could not update course settings.'
-      );
+      setError(getApiErrorMessage(err, 'Could not update course settings.'));
     } finally {
       setSubmitting(false);
     }
@@ -120,11 +117,7 @@ export function EditCourseModal({ open, onClose, course, onUpdated }) {
       }
     >
       <div className="space-y-4">
-        {error && (
-          <p role="alert" className="text-xs font-medium text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
 
         <div className="grid grid-cols-2 gap-4">
           <Input label="Course code" value={course?.code || ''} disabled readOnly />
