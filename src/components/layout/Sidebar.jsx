@@ -37,6 +37,7 @@ import {
   LayoutGrid,
   Moon,
   Sun,
+  UserCog,
   Users,
   Wifi,
 } from 'lucide-react';
@@ -58,6 +59,7 @@ const ICONS = {
   ArrowLeftRight,
   HandHeart,
   BarChart3,
+  UserCog,
 };
 
 const PAGE_NAMES = [
@@ -70,6 +72,7 @@ const PAGE_NAMES = [
   { match: '/swaps', name: 'Session Swaps' },
   { match: '/volunteers', name: 'Volunteer Overflow' },
   { match: '/reports', name: 'Reports' },
+  { match: '/users', name: 'Users' },
   { match: '/profile', name: 'My Profile' },
 ];
 
