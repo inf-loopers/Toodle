@@ -299,7 +299,13 @@ function AssignTutorModal({
           />
         )}
 
-        {submitError && <p className="text-xs text-rose-600">{submitError}</p>}
+        {/* Announced to assistive technology: the message itself already
+            carries the next action via describeAllocationError(). */}
+        {submitError && (
+          <p role="alert" className="text-xs text-rose-600">
+            {submitError}
+          </p>
+        )}
       </div>
     </Modal>
   );
