@@ -3,8 +3,10 @@ import { CheckCircle2 } from 'lucide-react';
 
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import FormError from '../ui/FormError';
 import { Select, Textarea } from '../ui/Input';
 import { reportsApi } from '../../api/reports';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const PAGE_OPTIONS = [
   'Dashboard',
@@ -62,12 +64,7 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
       });
       setSubmitted(true);
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          'Could not send your report. Please try again.'
-      );
+      setError(getApiErrorMessage(err, 'Could not send your report. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -156,14 +153,7 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
             </span>
           </label>
 
-          {error && (
-            <p
-              role="alert"
-              className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700"
-            >
-              {error}
-            </p>
-          )}
+          <FormError message={error} />
         </div>
       )}
     </Modal>

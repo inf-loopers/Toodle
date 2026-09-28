@@ -17,8 +17,10 @@ import Card from '../components/ui/Card';
 import EmptyState from '../components/ui/EmptyState';
 import Input, { Select } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
+import FormError from '../components/ui/FormError';
 import Spinner from '../components/ui/Spinner';
 import { ROLE_LABELS, ROLES } from '../utils/constants';
+import { getApiErrorMessage } from '../utils/apiError';
 
 // DB roles are uppercase enum values; ROLES/ROLE_LABELS use lowercase keys.
 const roleKey = (role) => String(role ?? '').toLowerCase();
@@ -68,7 +70,7 @@ function ChangeRoleModal({ user, onClose, onChanged }) {
       await onChanged();
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.error || err.message || 'Could not change the role.');
+      setError(getApiErrorMessage(err, 'Could not change the role.'));
     } finally {
       setSubmitting(false);
     }
@@ -104,11 +106,7 @@ function ChangeRoleModal({ user, onClose, onChanged }) {
             {hint}
           </p>
         ))}
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
       </div>
     </Modal>
   );
