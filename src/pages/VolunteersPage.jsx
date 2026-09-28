@@ -11,7 +11,7 @@
  * Route: `/volunteers`
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, HandHeart, CheckCircle2, XCircle, Clock, Mail, CalendarClock } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
@@ -26,6 +26,8 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
+import FormError from '../components/ui/FormError';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const STATUS_TONE = {
   OPEN: 'info',
@@ -52,15 +54,28 @@ const CLAIM_STATUS_LABEL = {
 function PostWorkModal({ open, onClose, courses, onCreated }) {
   const [form, setForm] = useState({ courseId: '', hoursPerWeek: 2, description: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // Start from a clean slate each time the dialog is opened. Resetting on open
+  // (rather than after a submit) means a failed post keeps everything typed so
+  // far, while a successful one never leaves stale data behind.
+  useEffect(() => {
+    if (!open) return;
+    setForm({ courseId: '', hoursPerWeek: 2, description: '' });
+    setError('');
+  }, [open]);
 
   const handleSubmit = async () => {
     if (!form.courseId) return;
     setSubmitting(true);
+    setError('');
     try {
       await overflowApi.createPost({ ...form, hoursPerWeek: Number(form.hoursPerWeek) });
       onCreated();
       onClose();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not post the work.'));
     } finally {
       setSubmitting(false);
     }
@@ -84,6 +99,7 @@ function PostWorkModal({ open, onClose, courses, onCreated }) {
       }
     >
       <div className="space-y-4">
+        <FormError message={error} />
         <Select label="Course" value={form.courseId} onChange={update('courseId')}>
           <option value="">Choose a course…</option>
           {courses.map((c) => (
@@ -117,6 +133,7 @@ export function VolunteersPage() {
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [courseFilter, setCourseFilter] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const posts = data?.data ?? data ?? [];
   const courses = coursesData?.data ?? coursesData ?? [];
@@ -149,9 +166,12 @@ export function VolunteersPage() {
 
   const handleClaim = async (postId) => {
     setBusyId(postId);
+    setActionError('');
     try {
       await overflowApi.claimPost(postId);
       refetch();
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, 'Could not claim this work.'));
     } finally {
       setBusyId(null);
     }
@@ -159,9 +179,12 @@ export function VolunteersPage() {
 
   const handleApproveClaim = async (claimId) => {
     setBusyId(claimId);
+    setActionError('');
     try {
       await overflowApi.approveClaim(claimId);
       refetch();
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, 'Could not approve this claim.'));
     } finally {
       setBusyId(null);
     }
@@ -169,16 +192,26 @@ export function VolunteersPage() {
 
   const handleRejectClaim = async (claimId) => {
     setBusyId(`reject-${claimId}`);
+    setActionError('');
     try {
       await overflowApi.rejectClaim(claimId);
       refetch();
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, 'Could not reject this claim.'));
     } finally {
       setBusyId(null);
     }
   };
 
   if (loading) return <Spinner fullPage label="Loading overflow work…" />;
-  if (error) return <ErrorState title="Couldn't load overflow work" description={error} />;
+  if (error)
+    return (
+      <ErrorState
+        title="Couldn't load overflow work"
+        description={error}
+        action={<Button onClick={refetch}>Try again</Button>}
+      />
+    );
 
   // --- Course filter dropdown (shared by both views) ---
   const courseFilterBar = courses.length > 0 && (
@@ -239,6 +272,24 @@ export function VolunteersPage() {
           </Button>
         )}
       </div>
+
+      {/* Page-level action failure (claim / approve / reject). These actions
+          carry no form input, so the copy points at retrying rather than at
+          keeping data. */}
+      {actionError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/80 p-4"
+        >
+          <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
+          <div>
+            <p className="text-sm font-medium text-rose-700">{actionError}</p>
+            <p className="mt-0.5 text-xs text-rose-500">
+              You can try again — if it keeps failing, reload the page for the latest state.
+            </p>
+          </div>
+        </div>
+      )}
 
       {courseFilterBar}
 
