@@ -13,6 +13,10 @@
  *   replacement. Mutation failures are caught and exposed as `mutationError`
  *   (with `clearMutationError`) so the board can surface them as a banner
  *   instead of unhandled promise rejections.
+ * - Lecturers only see the courses they coordinate (matching the allocations
+ *   API scoping); admins and unknown roles see every course.
+ * - Background refreshes keep the board mounted (no full-page spinner), and
+ *   stale mutation failures (404/409) surface actionable feedback plus a refetch.
  *
  * Expected Usage:
  * ```jsx
@@ -25,9 +29,12 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useAuthContext } from './AuthContext';
 import { coursesApi } from '../api/courses';
 import { tutorsApi } from '../api/tutors';
 import { allocationsApi } from '../api/allocations';
+import { ROLES } from '../utils/constants';
+import { describeAllocationError, isStaleAllocationError } from '../utils/allocationErrors';
 
 /** Default weekly hours for drag-over validation previews and the assign modal. */
 export const DEFAULT_HOURS = 2;
@@ -65,6 +72,12 @@ export function AllocationProvider({ children }) {
     refetch: refetchAllocations,
   } = useApi(allocationsApi.getAllocations);
 
+  // Auth context is optional (unit tests render without it); the board only
+  // scopes courses when it knows the viewer is a lecturer.
+  const auth = useAuthContext();
+  const role = auth?.dbUser?.role ?? null;
+  const userId = auth?.dbUser?.id ?? null;
+
   // ── Shared UI state ──────────────────────────────────────────────────
   /** Course the assign modal targets (with optional `_preselectedTutorId` / `_dropValidation`). */
   const [assignTarget, setAssignTarget] = useState(null);
@@ -75,10 +88,22 @@ export function AllocationProvider({ children }) {
   const [overCourseId, setOverCourseId] = useState(null);
   const [hoverValidation, setHoverValidation] = useState(null);
 
-  const loading = coursesLoading || tutorsLoading || allocLoading;
-  const courseList = useMemo(() => courses?.data ?? courses ?? [], [courses]);
+  const rawCourseList = useMemo(() => courses?.data ?? courses ?? [], [courses]);
+  // Lecturers only manage the courses they coordinate (matching the
+  // allocations API scoping); admins and unknown roles see every course.
+  const courseList = useMemo(() => {
+    if (role !== ROLES.LECTURER || !userId) return rawCourseList;
+    return rawCourseList.filter((course) =>
+      (course.coordinators ?? []).some((coord) => (coord.user?.id ?? coord.userId) === userId)
+    );
+  }, [rawCourseList, role, userId]);
   const tutorList = useMemo(() => tutors?.data ?? tutors ?? [], [tutors]);
   const allocationList = useMemo(() => allocations?.data ?? allocations ?? [], [allocations]);
+
+  // Background refreshes keep the board mounted: only the initial load shows
+  // the full-page spinner, and only then can load errors go full-page.
+  const hasData = courses != null && tutors != null && allocations != null;
+  const loading = !hasData && (coursesLoading || tutorsLoading || allocLoading);
 
   // ── Derived maps ─────────────────────────────────────────────────────
   const allocatedHoursMap = useMemo(() => {
@@ -183,10 +208,6 @@ export function AllocationProvider({ children }) {
   /** Last mutation failure (lock/unlock/remove), surfaced as a board banner. */
   const [mutationError, setMutationError] = useState(null);
 
-  /** Pull the human-readable message out of an axios/API error. */
-  const extractApiError = (err, fallback) =>
-    err?.response?.data?.error || err?.response?.data?.message || err?.message || fallback;
-
   const clearMutationError = useCallback(() => setMutationError(null), []);
 
   const toggleLock = useCallback(
@@ -198,7 +219,10 @@ export function AllocationProvider({ children }) {
         });
         await refetchAllocations();
       } catch (err) {
-        setMutationError(extractApiError(err, 'Could not update the allocation.'));
+        setMutationError(describeAllocationError(err, 'Could not update the allocation lock.'));
+        // Stale view of the board — pull the latest state so the organiser
+        // retries against what is actually stored.
+        if (isStaleAllocationError(err)) await refetchAllocations().catch(() => {});
       }
     },
     [refetchAllocations]
@@ -211,7 +235,8 @@ export function AllocationProvider({ children }) {
         await allocationsApi.deleteAllocation(allocation.id);
         await refetchAllocations();
       } catch (err) {
-        setMutationError(extractApiError(err, 'Could not remove the allocation.'));
+        setMutationError(describeAllocationError(err, 'Could not remove the allocation.'));
+        if (isStaleAllocationError(err)) await refetchAllocations().catch(() => {});
       }
     },
     [refetchAllocations]
@@ -314,6 +339,7 @@ export function AllocationProvider({ children }) {
       tutorList,
       allocationList,
       loading,
+      hasData,
       coursesError: coursesError || tutorsError || allocationsError,
       updateTutorMark,
       // Derived
@@ -348,6 +374,7 @@ export function AllocationProvider({ children }) {
       tutorList,
       allocationList,
       loading,
+      hasData,
       coursesError,
       tutorsError,
       allocationsError,
