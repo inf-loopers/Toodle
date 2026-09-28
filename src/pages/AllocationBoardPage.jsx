@@ -23,6 +23,10 @@
  *   breakpoint, see `useIsMobile`) where the board degrades to a modal-only
  *   flow (tap tutor card / "+ Assign tutor"), and a KeyboardSensor enables
  *   keyboard-driven dragging on desktop (Space/Enter, arrows, Esc).
+ * - Bounded layout: the board never grows the page — course columns scroll
+ *   horizontally inside the board, the tutor pool shows five cards and sets
+ *   the board's height, and every course column matches that level with its
+ *   assigned-tutor list scrolling internally.
  *
  * Role: Staff Only (Admin, Lecturer)
  * Endpoint Connections: `GET /allocations`, `POST /allocations`, `DELETE /allocations/:id`, `GET /allocations/validate`
@@ -536,7 +540,8 @@ function CourseColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-w-[260px] flex-1 flex-col rounded-2xl border-2 transition-colors ${dropZoneClass}`}
+      data-testid="course-column"
+      className={`flex min-h-0 min-w-[260px] flex-1 flex-col rounded-2xl border-2 transition-colors ${dropZoneClass}`}
     >
       {/* Column header */}
       <div className="border-b border-slate-100 px-4 py-3">
@@ -600,8 +605,11 @@ function CourseColumn({
         </div>
       )}
 
-      {/* Assigned tutors */}
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      {/* Assigned tutors — fills the column (level with the pool); scrolls when they exceed it. */}
+      <div
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
+        data-testid="course-column-list"
+      >
         {allocations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
@@ -743,9 +751,9 @@ function AllocationBoard() {
     return <ErrorState title="Couldn't load the board" description={coursesError} />;
 
   return (
-    <>
+    <div className="flex min-h-0 flex-col lg:min-h-full">
       {/* Header */}
-      <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+      <div className="mb-6 flex shrink-0 flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <p className="text-sm font-medium text-primary">2026 Academic Year</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
@@ -780,7 +788,7 @@ function AllocationBoard() {
       {hasData && coursesError && (
         <div
           role="alert"
-          className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
+          className="mb-6 flex shrink-0 items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
         >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <div>
@@ -796,7 +804,7 @@ function AllocationBoard() {
       {mutationError && (
         <div
           role="alert"
-          className="mb-6 flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50/80 p-4"
+          className="mb-6 flex shrink-0 items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50/80 p-4"
         >
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
@@ -817,7 +825,7 @@ function AllocationBoard() {
       )}
 
       {/* Stat chips */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid shrink-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatChip label="Courses" value={courseList.length} />
         <StatChip label="Available Tutors" value={tutorList.length} />
         <StatChip
@@ -836,9 +844,16 @@ function AllocationBoard() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="flex flex-col gap-6 lg:flex-row" style={{ minHeight: '600px' }}>
+        {/* Row height is pool-driven (aside is self-start); columns stretch to the same level. */}
+        <div
+          className="flex min-h-[600px] flex-col gap-6 lg:min-h-0 lg:flex-row"
+          data-testid="board-body"
+        >
           {/* ── Left Panel: Tutor Pool ── */}
-          <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:w-[320px] lg:min-w-[280px]">
+          <aside
+            className="flex min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:w-[320px] lg:min-w-[280px] lg:self-start"
+            data-testid="tutor-pool"
+          >
             <div className="border-b border-slate-100 px-4 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -864,7 +879,11 @@ function AllocationBoard() {
               </div>
             </div>
 
-            <div className="flex-1 space-y-2 overflow-y-auto p-3">
+            {/* Visible height is capped at ~5 tutor cards (max-h); the rest scroll. */}
+            <div
+              className="max-h-[46.5rem] min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
+              data-testid="tutor-pool-list"
+            >
               {filteredTutors.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
@@ -893,7 +912,7 @@ function AllocationBoard() {
           </aside>
 
           {/* ── Main Area: Course Columns ── */}
-          <div className="min-w-0 flex-1">
+          <div className="min-h-0 min-w-0 flex-1">
             {courseList.length === 0 ? (
               <EmptyState
                 icon={GraduationCap}
@@ -901,7 +920,10 @@ function AllocationBoard() {
                 description="Add a course to start building the board."
               />
             ) : (
-              <div className="flex h-full gap-4 overflow-x-auto pb-4">
+              <div
+                className="flex h-full min-h-0 gap-4 overflow-x-auto pb-4"
+                data-testid="board-columns"
+              >
                 {courseList.map((course) => (
                   <CourseColumn
                     key={course.id}
@@ -941,7 +963,7 @@ function AllocationBoard() {
         onMarkSaved={updateTutorMark}
         onStale={refetchAll}
       />
-    </>
+    </div>
   );
 }
 
