@@ -127,8 +127,8 @@ export function Sidebar({
 
       <aside
         className={cn(
-          'fixed bottom-0 left-0 top-16 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
-          'lg:sticky lg:top-16 lg:z-40 lg:h-[calc(100vh-4rem)] lg:translate-x-0',
+          'fixed bottom-0 left-0 top-16 z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
+          'lg:sticky lg:top-0 lg:z-40 lg:h-full lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           isCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64'
         )}

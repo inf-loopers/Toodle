@@ -117,9 +117,10 @@ export function ReportsPage() {
   const allocationList = useMemo(() => allocations?.data ?? allocations ?? [], [allocations]);
   const timesheetList = useMemo(() => timesheets?.data ?? timesheets ?? [], [timesheets]);
 
-  // REMOVED allocations are retired assignments — exclude them from every total.
+  // Only ACTIVE allocations consume hours and staffing capacity — PENDING
+  // rows are unapproved proposals and REMOVED rows are retired history.
   const activeAllocations = useMemo(
-    () => allocationList.filter((a) => a.status !== 'REMOVED'),
+    () => allocationList.filter((a) => a.status === 'ACTIVE'),
     [allocationList]
   );
 
