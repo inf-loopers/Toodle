@@ -304,7 +304,7 @@ export function CourseDetailPage() {
         </Card>
       </div>
 
-      {isStaff && courseData?.coordinators && (
+      {courseData?.coordinators && (
         <Card className="mb-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">

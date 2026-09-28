@@ -13,7 +13,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, BookOpen, Search, ArrowRight } from 'lucide-react';
+import { Plus, BookOpen, Search, ArrowRight, Users } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { useAuth } from '../hooks/useAuth';
@@ -212,37 +212,50 @@ export function CoursesPage() {
         />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((course) => (
-            <Link key={course.id} to={`/courses/${course.id}`}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
-                    <BookOpen className="h-5 w-5" />
+          {filtered.map((course) => {
+            const lecturers = (course.coordinators ?? []).map((c) => c.user?.name).filter(Boolean);
+            return (
+              <Link key={course.id} to={`/courses/${course.id}`}>
+                <Card className="h-full transition-shadow hover:shadow-md">
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
+                      <BookOpen className="h-5 w-5" />
+                    </div>
+                    <Badge tone="neutral">
+                      Sem {course.semester} · {course.year}
+                    </Badge>
                   </div>
-                  <Badge tone="neutral">
-                    Sem {course.semester} · {course.year}
-                  </Badge>
-                </div>
-                <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
-                <p className="text-sm text-slate-500">{course.name}</p>
-                <p className="mt-2 text-xs text-slate-600">
-                  Minimum mark: {course.minMarkRequired}% · Applications{' '}
-                  {course.applicationsOpen ? 'open' : 'closed'}
-                </p>
-                {course.description && (
-                  <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
-                )}
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className="text-xs text-slate-400">
-                    {course.requiredTutors ?? 1} tutor(s) needed
-                  </span>
-                  <span className="flex items-center gap-1 text-xs font-semibold text-primary">
-                    Details <ArrowRight className="h-3 w-3" />
-                  </span>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                  <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
+                  <p className="text-sm text-slate-500">{course.name}</p>
+                  <p className="mt-2 text-xs text-slate-600">
+                    Minimum mark: {course.minMarkRequired}% · Applications{' '}
+                    {course.applicationsOpen ? 'open' : 'closed'}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
+                    <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    {lecturers.length === 0 ? (
+                      <span className="text-slate-400">No lecturer assigned</span>
+                    ) : (
+                      <span>
+                        Lecturer{lecturers.length > 1 ? 's' : ''}: {lecturers.join(', ')}
+                      </span>
+                    )}
+                  </p>
+                  {course.description && (
+                    <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
+                  )}
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                    <span className="text-xs text-slate-400">
+                      {course.requiredTutors ?? 1} tutor(s) needed
+                    </span>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-primary">
+                      Details <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
 
