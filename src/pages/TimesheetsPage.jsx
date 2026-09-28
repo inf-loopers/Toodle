@@ -41,11 +41,19 @@ function getErrorMessage(error, fallback) {
 
 function getCurrentMonday() {
   const today = new Date();
-  const monday = new Date(today);
+  const monday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - ((today.getDay() + 6) % 7),
+  );
 
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  // Format from local calendar parts — toISOString() shifts the date in
+  // positive-UTC-offset timezones (e.g. SAST) and would yield a Sunday.
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, '0');
+  const day = String(monday.getDate()).padStart(2, '0');
 
-  return monday.toISOString().slice(0, 10);
+  return `${year}-${month}-${day}`;
 }
 
 function StatusStepper({ status }) {
