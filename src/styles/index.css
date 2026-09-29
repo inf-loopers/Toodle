@@ -558,3 +558,35 @@ html.dark .toodle-app .toodle-calendar-event--cancelled {
   --fc-event-border-color: #9f1239;
   --fc-event-text-color: #ffe4e6;
 }
+
+/* Mobile chrome: a phone cannot fit the full toolbar on one row, so it wraps
+   instead of overflowing horizontally, and the title and buttons shrink. The
+   grid labels shrink too so the day columns and the time gutter stay legible
+   at narrow widths. Scoped to .toodle-calendar so nothing else is affected,
+   and paired with the list-view default in CalendarPage.jsx. */
+@media (max-width: 1023px) {
+  .toodle-calendar .fc .fc-toolbar {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .toodle-calendar .fc .fc-toolbar-title {
+    font-size: 1.1rem;
+  }
+
+  .toodle-calendar .fc .fc-button {
+    padding: 0.3em 0.65em;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .toodle-calendar .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  .toodle-calendar .fc .fc-col-header-cell-cushion,
+  .toodle-calendar .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.72rem;
+  }
+}

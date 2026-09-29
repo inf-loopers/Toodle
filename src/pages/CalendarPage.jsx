@@ -19,10 +19,16 @@
  * (`height="100%"`), which preserves the PageLayout invariant that `<main>` is
  * the only page-level scroller — the calendar never adds a second one.
  *
+ * Responsive note: below the `lg` breakpoint (`useIsMobile`) the seven-column
+ * week grid is too cramped for a phone, so the page defaults to the list view
+ * behind a compact toolbar and switches back to the week grid on desktop. A
+ * breakpoint change after mount re-selects the view imperatively, because
+ * FullCalendar reads `initialView` only once.
+ *
  * Route: `/calendar` (all authenticated roles)
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, CalendarPlus, RefreshCw } from 'lucide-react';
 
@@ -35,6 +41,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { calendarApi } from '../api/calendar';
 import { formatDateParam, toCalendarEvent } from '../utils/calendar';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -51,9 +58,24 @@ const HEADER_TOOLBAR = {
   right: 'timeGridWeek,dayGridMonth,listWeek',
 };
 
+// A phone cannot fit the seven-column week grid or the full view switcher, so
+// the compact toolbar drops the cramped week grid and the page defaults to the
+// list view, keeping the month grid reachable. Both toolbars are module-level
+// constants: FullCalendar re-configures whenever a toolbar identity changes.
+const HEADER_TOOLBAR_MOBILE = {
+  left: 'prev,next today',
+  center: 'title',
+  right: 'listWeek,dayGridMonth',
+};
+
+const DESKTOP_VIEW = 'timeGridWeek';
+const MOBILE_VIEW = 'listWeek';
+
 export function CalendarPage() {
   const navigate = useNavigate();
   const calendarRef = useRef(null);
+  const didMountRef = useRef(false);
+  const isMobile = useIsMobile();
 
   const [eventCount, setEventCount] = useState(0);
   const [hasFetched, setHasFetched] = useState(false);
@@ -112,20 +134,34 @@ export function CalendarPage() {
     calendarRef.current?.getApi().refetchEvents();
   }, []);
 
+  // FullCalendar reads `initialView` only once, at mount, so a breakpoint change
+  // afterwards (device rotation, window resize) must switch the view
+  // imperatively. The first run is skipped because `initialView` already chose
+  // the right view, and `changeView` is optional-chained so the jsdom stub —
+  // which implements only `refetchEvents` — is left untouched.
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    calendarRef.current?.getApi()?.changeView?.(isMobile ? MOBILE_VIEW : DESKTOP_VIEW);
+  }, [isMobile]);
+
   const showEmptyHint = hasFetched && !loading && !error && eventCount === 0;
 
   return (
     <div className="flex h-full flex-col">
       <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Calendar</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Calendar</h1>
 
           <p className="mt-2 text-sm text-slate-500">
             Your scheduled sessions across every course you are allocated to or coordinate.
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button variant="secondary" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -152,17 +188,18 @@ export function CalendarPage() {
       )}
 
       <Card padded={false} className="overflow-hidden">
-        <div className="toodle-calendar h-[calc(100vh-16rem)] min-h-[32rem] p-2 sm:p-3">
+        <div className="toodle-calendar h-[calc(100dvh-15rem)] min-h-[26rem] p-2 sm:h-[calc(100vh-16rem)] sm:min-h-[32rem] sm:p-3">
           <FullCalendar
             ref={calendarRef}
             plugins={CALENDAR_PLUGINS}
-            initialView="timeGridWeek"
-            headerToolbar={HEADER_TOOLBAR}
+            initialView={isMobile ? MOBILE_VIEW : DESKTOP_VIEW}
+            headerToolbar={isMobile ? HEADER_TOOLBAR_MOBILE : HEADER_TOOLBAR}
             height="100%"
             slotMinTime="07:00:00"
             slotMaxTime="21:00:00"
             weekends
             nowIndicator
+            dayMaxEvents={isMobile ? 3 : false}
             events={fetchEvents}
             eventClick={handleEventClick}
             eventDidMount={handleEventDidMount}

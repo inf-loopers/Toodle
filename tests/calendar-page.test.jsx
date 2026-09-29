@@ -11,8 +11,9 @@
  * Asserted: session titles render, a PENDING occurrence carries its pending
  * marker, an approved excusal reads "Excused", an empty range shows the hint, an
  * API rejection surfaces a FormError banner, clicking an event navigates to the
- * course, Refresh refetches, Subscribe opens the feed dialog, and the Calendar
- * nav entry is wired for every role.
+ * course, Refresh refetches, Subscribe opens the feed dialog, the responsive
+ * view switch picks the week grid on desktop and the compact list on mobile, and
+ * the Calendar nav entry is wired for every role.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,17 +24,24 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import CalendarPage from '../src/pages/CalendarPage';
 import { NAV_SECTIONS, ROLES } from '../src/utils/constants';
 
-const { calendarApi } = vi.hoisted(() => ({
+const { calendarApi, mobileState } = vi.hoisted(() => ({
   calendarApi: {
     getMyEvents: vi.fn(),
     getFeedToken: vi.fn(),
     createFeedToken: vi.fn(),
     revokeFeedToken: vi.fn(),
   },
+  // Drives the mocked useIsMobile so a test can render the page at either the
+  // desktop or the mobile breakpoint without a real media query.
+  mobileState: { isMobile: false },
 }));
 
 vi.mock('../src/api/calendar', () => ({ calendarApi, default: calendarApi }));
 vi.mock('../src/api/client', () => ({ default: { defaults: { baseURL: '/api/v1' } } }));
+vi.mock('../src/hooks/useIsMobile', () => ({
+  useIsMobile: () => mobileState.isMobile,
+  default: () => mobileState.isMobile,
+}));
 
 // The page passes these plugin objects straight to FullCalendar, which is stubbed
 // below, so empty defaults keep the real (layout-heavy) packages out of jsdom.
@@ -83,7 +91,11 @@ vi.mock('@fullcalendar/react', async () => {
 
     return React.createElement(
       'div',
-      { 'data-testid': 'mock-calendar' },
+      {
+        'data-testid': 'mock-calendar',
+        'data-initial-view': props.initialView,
+        'data-header-right': props.headerToolbar?.right,
+      },
       events.map((event) =>
         React.createElement(
           'button',
@@ -161,6 +173,7 @@ function show() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mobileState.isMobile = false;
   calendarApi.getMyEvents.mockResolvedValue(eventsResponse([]));
   calendarApi.getFeedToken.mockResolvedValue({ data: { connected: false } });
 });
@@ -255,6 +268,26 @@ describe('CalendarPage', () => {
     expect(
       await screen.findByRole('dialog', { name: 'Subscribe to your calendar' })
     ).toBeInTheDocument();
+  });
+
+  it('uses the week grid and full view switcher on desktop', async () => {
+    show();
+
+    const calendar = await screen.findByTestId('mock-calendar');
+
+    expect(calendar).toHaveAttribute('data-initial-view', 'timeGridWeek');
+    expect(calendar).toHaveAttribute('data-header-right', 'timeGridWeek,dayGridMonth,listWeek');
+  });
+
+  it('falls back to the compact list view on mobile', async () => {
+    mobileState.isMobile = true;
+    show();
+
+    const calendar = await screen.findByTestId('mock-calendar');
+
+    expect(calendar).toHaveAttribute('data-initial-view', 'listWeek');
+    // The cramped seven-column week grid is dropped from the mobile switcher.
+    expect(calendar).toHaveAttribute('data-header-right', 'listWeek,dayGridMonth');
   });
 });
 
