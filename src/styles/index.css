@@ -467,3 +467,126 @@ html.dark .sidebar-badge {
     color: #64748b;
   }
 }
+
+/* ── Calendar page (FullCalendar v6) ─────────────────────────────────────── */
+
+/* Frame theming: FullCalendar v6 is themed entirely through --fc-* custom
+   properties, so the grid is mapped onto the Toodle palette here rather than
+   importing a FullCalendar theme stylesheet (v6 injects its own structural CSS
+   and needs no theme import). Light values sit on the container; the dark theme
+   overrides them under the same html.dark .toodle-app scope the rest of this
+   file uses, so the grid stays legible after a theme switch. */
+.toodle-calendar {
+  --fc-border-color: #e2e8f0;
+  --fc-page-bg-color: #ffffff;
+  --fc-neutral-bg-color: #f8fafc;
+  --fc-today-bg-color: #e8f0fe;
+  --fc-now-indicator-color: #f43f5e;
+  --fc-button-bg-color: var(--color-primary);
+  --fc-button-border-color: var(--color-primary);
+  --fc-button-text-color: #ffffff;
+  --fc-button-hover-bg-color: var(--color-primary-hover);
+  --fc-button-hover-border-color: var(--color-primary-hover);
+  --fc-button-active-bg-color: var(--color-primary-hover);
+  --fc-button-active-border-color: var(--color-primary-hover);
+  color: #0f172a;
+}
+
+html.dark .toodle-app .toodle-calendar {
+  --fc-border-color: #26384d;
+  --fc-page-bg-color: #111f33;
+  --fc-neutral-bg-color: #0f1a2b;
+  --fc-today-bg-color: rgba(37, 99, 235, 0.16);
+  --fc-now-indicator-color: #fb7185;
+  color: #e2e8f0;
+}
+
+/* Events: state is expressed through the same --fc-event-* properties, keyed
+   off the class the frontend sets in utils/calendar.js (never an inline hex, so
+   the dark theme keeps working). A cancelled occurrence outranks its allocation
+   status and is struck through so an empty slot still reads as excused. */
+.toodle-calendar .toodle-calendar-event {
+  --fc-event-text-color: #ffffff;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.toodle-calendar .toodle-calendar-event--active {
+  --fc-event-bg-color: #2563eb;
+  --fc-event-border-color: #1d4ed8;
+}
+
+.toodle-calendar .toodle-calendar-event--coordinated {
+  --fc-event-bg-color: #4f46e5;
+  --fc-event-border-color: #4338ca;
+}
+
+.toodle-calendar .toodle-calendar-event--pending {
+  --fc-event-bg-color: #f59e0b;
+  --fc-event-border-color: #d97706;
+  --fc-event-text-color: #451a03;
+}
+
+.toodle-calendar .toodle-calendar-event--cancelled {
+  --fc-event-bg-color: #fecdd3;
+  --fc-event-border-color: #fda4af;
+  --fc-event-text-color: #9f1239;
+}
+
+.toodle-calendar .toodle-calendar-event--cancelled .fc-event-title {
+  text-decoration: line-through;
+}
+
+html.dark .toodle-app .toodle-calendar-event--active {
+  --fc-event-bg-color: #1d4ed8;
+  --fc-event-border-color: #1e40af;
+}
+
+html.dark .toodle-app .toodle-calendar-event--coordinated {
+  --fc-event-bg-color: #4338ca;
+  --fc-event-border-color: #3730a3;
+}
+
+html.dark .toodle-app .toodle-calendar-event--pending {
+  --fc-event-bg-color: #b45309;
+  --fc-event-border-color: #92400e;
+  --fc-event-text-color: #fef3c7;
+}
+
+html.dark .toodle-app .toodle-calendar-event--cancelled {
+  --fc-event-bg-color: #881337;
+  --fc-event-border-color: #9f1239;
+  --fc-event-text-color: #ffe4e6;
+}
+
+/* Mobile chrome: a phone cannot fit the full toolbar on one row, so it wraps
+   instead of overflowing horizontally, and the title and buttons shrink. The
+   grid labels shrink too so the day columns and the time gutter stay legible
+   at narrow widths. Scoped to .toodle-calendar so nothing else is affected,
+   and paired with the list-view default in CalendarPage.jsx. */
+@media (max-width: 1023px) {
+  .toodle-calendar .fc .fc-toolbar {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .toodle-calendar .fc .fc-toolbar-title {
+    font-size: 1.1rem;
+  }
+
+  .toodle-calendar .fc .fc-button {
+    padding: 0.3em 0.65em;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .toodle-calendar .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  .toodle-calendar .fc .fc-col-header-cell-cushion,
+  .toodle-calendar .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.72rem;
+  }
+}
