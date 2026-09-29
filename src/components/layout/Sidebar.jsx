@@ -28,6 +28,7 @@ import {
   BarChart3,
   BookOpen,
   Bug,
+  CalendarDays,
   CalendarX,
   ChevronLeft,
   ChevronRight,
@@ -55,6 +56,7 @@ const ICONS = {
   Users,
   BookOpen,
   Clock,
+  CalendarDays,
   CalendarX,
   ArrowLeftRight,
   HandHeart,
@@ -64,6 +66,7 @@ const ICONS = {
 
 const PAGE_NAMES = [
   { match: '/dashboard', name: 'Dashboard' },
+  { match: '/calendar', name: 'Calendar' },
   { match: '/allocations', name: 'Allocation Board' },
   { match: '/courses', name: 'Courses' },
   { match: '/tutors', name: 'Tutors' },

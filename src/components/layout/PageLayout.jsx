@@ -29,6 +29,7 @@ const SIDEBAR_STORAGE_KEY = 'toodle.sidebarCollapsed';
 
 const PAGE_TITLES = [
   { match: '/dashboard', title: 'Dashboard' },
+  { match: '/calendar', title: 'Calendar' },
   { match: '/allocations', title: 'Allocation Board' },
   { match: '/courses', title: 'Courses' },
   { match: '/tutors', title: 'Tutors' },
