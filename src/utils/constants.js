@@ -107,7 +107,10 @@ export const NAV_SECTIONS = {
   [ROLES.ADMIN]: [
     {
       heading: 'Overview',
-      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: 'Home' },
+        { name: 'Calendar', path: '/calendar', icon: 'CalendarDays' },
+      ],
     },
     {
       heading: 'Manage',
@@ -141,7 +144,10 @@ export const NAV_SECTIONS = {
   [ROLES.LECTURER]: [
     {
       heading: 'Overview',
-      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: 'Home' },
+        { name: 'Calendar', path: '/calendar', icon: 'CalendarDays' },
+      ],
     },
     {
       heading: 'Manage',
@@ -168,7 +174,10 @@ export const NAV_SECTIONS = {
   [ROLES.TUTOR]: [
     {
       heading: 'Overview',
-      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: 'Home' },
+        { name: 'Calendar', path: '/calendar', icon: 'CalendarDays' },
+      ],
     },
     {
       heading: 'My Work',
@@ -188,7 +197,10 @@ export const NAV_SECTIONS = {
   [ROLES.STUDENT]: [
     {
       heading: 'Overview',
-      items: [{ name: 'Dashboard', path: '/dashboard', icon: 'Home' }],
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: 'Home' },
+        { name: 'Calendar', path: '/calendar', icon: 'CalendarDays' },
+      ],
     },
     {
       heading: 'Opportunities',
