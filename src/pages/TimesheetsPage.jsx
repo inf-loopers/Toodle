@@ -32,20 +32,24 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
-
-function getErrorMessage(error, fallback) {
-  return (
-    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback
-  );
-}
+import FormError from '../components/ui/FormError';
+import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
 
 function getCurrentMonday() {
   const today = new Date();
-  const monday = new Date(today);
+  const monday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - ((today.getDay() + 6) % 7)
+  );
 
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  // Format from local calendar parts — toISOString() shifts the date in
+  // positive-UTC-offset timezones (e.g. SAST) and would yield a Sunday.
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, '0');
+  const day = String(monday.getDate()).padStart(2, '0');
 
-  return monday.toISOString().slice(0, 10);
+  return `${year}-${month}-${day}`;
 }
 
 function StatusStepper({ status }) {
@@ -222,11 +226,7 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
           }
         />
 
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
       </div>
     </Modal>
   );
@@ -339,11 +339,7 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
           }
         />
 
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
       </div>
     </Modal>
   );
@@ -470,11 +466,9 @@ function ManageEntriesModal({ timesheet, open, onClose, onChanged }) {
           </p>
         )}
 
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        {/* This dialog loads and deletes rather than collecting input, so the
+            hint states that nothing changed instead of claiming input was kept. */}
+        <FormError message={error} hint="Nothing was changed — you can try again." />
       </div>
     </Modal>
   );
@@ -549,11 +543,7 @@ function DisputeModal({ timesheet, open, onClose, onDisputed }) {
           placeholder="e.g. Hours on Tuesday don't match the session length."
         />
 
-        {error && (
-          <p role="alert" className="text-xs text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
       </div>
     </Modal>
   );
@@ -664,6 +654,7 @@ export function TimesheetsPage() {
       <ErrorState
         title="Couldn't load timesheets"
         description={getErrorMessage(error, 'Could not load timesheets.')}
+        action={<Button onClick={refetch}>Try again</Button>}
       />
     );
   }

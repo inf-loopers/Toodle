@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import VolunteersPage from '../src/pages/VolunteersPage';
@@ -137,5 +137,65 @@ describe('Volunteer overflow workflow', () => {
     await user.click(await screen.findByRole('button', { name: 'Approve' }));
 
     await waitFor(() => expect(overflowApi.approveClaim).toHaveBeenCalledWith('cl-1'));
+  });
+
+  it('keeps the posted details and shows the API error when posting work fails', async () => {
+    useAuth.mockReturnValue({ isStaff: true, dbUser: { id: 'a1', role: 'admin' } });
+    coursesApi.getCourses.mockResolvedValue({
+      data: [{ id: 'c1', code: 'COMS3011A', name: 'SDP' }],
+    });
+    overflowApi.createPost.mockRejectedValue({
+      response: { data: { error: 'Hours exceed the course budget' } },
+    });
+    const user = userEvent.setup();
+    show();
+
+    await user.click(await screen.findByRole('button', { name: /Post work/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Post overflow work' });
+    await user.selectOptions(within(dialog).getByLabelText('Course'), 'c1');
+    await user.type(within(dialog).getByLabelText('Description'), 'Cover the Thursday lab');
+    await user.click(within(dialog).getByRole('button', { name: 'Post work' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Hours exceed the course budget');
+    expect(alert).toHaveTextContent(/try again/i);
+
+    // The dialog stays open with everything entered, so the post can be retried.
+    expect(within(dialog).getByLabelText('Description')).toHaveValue('Cover the Thursday lab');
+    expect(within(dialog).getByLabelText('Course')).toHaveValue('c1');
+    expect(overflowApi.createPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a visible error banner when claiming a post fails', async () => {
+    overflowApi.getPosts.mockResolvedValue({ data: [post()] });
+    overflowApi.claimPost.mockRejectedValue({
+      response: { data: { error: 'This post has already been filled' } },
+    });
+    const user = userEvent.setup();
+    show();
+
+    await user.click(await screen.findByRole('button', { name: 'Claim' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('This post has already been filled');
+    expect(alert).toHaveTextContent(/try again/i);
+    // The action stays available so the student can retry it.
+    expect(screen.getByRole('button', { name: 'Claim' })).toBeEnabled();
+    expect(overflowApi.claimPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers a retry when the overflow list fails to load', async () => {
+    // Fail the initial load only; the retry then resolves so refetch()'s promise
+    // is handled (models real recovery, avoids an unhandled rejection).
+    overflowApi.getPosts.mockRejectedValueOnce(new Error('Network Error'));
+    const user = userEvent.setup();
+    show();
+
+    expect(await screen.findByText("Couldn't load overflow work")).toBeInTheDocument();
+    expect(screen.getByText('Network Error')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    await waitFor(() => expect(overflowApi.getPosts).toHaveBeenCalledTimes(2));
   });
 });

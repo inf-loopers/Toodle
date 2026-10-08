@@ -28,6 +28,7 @@ import {
   BarChart3,
   BookOpen,
   Bug,
+  CalendarDays,
   CalendarX,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +38,7 @@ import {
   LayoutGrid,
   Moon,
   Sun,
+  UserCog,
   Users,
   Wifi,
 } from 'lucide-react';
@@ -54,14 +56,17 @@ const ICONS = {
   Users,
   BookOpen,
   Clock,
+  CalendarDays,
   CalendarX,
   ArrowLeftRight,
   HandHeart,
   BarChart3,
+  UserCog,
 };
 
 const PAGE_NAMES = [
   { match: '/dashboard', name: 'Dashboard' },
+  { match: '/calendar', name: 'Calendar' },
   { match: '/allocations', name: 'Allocation Board' },
   { match: '/courses', name: 'Courses' },
   { match: '/tutors', name: 'Tutors' },
@@ -70,6 +75,7 @@ const PAGE_NAMES = [
   { match: '/swaps', name: 'Session Swaps' },
   { match: '/volunteers', name: 'Volunteer Overflow' },
   { match: '/reports', name: 'Reports' },
+  { match: '/users', name: 'Users' },
   { match: '/profile', name: 'My Profile' },
 ];
 
@@ -126,9 +132,10 @@ export function Sidebar({
       )}
 
       <aside
+        data-testid="app-sidebar"
         className={cn(
-          'fixed bottom-0 left-0 top-16 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
-          'lg:sticky lg:top-16 lg:z-40 lg:h-[calc(100vh-4rem)] lg:translate-x-0',
+          'fixed bottom-0 left-0 top-16 z-50 flex h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-64 shrink-0 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
+          'lg:sticky lg:bottom-auto lg:left-auto lg:top-0 lg:z-40 lg:h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-4rem)] lg:self-start lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           isCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64'
         )}
@@ -151,7 +158,7 @@ export function Sidebar({
         {/* Navigation */}
         <nav
           className={cn(
-            'flex-1 overflow-y-auto overflow-x-hidden px-3 py-6',
+            'flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 lg:px-3 lg:py-6',
             isCollapsed && 'lg:px-2'
           )}
         >
@@ -217,7 +224,7 @@ export function Sidebar({
         {/* Bottom controls */}
         <div
           className={cn(
-            'border-t border-slate-100 p-4 dark:border-slate-800',
+            'border-t border-slate-100 p-3 dark:border-slate-800 lg:p-4',
             isCollapsed && 'lg:p-2'
           )}
         >

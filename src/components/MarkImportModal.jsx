@@ -14,6 +14,8 @@ import { tutorsApi } from '../api/tutors';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
+import FormError from './ui/FormError';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const TEMPLATE_CSV = 'email,mark\n';
 
@@ -70,12 +72,7 @@ export function MarkImportModal({ open, onClose, course, onImported }) {
       setPreview(data);
       setStep('preview');
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err.message ||
-          'Could not read the CSV file.'
-      );
+      setError(getApiErrorMessage(err, 'Could not read the CSV file.'));
     } finally {
       setBusy(false);
     }
@@ -90,12 +87,7 @@ export function MarkImportModal({ open, onClose, course, onImported }) {
       setStep('done');
       await onImported?.();
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err.message ||
-          'Could not import the marks.'
-      );
+      setError(getApiErrorMessage(err, 'Could not import the marks.'));
     } finally {
       setBusy(false);
     }
@@ -147,11 +139,7 @@ export function MarkImportModal({ open, onClose, course, onImported }) {
       }
     >
       <div className="space-y-4">
-        {error && (
-          <p role="alert" className="text-xs font-medium text-rose-600">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
 
         {step === 'select' && (
           <div className="space-y-4">
