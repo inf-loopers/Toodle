@@ -28,6 +28,7 @@ import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage } from '../utils/apiError';
+import { formatDuration, formatOccurrenceDate, formatSessionLabel } from '../utils/excusals';
 
 const STATUS_TONE = {
   OPEN: 'info',
@@ -246,8 +247,20 @@ export function VolunteersPage() {
         <p className="mt-2 text-xs text-slate-400">
           {post.description || 'No description provided.'}
         </p>
+        {post.sessionDate && (
+          <p className="mt-2 text-xs font-medium text-slate-600">
+            Covers {post.session ? `${formatSessionLabel(post.session)} · ` : ''}
+            {formatOccurrenceDate(post.sessionDate)}
+          </p>
+        )}
         <div className="mt-4 border-t border-slate-100 pt-4">
-          <Badge tone="primary">{formatHours(post.hoursPerWeek ?? post.hoursNeeded)} / week</Badge>
+          {post.durationMinutes ? (
+            <Badge tone="primary">{formatDuration(post.durationMinutes)} · one session</Badge>
+          ) : (
+            <Badge tone="primary">
+              {formatHours(post.hoursPerWeek ?? post.hoursNeeded)} / week
+            </Badge>
+          )}
           {children}
         </div>
       </Card>
