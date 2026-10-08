@@ -3,12 +3,15 @@
  * @description Course catalog and management page.
  *
  * Responsibilities:
+ * - `scope="all"` (default): lists every course with staffing status.
+ * - `scope="mine"`: lists only the courses the signed-in tutor is allocated to,
+ *   or the signed-in lecturer coordinates (`GET /courses/mine`).
  * - Lists all active computer science courses with staffing status.
  * - Real-time client-side search and filtering by code or title.
  * - Displays staffing status badges and prerequisite minimum marks.
  * - "Add New Course" button for Admin.
  *
- * Route: `/courses`
+ * Routes: `/courses` (all), `/my-courses` (mine)
  */
 
 import { useEffect, useState } from 'react';
@@ -157,9 +160,38 @@ function CreateCourseModal({ open, onClose, onCreated }) {
   );
 }
 
-export function CoursesPage() {
-  const { isAdmin } = useAuth();
-  const { data, loading, error, refetch } = useApi(coursesApi.getCourses);
+const ALLOCATION_TONE = { ACTIVE: 'success', PENDING: 'warning' };
+
+function pageCopy({ mine, isAdmin, isTutor }) {
+  if (mine) {
+    return {
+      title: 'My Courses',
+      description: isTutor
+        ? 'The courses you are allocated to tutor.'
+        : 'The courses you are assigned to coordinate.',
+      emptyTitle: 'No courses yet',
+      emptyDescription: isTutor
+        ? "You aren't allocated to any courses yet. Browse all courses to apply."
+        : "You aren't assigned to coordinate any courses yet.",
+    };
+  }
+  return {
+    title: 'Courses',
+    description: isAdmin
+      ? 'Everything the school is running this semester.'
+      : 'Browse courses, check requirements and apply to tutor.',
+    emptyTitle: 'No courses found',
+    emptyDescription: 'Courses will appear here once added.',
+  };
+}
+
+export function CoursesPage({ scope = 'all' }) {
+  const { isAdmin, isTutor } = useAuth();
+  const mine = scope === 'mine';
+  const { data, loading, error, refetch } = useApi(
+    mine ? coursesApi.getMyCourses : coursesApi.getCourses
+  );
+  const copy = pageCopy({ mine, isAdmin, isTutor });
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -184,12 +216,8 @@ export function CoursesPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Courses</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            {isAdmin
-              ? 'Everything the school is running this semester.'
-              : 'Browse courses, check requirements and apply to tutor.'}
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{copy.title}</h1>
+          <p className="mt-2 text-sm text-slate-500">{copy.description}</p>
         </div>
         <div className="flex gap-3">
           <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
@@ -201,7 +229,7 @@ export function CoursesPage() {
               className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
-          {isAdmin && (
+          {isAdmin && !mine && (
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> New course
             </Button>
@@ -212,9 +240,14 @@ export function CoursesPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="No courses found"
-          description={
-            search ? 'Try a different search term.' : 'Courses will appear here once added.'
+          title={search ? 'No courses found' : copy.emptyTitle}
+          description={search ? 'Try a different search term.' : copy.emptyDescription}
+          action={
+            mine && !search ? (
+              <Link to="/courses">
+                <Button variant="secondary">Browse all courses</Button>
+              </Link>
+            ) : undefined
           }
         />
       ) : (
@@ -228,17 +261,22 @@ export function CoursesPage() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
                       <BookOpen className="h-5 w-5" />
                     </div>
-                    <Badge tone="neutral">
-                      Sem {course.semester} · {course.year}
-                    </Badge>
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      {course.myAllocation && (
+                        <Badge tone={ALLOCATION_TONE[course.myAllocation.status] || 'neutral'}>
+                          {course.myAllocation.status === 'PENDING'
+                            ? 'Allocation pending'
+                            : `Tutoring · ${course.myAllocation.hoursPerWeek}h/week`}
+                        </Badge>
+                      )}
+                      <Badge tone="neutral">
+                        Sem {course.semester} · {course.year}
+                      </Badge>
+                    </div>
                   </div>
                   <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
                   <p className="text-sm text-slate-500">{course.name}</p>
-                  <p className="mt-2 text-xs text-slate-600">
-                    Minimum mark: {course.minMarkRequired}% · Applications{' '}
-                    {course.applicationsOpen ? 'open' : 'closed'}
-                  </p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
+                                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
                     <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     {lecturers.length === 0 ? (
                       <span className="text-slate-400">No lecturer assigned</span>
@@ -248,6 +286,11 @@ export function CoursesPage() {
                       </span>
                     )}
                   </p>
+                  <p className="mt-2 text-xs text-slate-600">
+                    Minimum mark: {course.minMarkRequired}% · Applications{' '}
+                    {course.applicationsOpen ? 'open' : 'closed'}
+                  </p>
+
                   {course.description && (
                     <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
                   )}
@@ -266,7 +309,7 @@ export function CoursesPage() {
         </div>
       )}
 
-      {isAdmin && (
+      {isAdmin && !mine && (
         <CreateCourseModal
           open={createOpen}
           onClose={() => setCreateOpen(false)}

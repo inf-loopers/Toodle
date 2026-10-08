@@ -26,6 +26,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   ArrowLeftRight,
   BarChart3,
+  BookMarked,
   BookOpen,
   Bug,
   CalendarDays,
@@ -55,6 +56,7 @@ const ICONS = {
   LayoutGrid,
   Users,
   BookOpen,
+  BookMarked,
   Clock,
   CalendarDays,
   CalendarX,
@@ -69,6 +71,7 @@ const PAGE_NAMES = [
   { match: '/calendar', name: 'Calendar' },
   { match: '/allocations', name: 'Allocation Board' },
   { match: '/courses', name: 'Courses' },
+  { match: '/my-courses', name: 'My Courses' },
   { match: '/tutors', name: 'Tutors' },
   { match: '/timesheets', name: 'Timesheets' },
   { match: '/excusals', name: 'Excusals' },
