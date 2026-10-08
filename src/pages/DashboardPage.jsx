@@ -251,6 +251,12 @@ function TutorDashboard({ user }) {
     error: tsError,
   } = useApi(timesheetsApi.getTimesheets);
   const { data: swaps, loading: swapsLoading, error: swapsError } = useApi(swapsApi.getSwaps);
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage);
+  const { data: workloadData, error: workloadError } = useApi(swapsApi.getWorkload);
+  const workload = workloadData?.data ?? workloadData;
+  const upcomingCover = (coverageData?.data ?? coverageData ?? []).filter(
+    (r) => new Date(`${String(r.sessionDate).slice(0, 10)}T${r.endTime}:00+02:00`) > new Date()
+  );
   const {
     data: profileData,
     loading: profileLoading,
@@ -283,7 +289,11 @@ function TutorDashboard({ user }) {
   const profile = profileData?.data ?? profileData ?? {};
   const availability = profile.availability ?? [];
 
-  const totalHours = allocationList.reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
+  const totalHours =
+    workload?.hours ??
+    allocationList
+      .filter((a) => a.status === 'ACTIVE')
+      .reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
   const maxHours = profile.maxHoursPerWeek ?? user?.maxHoursPerWeek ?? 10;
   const pendingSwaps = swapList.filter((s) => s.status === 'PENDING').length;
   const draftTimesheets = timesheetList.filter(
@@ -293,6 +303,29 @@ function TutorDashboard({ user }) {
   return (
     <>
       <Welcome name={user?.name} tagline="Here's what's on your plate this week." />
+      {coverageError && <p role="alert">Could not load session cover: {coverageError}</p>}
+      {workloadError && (
+        <p role="alert">Could not load this week’s adjusted hours: {workloadError}</p>
+      )}
+      {upcomingCover.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader
+            title="Sessions you are covering"
+            description="Approved swaps and volunteer cover, in Africa/Johannesburg."
+          />
+          <CardBody>
+            <div className="space-y-2">
+              {upcomingCover.map((r) => (
+                <p key={r.id}>
+                  {r.course?.code} · {String(r.sessionDate).slice(0, 10)} · {r.startTime}–
+                  {r.endTime}
+                </p>
+              ))}
+            </div>
+            <Link to="/calendar">View your full schedule</Link>
+          </CardBody>
+        </Card>
+      )}
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -306,7 +339,7 @@ function TutorDashboard({ user }) {
           label="Weekly Hours"
           value={`${formatHours(totalHours)} / ${maxHours}h`}
           tone="emerald"
-          description="Allocated vs. your cap"
+          description="This week’s planned work vs. your cap"
         />
         <StatCard
           icon={AlertTriangle}

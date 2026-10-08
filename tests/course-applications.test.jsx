@@ -12,6 +12,7 @@ vi.mock('../src/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('../src/api/courses', () => ({
   coursesApi: {
     getApplications: vi.fn(),
+    getEligibility: vi.fn(),
     apply: vi.fn(),
     reviewApplication: vi.fn(),
     withdrawApplication: vi.fn(),
@@ -52,11 +53,68 @@ const show = (props = {}) => {
 };
 beforeEach(() => {
   vi.resetAllMocks();
-  useAuth.mockReturnValue({ isAdmin: false });
+  useAuth.mockReturnValue({ isAdmin: false, role: 'student' });
+  coursesApi.getEligibility.mockResolvedValue({
+    data: { status: 'eligible', reasons: [], missing: [] },
+  });
   coursesApi.getApplications.mockResolvedValue({ data: [] });
   usersApi.getCurrentUser.mockResolvedValue({ data: { tutorMarks: [] } });
 });
 describe('Course application workflow', () => {
+  it('shows verified marks as read-only with correction guidance while still allowing applications', async () => {
+    usersApi.getCurrentUser.mockResolvedValue({
+      data: { tutorMarks: [{ courseId: 'c1', mark: 75, status: 'VERIFIED' }] },
+    });
+    const user = userEvent.setup();
+    show();
+    expect(await screen.findByText(/Your recorded mark: 75%/)).toHaveTextContent('VERIFIED');
+    expect(screen.getByText(/Contact your course coordinator with supporting/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Your course mark (%)')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Submit mark for verification' })
+    ).not.toBeInTheDocument();
+    await user.type(
+      screen.getByLabelText('Why would you like to tutor this course?'),
+      'I enjoy teaching'
+    );
+    await user.click(screen.getByRole('button', { name: 'Apply to tutor' }));
+    await waitFor(() => expect(coursesApi.apply).toHaveBeenCalled());
+    expect(tutorsApi.submitMark).not.toHaveBeenCalled();
+  });
+
+  it.each(['PENDING', 'REJECTED'])(
+    'keeps the self-submission form available for %s marks',
+    async (status) => {
+      usersApi.getCurrentUser.mockResolvedValue({
+        data: { tutorMarks: [{ courseId: 'c1', mark: 75, status }] },
+      });
+      const user = userEvent.setup();
+      show();
+      await screen.findByText(/Your recorded mark: 75%/);
+      await user.type(screen.getByLabelText('Your course mark (%)'), '82');
+      await user.click(screen.getByRole('button', { name: 'Submit mark for verification' }));
+      await waitFor(() =>
+        expect(tutorsApi.submitMark).toHaveBeenCalledWith({ courseId: 'c1', mark: 82 })
+      );
+    }
+  );
+
+  it('shows backend correction guidance when a mark is verified after the form was loaded', async () => {
+    tutorsApi.submitMark.mockRejectedValue({
+      response: {
+        data: {
+          error:
+            'Verified marks cannot be resubmitted. Contact your course coordinator with supporting records to request a correction.',
+        },
+      },
+    });
+    const user = userEvent.setup();
+    show();
+    await user.type(screen.getByLabelText('Your course mark (%)'), '90');
+    await user.click(screen.getByRole('button', { name: 'Submit mark for verification' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Contact your course coordinator');
+  });
+
   it('lets a student submit a mark and apply with requested hours', async () => {
     const user = userEvent.setup();
     show();
@@ -160,5 +218,59 @@ describe('Course application workflow', () => {
       expect(coursesApi.updateCourse).toHaveBeenCalledWith('c1', { applicationsOpen: false });
       expect(onUpdated).toHaveBeenCalled();
     });
+  });
+});
+
+describe('B05 application next actions', () => {
+  it('blocks ineligible applications and shows the backend reason', async () => {
+    coursesApi.getEligibility.mockResolvedValue({
+      data: { status: 'ineligible', reasons: ['Required mark not met'], missing: [] },
+    });
+    show();
+    expect(await screen.findByText('Ineligible')).toBeInTheDocument();
+    expect(screen.getByText('Required mark not met')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply to tutor' })).toBeDisabled();
+  });
+  it('distinguishes missing profile data and links to actual workflows', async () => {
+    coursesApi.getEligibility.mockResolvedValue({
+      data: { status: 'profile_incomplete', reasons: [], missing: ['availability', 'courseMark'] },
+    });
+    show();
+    expect(await screen.findByText('Profile incomplete')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Complete profile' })).toHaveAttribute(
+      'href',
+      '/profile'
+    );
+    expect(screen.getByRole('link', { name: 'Add marks' })).toHaveAttribute('href', '/courses/c1');
+    expect(screen.getByRole('button', { name: 'Apply to tutor' })).toBeDisabled();
+    expect(screen.queryByText('Ineligible')).not.toBeInTheDocument();
+  });
+  it('shows a stale-state rejection truthfully and refreshes eligibility', async () => {
+    coursesApi.apply.mockImplementation(async () => {
+      coursesApi.getEligibility.mockResolvedValue({
+        data: { status: 'ineligible', reasons: ['Weekly hours changed'], missing: [] },
+      });
+      throw { response: { data: { error: 'Server rejected: weekly hours changed' } } };
+    });
+    const { onUpdated } = show();
+    const user = userEvent.setup();
+    await user.type(
+      await screen.findByLabelText('Why would you like to tutor this course?'),
+      'I enjoy teaching'
+    );
+    await user.click(screen.getByRole('button', { name: 'Apply to tutor' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Server rejected: weekly hours changed'
+    );
+    expect(await screen.findByText('Weekly hours changed')).toBeInTheDocument();
+    expect(onUpdated).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Apply to tutor' })).toBeDisabled();
+  });
+  it('does not show applicant forms to a lecturer who does not manage the course', async () => {
+    useAuth.mockReturnValue({ role: 'lecturer', dbUser: { id: 'other' } });
+    show();
+    expect(await screen.findByText('Only students and tutors can apply.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply to tutor' })).not.toBeInTheDocument();
+    expect(coursesApi.getEligibility).not.toHaveBeenCalled();
   });
 });

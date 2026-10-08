@@ -17,7 +17,15 @@
  */
 
 import { useMemo, useState } from 'react';
-import { BarChart3, Clock, Users, AlertTriangle, CalendarRange, Download, Wallet } from 'lucide-react';
+import {
+  BarChart3,
+  Clock,
+  Users,
+  AlertTriangle,
+  CalendarRange,
+  Download,
+  Wallet,
+} from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { allocationsApi } from '../api/allocations';
@@ -139,9 +147,7 @@ export function ReportsPage() {
   } = useApi(allocationsApi.getAllocations);
   // Reports is Admin-only, so this is permitted — used to show the rate
   // offered per course (each tutor's `currentRate`, scoped by `allocations`).
-  const { data: tutors, loading: tutorsLoading, error: tutorsError } = useApi(
-    tutorsApi.getTutors
-  );
+  const { data: tutors, loading: tutorsLoading, error: tutorsError } = useApi(tutorsApi.getTutors);
   // Only approved timesheets feed the report — hours are final once approved.
   // include=entries additionally attaches each entry (date, hours,
   // description, course) so the payroll CSV export can report one row per
@@ -501,9 +507,8 @@ export function ReportsPage() {
           ) : (
             <>
               <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Wallet className="h-3.5 w-3.5" />
-                R{budgetSummary.spent.toLocaleString('en-US')} spent of R
-                {budgetSummary.amount.toLocaleString('en-US')} budgeted
+                <Wallet className="h-3.5 w-3.5" />R{budgetSummary.spent.toLocaleString('en-US')}{' '}
+                spent of R{budgetSummary.amount.toLocaleString('en-US')} budgeted
                 {budgetSummary.coursesOverBudget > 0 && (
                   <span className="font-medium text-rose-600">
                     · {budgetSummary.coursesOverBudget} course

@@ -16,6 +16,8 @@ import { CalendarX, Plus, Check, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { excusalsApi } from '../api/excusals';
+import { coursesApi } from '../api/courses';
+import { tutorsApi } from '../api/tutors';
 import { swapsApi } from '../api/swaps';
 import { EXCUSAL_STATUS_TONE } from '../utils/constants';
 
@@ -32,6 +34,11 @@ import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
 function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
   const [allocationId, setAllocationId] = useState('');
   const [sessionDate, setSessionDate] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState('');
+  const courseId = allocations.find((allocation) => allocation.id === allocationId)?.courseId;
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -40,13 +47,39 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
     if (!open) {
       setAllocationId('');
       setSessionDate('');
+      setSessionId('');
       setReason('');
       setError('');
     }
   }, [open]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setSessions([]);
+    setSessionId('');
+    setSessionsError('');
+    setSessionsLoading(Boolean(open && courseId));
+    if (open && courseId) {
+      coursesApi
+        .getCourseSessions(courseId)
+        .then((response) => {
+          if (!cancelled) setSessions(response.data ?? response);
+        })
+        .catch((err) => {
+          if (!cancelled)
+            setSessionsError(getErrorMessage(err, 'Could not load scheduled sessions.'));
+        })
+        .finally(() => {
+          if (!cancelled) setSessionsLoading(false);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [open, courseId]);
+
   const handleSubmit = async () => {
-    if (!allocationId || !sessionDate || !reason.trim()) return;
+    if (!allocationId || !sessionId || !sessionDate || !reason.trim()) return;
 
     setSubmitting(true);
     setError('');
@@ -54,7 +87,8 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
     try {
       await excusalsApi.requestExcusal({
         allocationId,
-        sessionDate: new Date(sessionDate).toISOString(),
+        sessionId,
+        sessionDate,
         reason: reason.trim(),
       });
 
@@ -82,7 +116,7 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
           <Button
             onClick={handleSubmit}
             loading={submitting}
-            disabled={!allocationId || !sessionDate || !reason.trim()}
+            disabled={!allocationId || !sessionId || !sessionDate || !reason.trim()}
           >
             Send request
           </Button>
@@ -105,9 +139,32 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
           ))}
         </Select>
 
+        <Select
+          label="Scheduled session (Africa/Johannesburg)"
+          value={sessionId}
+          disabled={sessionsLoading || !sessions.length}
+          onChange={(event) => setSessionId(event.target.value)}
+        >
+          <option value="">
+            {sessionsLoading ? 'Loading sessions?' : 'Choose a scheduled session?'}
+          </option>
+          {sessions.map((session) => (
+            <option key={session.id} value={session.id}>
+              {session.dayOfWeek} {session.startTime}?{session.endTime} ? {session.sessionType}
+            </option>
+          ))}
+        </Select>
+        {sessionsError && (
+          <p role="alert" className="text-xs text-rose-600">
+            {sessionsError}
+          </p>
+        )}
+        {courseId && !sessionsLoading && !sessionsError && !sessions.length && (
+          <p className="text-sm text-slate-500">This course has no scheduled sessions.</p>
+        )}
         <Input
-          label="Session date and time"
-          type="datetime-local"
+          label="Occurrence date (must match the scheduled day)"
+          type="date"
           value={sessionDate}
           onChange={(e) => setSessionDate(e.target.value)}
         />
@@ -190,9 +247,16 @@ export function ExcusalsPage() {
   const { dbUser: user, isStaff, isTutor } = useAuth();
 
   const { data, loading, error, refetch } = useApi(excusalsApi.getExcusals);
-
-  const { data: allocationData, error: allocationError } = useApi(swapsApi.getOptions, {
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
     immediate: isTutor,
+  });
+  const coverage = (coverageData?.data ?? coverageData ?? []).filter(
+    (r) => new Date(`${String(r.sessionDate).slice(0, 10)}T${r.startTime}:00+02:00`) > new Date()
+  );
+
+  const { data: allocationData, error: allocationError } = useApi(tutorsApi.getTutor, {
+    immediate: isTutor && Boolean(user?.id),
+    params: [user?.id],
   });
 
   const [requestOpen, setRequestOpen] = useState(false);
@@ -201,11 +265,14 @@ export function ExcusalsPage() {
   const [actionError, setActionError] = useState('');
 
   const excusals = data?.data ?? data ?? [];
-  const allocations = allocationData?.data ?? allocationData ?? [];
+  const allocations = (allocationData?.data ?? allocationData)?.allocations ?? [];
 
-  const myActiveAllocations = allocations.filter(
-    (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
-  );
+  const myActiveAllocations = [
+    ...allocations.filter(
+      (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
+    ),
+    ...coverage.map((r) => ({ id: r.allocationId, courseId: r.courseId, course: r.course })),
+  ].filter((a, i, all) => all.findIndex((b) => b.id === a.id) === i);
 
   const approve = async (id) => {
     setBusyId(id);
@@ -256,9 +323,9 @@ export function ExcusalsPage() {
         )}
       </div>
 
-      {(actionError || allocationError) && (
+      {(actionError || allocationError || coverageError) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
-          {actionError || allocationError}
+          {actionError || allocationError || coverageError}
         </p>
       )}
 
@@ -308,18 +375,26 @@ export function ExcusalsPage() {
                   )}
 
                   <p className="mt-2 text-xs text-slate-400">
-                    Session: {new Date(excusal.sessionDate).toLocaleString()}
+                    Session: {String(excusal.sessionDate).slice(0, 10)}
+                    {excusal.sessionStartTime &&
+                      ` ? ${excusal.sessionStartTime}?${excusal.sessionEndTime} (Africa/Johannesburg)`}
                   </p>
 
                   {excusal.reason && (
                     <p className="mt-2 text-sm text-slate-600">{excusal.reason}</p>
                   )}
 
+                  {excusal.reviewReason && (
+                    <p className="mt-2 text-sm text-slate-600">
+                      Review reason: {excusal.reviewReason}
+                    </p>
+                  )}
+
                   {excusal.reviewedBy && (
                     <p className="mt-2 text-xs text-slate-400">
                       Reviewed by {excusal.reviewedBy.name}
-                      {excusal.reviewedAt
-                        ? ` · ${new Date(excusal.reviewedAt).toLocaleString()}`
+                      {excusal.resolvedAt
+                        ? ` · ${new Date(excusal.resolvedAt).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`
                         : ''}
                     </p>
                   )}
