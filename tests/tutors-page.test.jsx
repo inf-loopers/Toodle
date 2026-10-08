@@ -128,7 +128,9 @@ describe('Tutor pay rate', () => {
     render(<TutorsPage />);
 
     const dialog = await openTutor(user);
-    expect(within(dialog).getByText(/Current rate: R150.00\/hr since 2026-01-01/)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/Current rate: R150.00\/hr since 2026-01-01/)
+    ).toBeInTheDocument();
     await waitFor(() => expect(ratesApi.getRateHistory).toHaveBeenCalledWith('t1'));
     expect(within(dialog).getByText(/2026-01-01 — R150.00\/hr/)).toBeInTheDocument();
 

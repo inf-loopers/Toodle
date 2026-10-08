@@ -47,7 +47,13 @@ function approvedTimesheet(overrides = {}) {
     course,
     user: alice,
     entries: [
-      { id: 'e1', date: new Date().toISOString().slice(0, 10), hoursWorked: 2, description: '', course },
+      {
+        id: 'e1',
+        date: new Date().toISOString().slice(0, 10),
+        hoursWorked: 2,
+        description: '',
+        course,
+      },
     ],
     ...overrides,
   };
