@@ -213,28 +213,37 @@ export default function CourseApplications({ course, onUpdated }) {
               Your recorded mark: {ownMark.mark}% — {ownMark.status}. {ownMark.rejectionReason}
             </p>
           )}
-          <Input
-            label="Your course mark (%)"
-            type="number"
-            min={0}
-            max={100}
-            value={mark}
-            onChange={(e) => setMark(e.target.value)}
-          />
-          <Button
-            disabled={
-              busy ||
-              mark === '' ||
-              !Number.isInteger(Number(mark)) ||
-              Number(mark) < 0 ||
-              Number(mark) > 100
-            }
-            onClick={() =>
-              run(() => tutorsApi.submitMark({ courseId: course.id, mark: Number(mark) }))
-            }
-          >
-            Submit mark for verification
-          </Button>
+          {ownMark?.status === 'VERIFIED' ? (
+            <p>
+              Verified marks cannot be edited here. Contact your course coordinator with supporting
+              records to request a correction.
+            </p>
+          ) : (
+            <>
+              <Input
+                label="Your course mark (%)"
+                type="number"
+                min={0}
+                max={100}
+                value={mark}
+                onChange={(e) => setMark(e.target.value)}
+              />
+              <Button
+                disabled={
+                  busy ||
+                  mark === '' ||
+                  !Number.isInteger(Number(mark)) ||
+                  Number(mark) < 0 ||
+                  Number(mark) > 100
+                }
+                onClick={() =>
+                  run(() => tutorsApi.submitMark({ courseId: course.id, mark: Number(mark) }))
+                }
+              >
+                Submit mark for verification
+              </Button>
+            </>
+          )}
           {applications.length === 0 && course.applicationsOpen && !loading && !error && (
             <>
               <Input
