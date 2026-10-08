@@ -21,6 +21,8 @@ import { useAuth } from '../hooks/useAuth';
 
 import { timesheetsApi } from '../api/timesheets';
 import { allocationsApi } from '../api/allocations';
+import { swapsApi } from '../api/swaps';
+import { coursesApi } from '../api/courses';
 
 import { TIMESHEET_STATUS_TONE } from '../utils/constants';
 import { formatShortDate } from '../utils/helpers';
@@ -176,7 +178,7 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
       open={open}
       onClose={onClose}
       title="Start a timesheet"
-      description="Choose one of your actively allocated courses."
+      description="Choose a course you are assigned to or covering a session for."
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -232,7 +234,29 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
   );
 }
 
-function LogHoursModal({ timesheet, open, onClose, onLogged }) {
+function LogHoursModal({ timesheet, open, onClose, onLogged, coverage = [] }) {
+  const [sessionChoice, setSessionChoice] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [sessionError, setSessionError] = useState('');
+  const courseId = timesheet?.courseId;
+  useEffect(() => {
+    let stale = false;
+    setSessionChoice('');
+    setSessions([]);
+    setSessionError('');
+    if (open && courseId)
+      coursesApi
+        .getCourseSessions(courseId)
+        .then((result) => {
+          if (!stale) setSessions(result.data ?? result);
+        })
+        .catch((err) => {
+          if (!stale) setSessionError(getErrorMessage(err, 'Could not load sessions.'));
+        });
+    return () => {
+      stale = true;
+    };
+  }, [open, courseId]);
   const [form, setForm] = useState({
     date: '',
     hours: 1,
@@ -268,6 +292,15 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
 
     try {
       await timesheetsApi.addEntry(timesheet.id, {
+        ...(sessionChoice
+          ? (() => {
+              const covered = coverage.find((r) => `cover-${r.id}` === sessionChoice);
+              return {
+                sessionId: covered?.sessionId || sessionChoice,
+                ...(covered ? { allocationId: covered.allocationId } : {}),
+              };
+            })()
+          : {}),
         date: form.date,
         hoursWorked: Number(form.hours),
         description: form.description,
@@ -301,6 +334,40 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
       }
     >
       <div className="space-y-4">
+        <Select
+          label="Session or other work"
+          value={sessionChoice}
+          onChange={(e) => {
+            setSessionChoice(e.target.value);
+            const covered = coverage.find((r) => `cover-${r.id}` === e.target.value);
+            if (covered)
+              setForm((previous) => ({
+                ...previous,
+                date: String(covered.sessionDate).slice(0, 10),
+                hours:
+                  (Number(covered.endTime.slice(0, 2)) * 60 +
+                    Number(covered.endTime.slice(3)) -
+                    Number(covered.startTime.slice(0, 2)) * 60 -
+                    Number(covered.startTime.slice(3))) /
+                  60,
+              }));
+          }}
+        >
+          <option value="">Other work (preparation or marking)</option>
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.dayOfWeek} {s.startTime}–{s.endTime} · {s.sessionType}
+            </option>
+          ))}
+          {coverage
+            .filter((r) => r.courseId === courseId)
+            .map((r) => (
+              <option key={r.id} value={`cover-${r.id}`}>
+                Cover: {String(r.sessionDate).slice(0, 10)} {r.startTime}–{r.endTime}
+              </option>
+            ))}
+        </Select>
+        {sessionError && <p role="alert">{sessionError}</p>}
         <Input
           label="Date"
           type="date"
@@ -565,6 +632,10 @@ export function TimesheetsPage() {
    * - compare each Tutor's logged hours with their allocation
    */
   const { data: allocationsData, error: allocationsError } = useApi(allocationsApi.getAllocations);
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
+    immediate: !isStaff,
+  });
+  const coverage = coverageData?.data ?? coverageData ?? [];
 
   const [newOpen, setNewOpen] = useState(false);
 
@@ -598,8 +669,10 @@ export function TimesheetsPage() {
     (allocation) => allocation.userId === user?.id
   );
 
-  const courses = tutorActiveAllocations
-    .map((allocation) => allocation.course)
+  const courses = [
+    ...tutorActiveAllocations.map((allocation) => allocation.course),
+    ...coverage.map((r) => r.course),
+  ]
     .filter(Boolean)
     .filter((course, index, array) => array.findIndex((item) => item.id === course.id) === index);
 
@@ -677,7 +750,7 @@ export function TimesheetsPage() {
         </div>
 
         {!isStaff && (
-          <Button onClick={() => setNewOpen(true)} disabled={tutorActiveAllocations.length === 0}>
+          <Button onClick={() => setNewOpen(true)} disabled={courses.length === 0}>
             <Plus className="h-4 w-4" />
             New timesheet
           </Button>
@@ -690,7 +763,8 @@ export function TimesheetsPage() {
         </p>
       )}
 
-      {!isStaff && tutorActiveAllocations.length === 0 && !allocationErrorMessage && (
+      {coverageError && <p role="alert">{coverageError}</p>}
+      {!isStaff && courses.length === 0 && !allocationErrorMessage && (
         <p className="mb-4 text-sm text-slate-500">
           You need an active allocation before you can create a timesheet.
         </p>
@@ -849,6 +923,7 @@ export function TimesheetsPage() {
           />
 
           <LogHoursModal
+            coverage={coverage}
             timesheet={logTarget}
             open={Boolean(logTarget)}
             onClose={() => setLogTarget(null)}

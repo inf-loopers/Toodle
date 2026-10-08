@@ -44,6 +44,7 @@ export function ProfilePage() {
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
 
   const [maxHours, setMaxHours] = useState(10);
+  const [hoursError, setHoursError] = useState('');
   const [savingHours, setSavingHours] = useState(false);
   const [hoursSaved, setHoursSaved] = useState(false);
 
@@ -135,6 +136,7 @@ export function ProfilePage() {
 
     setSavingHours(true);
     setHoursSaved(false);
+    setHoursError('');
 
     try {
       await usersApi.updateUser(profile.id, {
@@ -144,6 +146,8 @@ export function ProfilePage() {
       setHoursSaved(true);
 
       await refetch();
+    } catch (err) {
+      setHoursError(err?.response?.data?.error || 'Could not save weekly hours.');
     } finally {
       setSavingHours(false);
     }
@@ -331,9 +335,15 @@ export function ProfilePage() {
                 onChange={(event) => {
                   setMaxHours(event.target.value);
                   setHoursSaved(false);
+                  setHoursError('');
                 }}
                 className="max-w-36"
               />
+              {hoursError && (
+                <p role="alert" className="text-sm text-rose-600">
+                  {hoursError}
+                </p>
+              )}
 
               <Button onClick={handleSaveHours} loading={savingHours}>
                 <Save className="h-4 w-4" />
