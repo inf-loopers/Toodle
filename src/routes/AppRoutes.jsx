@@ -12,18 +12,21 @@
  *   - `/reports` (Admin)
  *   - `/users` (Admin)
  *   - `/courses`, `/courses/:id`, `/dashboard` (All authenticated roles)
+ *   - `/calendar` (All authenticated roles; lazy-loaded)
  * - Defines 404 catch-all route (`*`).
  *
  * Expected Usage:
  * Rendered inside `<BrowserRouter>` in `App.jsx`.
  */
 
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ROLES } from '../utils/constants';
 
 import PageLayout from '../components/layout/PageLayout';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import OnboardingGate from '../components/auth/OnboardingGate';
+import Spinner from '../components/ui/Spinner';
 
 import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
@@ -43,6 +46,10 @@ import OnboardingPage from '../pages/OnboardingPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ExcusalsPage from '../pages/ExcusalsPage';
 
+// Lazy-loaded so FullCalendar is split into its own chunk and kept out of the
+// main bundle; it is only needed on /calendar.
+const CalendarPage = lazy(() => import('../pages/CalendarPage'));
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -59,6 +66,14 @@ export default function AppRoutes() {
 
           <Route element={<PageLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route
+              path="/calendar"
+              element={
+                <Suspense fallback={<Spinner fullPage label="Loading calendar…" />}>
+                  <CalendarPage />
+                </Suspense>
+              }
+            />
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/courses/:id" element={<CourseDetailPage />} />
             <Route path="/timesheets" element={<TimesheetsPage />} />

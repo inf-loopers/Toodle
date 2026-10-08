@@ -33,18 +33,30 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Select, Input } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
+import FormError from '../components/ui/FormError';
+import { getApiErrorMessage } from '../utils/apiError';
+
+const emptySessionForm = () => ({
+  dayOfWeek: 'MONDAY',
+  startTime: '10:00',
+  endTime: '12:00',
+  venue: '',
+  sessionType: 'TUTORIAL',
+});
 
 function AddSessionModal({ open, onClose, courseId, onCreated }) {
-  const [form, setForm] = useState({
-    dayOfWeek: 'MONDAY',
-    startTime: '10:00',
-    endTime: '12:00',
-    venue: '',
-    sessionType: 'TUTORIAL',
-  });
+  const [form, setForm] = useState(emptySessionForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // Reset on open: a failed add keeps the entered times and venue so they can
+  // be corrected and retried, while a successful one starts fresh next time.
+  useEffect(() => {
+    if (!open) return;
+    setForm(emptySessionForm());
+    setError('');
+  }, [open]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -54,7 +66,7 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
       await onCreated();
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.error || err.message);
+      setError(getApiErrorMessage(err, 'Could not add the session.'));
     } finally {
       setSubmitting(false);
     }
@@ -77,11 +89,7 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
       }
     >
       <div className="space-y-4">
-        {error && (
-          <p role="alert" className="text-rose-700">
-            {error}
-          </p>
-        )}
+        <FormError message={error} />
         <Select label="Day" value={form.dayOfWeek} onChange={update('dayOfWeek')}>
           {DAYS_OF_WEEK.map((d) => (
             <option key={d} value={d}>
@@ -150,7 +158,7 @@ function CoordinatorsModal({ open, onClose, course, onUpdated }) {
       await onUpdated();
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.error || err.message || 'Could not save coordinators.');
+      setError(getApiErrorMessage(err, 'Could not save coordinators.'));
     } finally {
       setSubmitting(false);
     }
@@ -198,11 +206,7 @@ function CoordinatorsModal({ open, onClose, course, onUpdated }) {
               </label>
             ))
           )}
-          {error && (
-            <p role="alert" className="text-xs text-rose-600">
-              {error}
-            </p>
-          )}
+          <FormError message={error} className="mt-2" />
         </div>
       )}
     </Modal>

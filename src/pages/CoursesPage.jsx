@@ -11,7 +11,7 @@
  * Route: `/courses`
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, BookOpen, Search, ArrowRight, Users } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
@@ -24,20 +24,32 @@ import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
 import { Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
+import FormError from '../components/ui/FormError';
+import { getApiErrorMessage } from '../utils/apiError';
+
+const emptyCourseForm = () => ({
+  code: '',
+  name: '',
+  description: '',
+  year: new Date().getFullYear(),
+  semester: 1,
+  requiredTutors: 1,
+  minMarkRequired: 50,
+  budget: '',
+});
 
 function CreateCourseModal({ open, onClose, onCreated }) {
-  const [form, setForm] = useState({
-    code: '',
-    name: '',
-    description: '',
-    year: new Date().getFullYear(),
-    semester: 1,
-    requiredTutors: 1,
-    minMarkRequired: 50,
-    budget: '',
-  });
+  const [form, setForm] = useState(emptyCourseForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Reset on open rather than after submit: a successful create never leaves
+  // stale values behind, and a failed create keeps everything typed so far.
+  useEffect(() => {
+    if (!open) return;
+    setForm(emptyCourseForm());
+    setError('');
+  }, [open]);
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -65,12 +77,7 @@ function CreateCourseModal({ open, onClose, onCreated }) {
       onCreated();
       onClose();
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err.message ||
-          'Could not create the course.'
-      );
+      setError(getApiErrorMessage(err, 'Could not create the course.'));
     } finally {
       setSubmitting(false);
     }
@@ -144,7 +151,7 @@ function CreateCourseModal({ open, onClose, onCreated }) {
           value={form.budget}
           onChange={update('budget')}
         />
-        {error && <p className="text-xs text-rose-600">{error}</p>}
+        <FormError message={error} />
       </div>
     </Modal>
   );
