@@ -6,6 +6,8 @@ import { useAuth } from '../src/hooks/useAuth';
 import { excusalsApi } from '../src/api/excusals';
 import { tutorsApi } from '../src/api/tutors';
 import { coursesApi } from '../src/api/courses';
+import { swapsApi } from '../src/api/swaps';
+vi.mock('../src/api/swaps', () => ({ swapsApi: { getCoverage: vi.fn() } }));
 
 vi.mock('../src/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('../src/api/excusals', () => ({
@@ -16,6 +18,7 @@ vi.mock('../src/api/courses', () => ({ coursesApi: { getCourseSessions: vi.fn() 
 
 beforeEach(() => {
   vi.resetAllMocks();
+  swapsApi.getCoverage.mockResolvedValue({ data: [] });
   useAuth.mockReturnValue({ dbUser: { id: 'u1' }, isTutor: true, isStaff: false });
   excusalsApi.getExcusals.mockResolvedValue({ data: [] });
   excusalsApi.requestExcusal.mockResolvedValue({ data: {} });

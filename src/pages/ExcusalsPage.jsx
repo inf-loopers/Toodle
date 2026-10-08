@@ -18,6 +18,7 @@ import { useApi } from '../hooks/useApi';
 import { excusalsApi } from '../api/excusals';
 import { coursesApi } from '../api/courses';
 import { tutorsApi } from '../api/tutors';
+import { swapsApi } from '../api/swaps';
 import { EXCUSAL_STATUS_TONE } from '../utils/constants';
 
 import Card from '../components/ui/Card';
@@ -246,6 +247,12 @@ export function ExcusalsPage() {
   const { dbUser: user, isStaff, isTutor } = useAuth();
 
   const { data, loading, error, refetch } = useApi(excusalsApi.getExcusals);
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
+    immediate: isTutor,
+  });
+  const coverage = (coverageData?.data ?? coverageData ?? []).filter(
+    (r) => new Date(`${String(r.sessionDate).slice(0, 10)}T${r.startTime}:00+02:00`) > new Date()
+  );
 
   const { data: allocationData, error: allocationError } = useApi(tutorsApi.getTutor, {
     immediate: isTutor && Boolean(user?.id),
@@ -260,9 +267,12 @@ export function ExcusalsPage() {
   const excusals = data?.data ?? data ?? [];
   const allocations = (allocationData?.data ?? allocationData)?.allocations ?? [];
 
-  const myActiveAllocations = allocations.filter(
-    (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
-  );
+  const myActiveAllocations = [
+    ...allocations.filter(
+      (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
+    ),
+    ...coverage.map((r) => ({ id: r.allocationId, courseId: r.courseId, course: r.course })),
+  ].filter((a, i, all) => all.findIndex((b) => b.id === a.id) === i);
 
   const approve = async (id) => {
     setBusyId(id);
@@ -313,9 +323,9 @@ export function ExcusalsPage() {
         )}
       </div>
 
-      {(actionError || allocationError) && (
+      {(actionError || allocationError || coverageError) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
-          {actionError || allocationError}
+          {actionError || allocationError || coverageError}
         </p>
       )}
 
