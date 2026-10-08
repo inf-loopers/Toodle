@@ -61,6 +61,60 @@ beforeEach(() => {
   usersApi.getCurrentUser.mockResolvedValue({ data: { tutorMarks: [] } });
 });
 describe('Course application workflow', () => {
+  it('shows verified marks as read-only with correction guidance while still allowing applications', async () => {
+    usersApi.getCurrentUser.mockResolvedValue({
+      data: { tutorMarks: [{ courseId: 'c1', mark: 75, status: 'VERIFIED' }] },
+    });
+    const user = userEvent.setup();
+    show();
+    expect(await screen.findByText(/Your recorded mark: 75%/)).toHaveTextContent('VERIFIED');
+    expect(screen.getByText(/Contact your course coordinator with supporting/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Your course mark (%)')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Submit mark for verification' })
+    ).not.toBeInTheDocument();
+    await user.type(
+      screen.getByLabelText('Why would you like to tutor this course?'),
+      'I enjoy teaching'
+    );
+    await user.click(screen.getByRole('button', { name: 'Apply to tutor' }));
+    await waitFor(() => expect(coursesApi.apply).toHaveBeenCalled());
+    expect(tutorsApi.submitMark).not.toHaveBeenCalled();
+  });
+
+  it.each(['PENDING', 'REJECTED'])(
+    'keeps the self-submission form available for %s marks',
+    async (status) => {
+      usersApi.getCurrentUser.mockResolvedValue({
+        data: { tutorMarks: [{ courseId: 'c1', mark: 75, status }] },
+      });
+      const user = userEvent.setup();
+      show();
+      await screen.findByText(/Your recorded mark: 75%/);
+      await user.type(screen.getByLabelText('Your course mark (%)'), '82');
+      await user.click(screen.getByRole('button', { name: 'Submit mark for verification' }));
+      await waitFor(() =>
+        expect(tutorsApi.submitMark).toHaveBeenCalledWith({ courseId: 'c1', mark: 82 })
+      );
+    }
+  );
+
+  it('shows backend correction guidance when a mark is verified after the form was loaded', async () => {
+    tutorsApi.submitMark.mockRejectedValue({
+      response: {
+        data: {
+          error:
+            'Verified marks cannot be resubmitted. Contact your course coordinator with supporting records to request a correction.',
+        },
+      },
+    });
+    const user = userEvent.setup();
+    show();
+    await user.type(screen.getByLabelText('Your course mark (%)'), '90');
+    await user.click(screen.getByRole('button', { name: 'Submit mark for verification' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Contact your course coordinator');
+  });
+
   it('lets a student submit a mark and apply with requested hours', async () => {
     const user = userEvent.setup();
     show();
