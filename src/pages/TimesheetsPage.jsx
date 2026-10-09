@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth';
 
 import { timesheetsApi } from '../api/timesheets';
 import { allocationsApi } from '../api/allocations';
+import { ratesApi } from '../api/rates';
 import { swapsApi } from '../api/swaps';
 import { coursesApi } from '../api/courses';
 
@@ -641,6 +642,11 @@ export function TimesheetsPage() {
 
   const [logTarget, setLogTarget] = useState(null);
 
+  // The tutor's own currently effective rate — only loaded for a tutor
+  // viewing their own timesheets, so staff never see a stray "your rate"
+  // figure that doesn't apply to the tutor whose card they are looking at.
+  const [currentRate, setCurrentRate] = useState(null);
+
   const [manageTarget, setManageTarget] = useState(null);
 
   const [disputeTarget, setDisputeTarget] = useState(null);
@@ -703,6 +709,25 @@ export function TimesheetsPage() {
     }
   };
 
+  useEffect(() => {
+    if (isStaff || !user?.id) {
+      setCurrentRate(null);
+      return;
+    }
+    let cancelled = false;
+    ratesApi
+      .getCurrentRate(user.id)
+      .then((result) => {
+        if (!cancelled) setCurrentRate(result?.data ?? result ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentRate(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isStaff, user?.id]);
+
   const handleApprove = async (id) => {
     setBusyId(id);
     setActionError('');
@@ -756,6 +781,12 @@ export function TimesheetsPage() {
           </Button>
         )}
       </div>
+
+      {!isStaff && currentRate && (
+        <p className="mb-4 text-sm font-medium text-slate-600">
+          Your current rate: R{Number(currentRate.rate).toFixed(2)}/hr
+        </p>
+      )}
 
       {(actionError || allocationErrorMessage) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
@@ -845,6 +876,25 @@ export function TimesheetsPage() {
                           </p>
 
                           <p className="mt-1 text-sm text-amber-800">{timesheet.disputeReason}</p>
+                        </div>
+                      )}
+
+                      {timesheet.status === 'APPROVED' && timesheet.appliedRate != null && (
+                        <div className="mt-3 text-sm text-slate-500">
+                          <p>
+                            Paid at R{Number(timesheet.appliedRate).toFixed(2)}/hr · R
+                            {(loggedHours * Number(timesheet.appliedRate)).toFixed(2)} total
+                          </p>
+
+                          {!isStaff &&
+                            currentRate &&
+                            Number(currentRate.rate) !== Number(timesheet.appliedRate) && (
+                              <p className="mt-1 text-xs text-amber-600">
+                                Your rate has since changed to R
+                                {Number(currentRate.rate).toFixed(2)}
+                                /hr (from {formatShortDate(currentRate.effectiveFrom)})
+                              </p>
+                            )}
                         </div>
                       )}
                     </div>

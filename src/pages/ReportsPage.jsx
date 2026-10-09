@@ -7,7 +7,9 @@
  * - Summary metric cards (weekly allocated hours, logged hours, active tutors, unfilled courses).
  * - CSS-based bar charts for hours per course (allocated vs logged), tutor workload, and staffing fill.
  * - Week/month period filter for the time-based (logged hours) side of the report.
- * - Client-side CSV export of the allocation summary using Blob + URL.createObjectURL.
+ * - Client-side payroll CSV export of approved timesheet entries using Blob + URL.createObjectURL.
+ * - Budget vs spend comparison per course, from each course's budget relation
+ *   (staff-only field, already shown on Course Detail) — not a separate figure.
  *
  * All totals are calculated client-side from live API records — no mock numbers.
  *
@@ -15,12 +17,23 @@
  */
 
 import { useMemo, useState } from 'react';
-import { BarChart3, Clock, Users, AlertTriangle, CalendarRange, Download } from 'lucide-react';
+import {
+  BarChart3,
+  Clock,
+  Users,
+  AlertTriangle,
+  CalendarRange,
+  Download,
+  Wallet,
+} from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { allocationsApi } from '../api/allocations';
 import { timesheetsApi } from '../api/timesheets';
+import { tutorsApi } from '../api/tutors';
 import { formatHours } from '../utils/helpers';
+import { buildPayrollCsv, buildPayrollRows } from '../utils/payrollExport';
+import { buildBudgetRows, summarizeBudget } from '../utils/budgetReport';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Select } from '../components/ui/Input';
@@ -82,6 +95,37 @@ function DualBar({ label, allocated, logged, max, suffix = '' }) {
 }
 
 /**
+ * Spend vs budget bar for a single course — mirrors the look of `Bar` but
+ * formats both numbers as currency and switches to the "over budget" tone
+ * when spend has exceeded the allocation.
+ */
+function BudgetBar({ label, spent, amount, remaining, overBudget }) {
+  const max = Math.max(amount, spent, 1);
+  const pct = Math.min(100, (spent / max) * 100);
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-xs">
+        <span className="font-medium text-slate-600">{label}</span>
+        <span className={overBudget ? 'font-medium text-rose-600' : 'text-slate-400'}>
+          R{spent.toLocaleString('en-US')} / R{amount.toLocaleString('en-US')}
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full ${overBudget ? 'bg-rose-400' : 'bg-primary'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className={`mt-1 text-[10px] ${overBudget ? 'text-rose-500' : 'text-slate-400'}`}>
+        {overBudget
+          ? `R${Math.abs(remaining).toLocaleString('en-US')} over budget`
+          : `R${remaining.toLocaleString('en-US')} remaining`}
+      </p>
+    </div>
+  );
+}
+
+/**
  * Logged hours for a single timesheet. Prefers the server-computed
  * `totalHours` and falls back to summing the entry records client-side.
  */
@@ -101,21 +145,45 @@ export function ReportsPage() {
     loading: allocLoading,
     error: allocError,
   } = useApi(allocationsApi.getAllocations);
+  // Reports is Admin-only, so this is permitted — used to show the rate
+  // offered per course (each tutor's `currentRate`, scoped by `allocations`).
+  const { data: tutors, loading: tutorsLoading, error: tutorsError } = useApi(tutorsApi.getTutors);
   // Only approved timesheets feed the report — hours are final once approved.
+  // include=entries additionally attaches each entry (date, hours,
+  // description, course) so the payroll CSV export can report one row per
+  // logged entry rather than only the aggregated weekly total.
   const {
     data: timesheets,
     loading: tsLoading,
     error: tsError,
   } = useApi(timesheetsApi.getTimesheets, {
-    params: [{ status: 'APPROVED' }],
+    params: [{ status: 'APPROVED', include: 'entries' }],
   });
 
-  const loading = coursesLoading || allocLoading || tsLoading;
-  const error = coursesError || allocError || tsError;
+  const loading = coursesLoading || allocLoading || tsLoading || tutorsLoading;
+  const error = coursesError || allocError || tsError || tutorsError;
 
   const courseList = useMemo(() => courses?.data ?? courses ?? [], [courses]);
   const allocationList = useMemo(() => allocations?.data ?? allocations ?? [], [allocations]);
   const timesheetList = useMemo(() => timesheets?.data ?? timesheets ?? [], [timesheets]);
+  const tutorList = useMemo(() => tutors?.data ?? tutors ?? [], [tutors]);
+
+  // ── Rate offered per course ─────────────────────────────────────────
+  // For each tutor, attribute their currently effective rate to every
+  // course they currently hold an allocation on, so the Budget vs spend
+  // card can show "who is paid what" alongside each course's spend.
+  const ratesByCourse = useMemo(() => {
+    const byCourse = new Map();
+    for (const tutor of tutorList) {
+      if (tutor.currentRate == null) continue;
+      for (const allocation of tutor.allocations ?? []) {
+        const list = byCourse.get(allocation.courseId) ?? [];
+        list.push({ name: tutor.name || tutor.email, rate: tutor.currentRate.rate });
+        byCourse.set(allocation.courseId, list);
+      }
+    }
+    return byCourse;
+  }, [tutorList]);
 
   // Only ACTIVE allocations consume hours and staffing capacity — PENDING
   // rows are unapproved proposals and REMOVED rows are retired history.
@@ -131,16 +199,23 @@ export function ReportsPage() {
 
   const { periodLabel, rangeStart, rangeEnd } = useMemo(() => {
     const now = new Date();
+    // Use UTC calendar fields throughout: weekStartDate/entry.date are
+    // date-only columns that always serialise as UTC midnight, so computing
+    // "this week"/"this month" from the browser's local calendar day could
+    // shift the boundary by the viewer's UTC offset. Working in UTC keeps
+    // the filter correct (and reproducible) regardless of local timezone.
     if (period === 'week') {
-      const monday = new Date(now);
-      monday.setHours(0, 0, 0, 0);
-      monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-      const nextMonday = new Date(monday);
-      nextMonday.setDate(monday.getDate() + 7);
+      const mondayOffset = (now.getUTCDay() + 6) % 7;
+      const monday = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - mondayOffset)
+      );
+      const nextMonday = new Date(
+        Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 7)
+      );
       return { periodLabel: 'this week', rangeStart: monday, rangeEnd: nextMonday };
     }
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
     return { periodLabel: 'this month', rangeStart: monthStart, rangeEnd: nextMonth };
   }, [period]);
 
@@ -221,27 +296,37 @@ export function ReportsPage() {
   const maxTutorHours = Math.max(1, ...workloadPerTutor.map((t) => t.hours));
   const activeTutors = workloadPerTutor.filter((t) => t.hours > 0).length;
 
-  // ── CSV export (browser-native Blob + URL.createObjectURL) ─────────
-  // One row per active allocation: course, tutor, allocated hours, and
-  // logged hours for the selected period.
+  // ── Budget vs spend (staff-only `course.budget` relation) ───────────
+  // Spend here is the same `budget.spent` figure Course Detail already
+  // shows for staff — this report only compares it against the budget
+  // amount side by side, it never recomputes "spend" independently.
+  const budgetRows = useMemo(() => buildBudgetRows(courseList), [courseList]);
+  const budgetSummary = useMemo(() => summarizeBudget(budgetRows), [budgetRows]);
+
+  // ── Payroll CSV export (browser-native Blob + URL.createObjectURL) ──
+  // One row per approved, logged timesheet entry — course, tutor, week,
+  // exact date, hours and description — so the file can be imported
+  // straight into a payroll run. By default it is scoped to the selected
+  // week/month period; `exportAllHistory` lets the user export every
+  // approved entry on record instead.
+  const [exportAllHistory, setExportAllHistory] = useState(false);
+
+  const payrollRows = useMemo(
+    () => buildPayrollRows(exportAllHistory ? timesheetList : timesheetsInPeriod),
+    [exportAllHistory, timesheetList, timesheetsInPeriod]
+  );
+
   const exportCsv = () => {
-    const escapeCell = (value) => {
-      const s = String(value ?? '');
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const header = ['Course', 'Tutor', 'Allocated hours', 'Logged hours'];
-    const rows = activeAllocations.map((a) => [
-      a.course?.code ?? a.courseId,
-      a.user?.name ?? a.user?.email ?? a.userId,
-      Number(a.hoursPerWeek || 0),
-      loggedHours.byPair.get(`${a.courseId}|${a.userId}`) || 0,
-    ]);
-    const csv = [header, ...rows].map((row) => row.map(escapeCell).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const csv = buildPayrollCsv(payrollRows);
+    // Prepend a UTF-8 BOM so Excel (which otherwise guesses the legacy
+    // ANSI codepage) renders accented tutor/course names correctly.
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `toodle-allocation-report-${rangeStart.toISOString().slice(0, 10)}.csv`;
+    link.download = exportAllHistory
+      ? 'toodle-payroll-export-all.csv'
+      : `toodle-payroll-export-${rangeStart.toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -271,7 +356,15 @@ export function ReportsPage() {
             <option value="week">This week</option>
             <option value="month">This month</option>
           </Select>
-          <Button variant="secondary" onClick={exportCsv} disabled={activeAllocations.length === 0}>
+          <label className="flex items-center gap-1.5 text-xs text-slate-500">
+            <input
+              type="checkbox"
+              checked={exportAllHistory}
+              onChange={(e) => setExportAllHistory(e.target.checked)}
+            />
+            Export full approved history
+          </label>
+          <Button variant="secondary" onClick={exportCsv} disabled={payrollRows.length === 0}>
             <Download className="h-4 w-4" /> Download CSV
           </Button>
         </div>
@@ -399,6 +492,59 @@ export function ReportsPage() {
                 />
               );
             })
+          )}
+        </CardBody>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader
+          title="Budget vs spend"
+          description="Recorded spend against each course's allocated budget."
+        />
+        <CardBody className="space-y-4">
+          {budgetRows.length === 0 ? (
+            <p className="text-sm text-slate-400">No courses have a budget set yet.</p>
+          ) : (
+            <>
+              <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Wallet className="h-3.5 w-3.5" />R{budgetSummary.spent.toLocaleString('en-US')}{' '}
+                spent of R{budgetSummary.amount.toLocaleString('en-US')} budgeted
+                {budgetSummary.coursesOverBudget > 0 && (
+                  <span className="font-medium text-rose-600">
+                    · {budgetSummary.coursesOverBudget} course
+                    {budgetSummary.coursesOverBudget === 1 ? '' : 's'} over budget
+                  </span>
+                )}
+              </p>
+              {budgetRows.map((r) => (
+                <div key={r.courseId}>
+                  <BudgetBar
+                    label={r.code}
+                    spent={r.spent}
+                    amount={r.amount}
+                    remaining={r.remaining}
+                    overBudget={r.overBudget}
+                  />
+                  {(ratesByCourse.get(r.courseId) ?? []).length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {ratesByCourse.get(r.courseId).map((t, i) => (
+                        <span
+                          key={`${t.name}-${i}`}
+                          className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                        >
+                          {t.name} — R{Number(t.rate).toFixed(2)}/hr
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <p className="pt-1 text-[11px] font-medium text-slate-500">
+                {budgetSummary.coursesOverBudget > 0
+                  ? `R${Math.abs(budgetSummary.remaining).toLocaleString('en-US')} over budget overall`
+                  : `R${budgetSummary.remaining.toLocaleString('en-US')} remaining overall`}
+              </p>
+            </>
           )}
         </CardBody>
       </Card>
