@@ -46,7 +46,9 @@ export default function AuthProvider({ children }) {
     let cancelled = false;
 
     const sync = async () => {
-      console.log(devBypassEnabled ? '[Auth] Loading local demo account…' : '[Auth] Starting backend sync…');
+      console.log(
+        devBypassEnabled ? '[Auth] Loading local demo account…' : '[Auth] Starting backend sync…'
+      );
       setIsSyncing(true);
       setSyncError(null);
       try {

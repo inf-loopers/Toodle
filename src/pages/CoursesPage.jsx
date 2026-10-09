@@ -191,11 +191,7 @@ export function CoursesPage({ scope = 'all' }) {
   const mine = scope === 'mine';
   const applicant = !mine && ['student', 'tutor'].includes(role);
   const { data, loading, error, refetch } = useApi(
-    mine
-      ? coursesApi.getMyCourses
-      : applicant
-        ? coursesApi.getOpportunities
-        : coursesApi.getCourses
+    mine ? coursesApi.getMyCourses : applicant ? coursesApi.getOpportunities : coursesApi.getCourses
   );
   const copy = pageCopy({ mine, isAdmin, isTutor });
   const [search, setSearch] = useState('');

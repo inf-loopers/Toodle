@@ -43,15 +43,18 @@ function ExplanationBadge({ explanation }) {
   const [open, setOpen] = useState(false);
   if (!explanation) return null;
 
-  const { mark, markStatus, minMarkRequired, meetsMinMark, sessionsCovered, sessionsTotal, remainingHours } =
-    explanation;
+  const {
+    mark,
+    markStatus,
+    minMarkRequired,
+    meetsMinMark,
+    sessionsCovered,
+    sessionsTotal,
+    remainingHours,
+  } = explanation;
 
   const markLabel =
-    mark != null
-      ? meetsMinMark
-        ? `${mark}% ✓`
-        : `${mark}% (min ${minMarkRequired}%)`
-      : 'No mark';
+    mark != null ? (meetsMinMark ? `${mark}% ✓` : `${mark}% (min ${minMarkRequired}%)`) : 'No mark';
 
   const availLabel =
     sessionsTotal === 0
@@ -153,7 +156,14 @@ function EntryRow({ entry, selected, onToggle, onHoursChange }) {
 
 // ── Course Group ─────────────────────────────────────────────────────────────
 
-function CourseGroup({ courseCode, courseName, entries, selectedIds, onToggleEntry, onHoursChange }) {
+function CourseGroup({
+  courseCode,
+  courseName,
+  entries,
+  selectedIds,
+  onToggleEntry,
+  onHoursChange,
+}) {
   const allSelected = entries.every((e) => selectedIds.has(e.id ?? e.tutorId + e.courseId));
   const someSelected = entries.some((e) => selectedIds.has(e.id ?? e.tutorId + e.courseId));
 
@@ -322,7 +332,8 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
     const map = new Map();
     for (const entry of proposed) {
       const key = entry.courseCode;
-      if (!map.has(key)) map.set(key, { courseCode: entry.courseCode, courseName: entry.courseName, entries: [] });
+      if (!map.has(key))
+        map.set(key, { courseCode: entry.courseCode, courseName: entry.courseName, entries: [] });
       map.get(key).entries.push(entry);
     }
     return [...map.values()];
@@ -340,9 +351,7 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
 
   // Update hours for an entry.
   const updateHours = useCallback((id, hours) => {
-    setProposed((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, hoursPerWeek: hours } : e)),
-    );
+    setProposed((prev) => prev.map((e) => (e.id === id ? { ...e, hoursPerWeek: hours } : e)));
   }, []);
 
   // Select / deselect all.
@@ -350,7 +359,7 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
     (select) => {
       setSelectedIds(select ? new Set(proposed.map((e) => e.id)) : new Set());
     },
-    [proposed],
+    [proposed]
   );
 
   // Save as draft (no live allocations).
@@ -535,7 +544,9 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
         {/* Draft name input for "Save as Draft" flow */}
         {proposed.length > 0 && (
           <div className="rounded-xl border border-slate-200 p-3">
-            <label className="block text-xs font-semibold text-slate-700">Draft name (optional)</label>
+            <label className="block text-xs font-semibold text-slate-700">
+              Draft name (optional)
+            </label>
             <input
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
@@ -573,11 +584,7 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
     // review / saving / committing
     return (
       <div className="flex w-full items-center justify-between gap-3">
-        <Button
-          variant="secondary"
-          onClick={() => setPhase('idle')}
-          disabled={busy}
-        >
+        <Button variant="secondary" onClick={() => setPhase('idle')} disabled={busy}>
           ← Re-run
         </Button>
         <div className="flex items-center gap-2">
