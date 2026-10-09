@@ -62,7 +62,7 @@ function ExplanationBadge({ explanation }) {
 
   const hoursLabel = `${remainingHours}h remaining`;
 
-  const tone = !meetsMinMark ? 'warning' : sessionsCovered < sessionsTotal ? 'warning' : 'success';
+  const _tone = !meetsMinMark ? 'warning' : sessionsCovered < sessionsTotal ? 'warning' : 'success';
 
   return (
     <div className="relative inline-block">
@@ -303,7 +303,7 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
     try {
       const res = await allocationEngineApi.generate();
       const plan = res?.data ?? res;
-      const entries = (plan.proposed ?? []).map((p, idx) => ({
+      const entries = (plan.proposed ?? []).map((p, _idx) => ({
         ...p,
         id: `${p.tutorId}-${p.courseId}`,
       }));
