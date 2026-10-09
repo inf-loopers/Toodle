@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 /**
  * @file timesheets-page.test.jsx
  * @description Tutor pay-rate display on the Timesheets page: the tutor's
@@ -64,14 +65,22 @@ describe('Timesheets page — tutor pay rate (tutor view)', () => {
       data: { rate: 200, effectiveFrom: '2026-09-01' },
     });
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [] });
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('Your current rate: R200.00/hr')).toBeInTheDocument();
   });
 
   it('shows the paid-at amount and total for an approved timesheet', async () => {
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [approvedTimesheet()] });
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText(/Paid at R150.00\/hr · R750.00 total/)).toBeInTheDocument();
   });
@@ -81,7 +90,11 @@ describe('Timesheets page — tutor pay rate (tutor view)', () => {
       data: { rate: 220, effectiveFrom: '2026-09-15' },
     });
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [approvedTimesheet()] });
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     expect(
       await screen.findByText(/Your rate has since changed to R220.00\/hr/)
@@ -93,7 +106,11 @@ describe('Timesheets page — tutor pay rate (tutor view)', () => {
       data: { rate: 150, effectiveFrom: '2026-01-01' },
     });
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [approvedTimesheet()] });
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     await screen.findByText(/Paid at R150.00/);
     expect(screen.queryByText(/rate has since changed/)).not.toBeInTheDocument();
@@ -103,7 +120,11 @@ describe('Timesheets page — tutor pay rate (tutor view)', () => {
     timesheetsApi.getTimesheets.mockResolvedValue({
       data: [approvedTimesheet({ appliedRate: null })],
     });
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     await screen.findByText('COMS3011A');
     expect(screen.queryByText(/Paid at/)).not.toBeInTheDocument();
@@ -117,7 +138,11 @@ describe('Timesheets page — tutor pay rate (staff view)', () => {
 
   it('shows the paid-at amount on an approved timesheet without a "your rate" header line', async () => {
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [approvedTimesheet()] });
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText(/Paid at R150.00\/hr · R750.00 total/)).toBeInTheDocument();
     expect(screen.queryByText(/Your current rate/)).not.toBeInTheDocument();

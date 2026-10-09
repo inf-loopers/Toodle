@@ -15,6 +15,18 @@ import { Inbox } from 'lucide-react';
 // ─── Button ───────────────────────────────────────────────────────────────────
 
 describe('Button', () => {
+  it('renders navigation as one named link without a nested button', () => {
+    render(
+      <Button as="a" href="/courses" variant="secondary">
+        Browse courses
+      </Button>
+    );
+    expect(screen.getByRole('link', { name: 'Browse courses' })).toHaveAttribute(
+      'href',
+      '/courses'
+    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
   it.each([
     ['primary', 'bg-primary'],
     ['secondary', 'bg-white'],

@@ -17,6 +17,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const panelRef = useRef(null);
+  const triggerRef = useRef(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -58,6 +59,7 @@ export default function NotificationBell() {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         setOpen(false);
+        triggerRef.current?.focus();
       }
     };
 
@@ -105,6 +107,7 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={panelRef}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={handleToggle}
         className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -153,7 +156,10 @@ export default function NotificationBell() {
 
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    setOpen(false);
+                    triggerRef.current?.focus();
+                  }}
                   className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white sm:hidden"
                   aria-label="Close notification panel"
                 >

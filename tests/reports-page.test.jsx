@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import ReportsPage from '../src/pages/ReportsPage';
@@ -47,7 +48,13 @@ function approvedTimesheet(overrides = {}) {
     course,
     user: alice,
     entries: [
-      { id: 'e1', date: new Date().toISOString().slice(0, 10), hoursWorked: 2, description: '', course },
+      {
+        id: 'e1',
+        date: new Date().toISOString().slice(0, 10),
+        hoursWorked: 2,
+        description: '',
+        course,
+      },
     ],
     ...overrides,
   };
@@ -61,7 +68,11 @@ describe('Reports allocation totals', () => {
         allocation({ id: 'a2', userId: 't2', status: 'PENDING', hoursPerWeek: 3, user: bob }),
       ],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('across 1 active allocation')).toBeInTheDocument();
     expect(screen.getByText('1 / 1 tutor')).toBeInTheDocument();
     expect(within(screen.getByText('Unfilled courses').parentElement).getByText('0'));
@@ -77,7 +88,11 @@ describe('Reports allocation totals', () => {
     allocationsApi.getAllocations.mockResolvedValue({
       data: [allocation({ id: 'a2', userId: 't2', status: 'PENDING', hoursPerWeek: 3, user: bob })],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('across 0 active allocations')).toBeInTheDocument();
     expect(screen.getByText('0 / 1 tutor')).toBeInTheDocument();
     expect(within(screen.getByText('Unfilled courses').parentElement).getByText('1'));
@@ -90,20 +105,32 @@ describe('Reports allocation totals', () => {
 describe('Reports payroll CSV export', () => {
   it('enables the Download CSV button once an approved entry falls in the selected period', async () => {
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [approvedTimesheet()] });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByRole('button', { name: /Download CSV/ })).not.toBeDisabled();
   });
 
   it('disables the Download CSV button when there are no approved entries', async () => {
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByRole('button', { name: /Download CSV/ })).toBeDisabled();
   });
 
   it('offers an "Export full approved history" toggle alongside the period filter', async () => {
     timesheetsApi.getTimesheets.mockResolvedValue({ data: [approvedTimesheet()] });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     const toggle = await screen.findByLabelText('Export full approved history');
     expect(toggle).not.toBeChecked();
@@ -119,7 +146,11 @@ describe('Reports payroll CSV export', () => {
         approvedTimesheet({ id: 'ts-disputed', status: 'DISPUTED' }),
       ],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByRole('button', { name: /Download CSV/ })).toBeDisabled();
   });
@@ -130,7 +161,11 @@ describe('Reports budget vs spend', () => {
     coursesApi.getCourses.mockResolvedValue({
       data: [{ ...course, budget: { amount: '50000', spent: '32500' } }],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('R32,500 / R50,000')).toBeInTheDocument();
     expect(screen.getByText(/R32,500 spent of R50,000 budgeted/)).toBeInTheDocument();
@@ -143,7 +178,11 @@ describe('Reports budget vs spend', () => {
     coursesApi.getCourses.mockResolvedValue({
       data: [{ ...course, budget: { amount: '10000', spent: '12000' } }],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('R12,000 / R10,000')).toBeInTheDocument();
     expect(screen.getByText('· 1 course over budget')).toBeInTheDocument();
@@ -152,7 +191,11 @@ describe('Reports budget vs spend', () => {
   });
 
   it('shows an empty state when no courses have a budget set', async () => {
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('No courses have a budget set yet.')).toBeInTheDocument();
   });
@@ -172,7 +215,11 @@ describe('Reports rate offered per course', () => {
         },
       ],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('Alice — R150.00/hr')).toBeInTheDocument();
   });
@@ -184,7 +231,11 @@ describe('Reports rate offered per course', () => {
     tutorsApi.getTutors.mockResolvedValue({
       data: [{ ...alice, allocations: [{ id: 'a1', courseId: 'c1' }], currentRate: null }],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     await screen.findByText('R32,500 / R50,000');
     expect(screen.queryByText(/—.*\/hr/)).not.toBeInTheDocument();
@@ -211,7 +262,11 @@ describe('Reports period boundaries (UTC-based, timezone-independent)', () => {
         approvedTimesheet({ id: 'ts-out', weekStartDate: '2026-07-31', entries: [] }),
       ],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     fireEvent.change(await screen.findByLabelText('Report period'), { target: { value: 'month' } });
 
@@ -225,7 +280,11 @@ describe('Reports period boundaries (UTC-based, timezone-independent)', () => {
     timesheetsApi.getTimesheets.mockResolvedValue({
       data: [approvedTimesheet({ id: 'ts-next', weekStartDate: '2026-09-01', entries: [] })],
     });
-    render(<ReportsPage />);
+    render(
+      <MemoryRouter initialEntries={['/reports']}>
+        <ReportsPage />
+      </MemoryRouter>
+    );
 
     fireEvent.change(await screen.findByLabelText('Report period'), { target: { value: 'month' } });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Moon, Sun } from 'lucide-react';
 
-import toodleLogo from '../../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../ui/AppLogo';
 import { useAuth } from '../../hooks/useAuth';
 
 const THEME_STORAGE_KEY = 'toodle.theme';
@@ -56,7 +56,7 @@ export default function LandingNavbar() {
       <nav className="mx-auto flex h-16 max-w-7xl items-center px-6 md:px-10">
         {/* LOGO */}
         <a href="/" className="flex items-center">
-          <img src={toodleLogo} alt="Toodle logo" className="h-12 w-12 object-contain" />
+          <AppLogo className="h-12 w-12 object-contain" />
         </a>
 
         {/* NAVIGATION */}

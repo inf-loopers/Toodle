@@ -62,7 +62,17 @@ describe('buildPayrollRows', () => {
     const rows = buildPayrollRows([timesheet()]);
 
     expect(rows).toEqual([
-      ['COMS101', 'Computing', 'Alice', 'alice@example.test', '2026-08-17', '2026-08-18', '2.50', 'Lab prep', ''],
+      [
+        'COMS101',
+        'Computing',
+        'Alice',
+        'alice@example.test',
+        '2026-08-17',
+        '2026-08-18',
+        '2.50',
+        'Lab prep',
+        '',
+      ],
     ]);
   });
 
@@ -114,7 +124,15 @@ describe('buildPayrollRows', () => {
 
     expect(rows).toHaveLength(3);
     expect(rows[1]).toEqual([
-      'COMS101', 'Computing', 'Alice', 'alice@example.test', '2026-08-24', '2026-08-25', '1.00', 'Marking', '',
+      'COMS101',
+      'Computing',
+      'Alice',
+      'alice@example.test',
+      '2026-08-24',
+      '2026-08-25',
+      '1.00',
+      'Marking',
+      '',
     ]);
   });
 
@@ -149,7 +167,13 @@ describe('buildPayrollRows', () => {
       course: null,
       entries: [
         { id: 'e1', date: '2026-08-18', hoursWorked: 1.5, description: 'Marking', course },
-        { id: 'e2', date: '2026-08-19', hoursWorked: 2, description: 'Consulting', course: mathsCourse },
+        {
+          id: 'e2',
+          date: '2026-08-19',
+          hoursWorked: 2,
+          description: 'Consulting',
+          course: mathsCourse,
+        },
       ],
     });
 
@@ -171,7 +195,7 @@ describe('buildPayrollRows', () => {
       const rows = buildPayrollRows([timesheet({ status })]);
 
       expect(rows).toEqual([]);
-    },
+    }
   );
 
   it('keeps only the APPROVED timesheets out of a mixed-status list', () => {
@@ -186,7 +210,15 @@ describe('buildPayrollRows', () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toEqual([
-      'COMS101', 'Computing', 'Alice', 'alice@example.test', '2026-08-17', '2026-08-18', '2.50', 'Lab prep', '',
+      'COMS101',
+      'Computing',
+      'Alice',
+      'alice@example.test',
+      '2026-08-17',
+      '2026-08-18',
+      '2.50',
+      'Lab prep',
+      '',
     ]);
   });
 
@@ -200,7 +232,9 @@ describe('buildPayrollRows', () => {
     const third = timesheet({
       id: 'ts-3',
       weekStartDate: '2026-08-10',
-      entries: [{ id: 'e4', date: '2026-08-11', hoursWorked: 4, description: 'Consulting', course }],
+      entries: [
+        { id: 'e4', date: '2026-08-11', hoursWorked: 4, description: 'Consulting', course },
+      ],
     });
 
     const forward = buildPayrollRows([timesheet(), second, third]);
@@ -221,7 +255,9 @@ describe('buildPayrollCsv', () => {
     const lines = csv.split('\r\n');
 
     expect(lines[0]).toBe(PAYROLL_CSV_HEADER.join(','));
-    expect(lines[1]).toBe('COMS101,Computing,Alice,alice@example.test,2026-08-17,2026-08-18,2.50,Lab prep,');
+    expect(lines[1]).toBe(
+      'COMS101,Computing,Alice,alice@example.test,2026-08-17,2026-08-18,2.50,Lab prep,'
+    );
   });
 
   it('includes the computed amount in the serialised CSV row', () => {
@@ -229,13 +265,15 @@ describe('buildPayrollCsv', () => {
     const lines = csv.split('\r\n');
 
     expect(lines[1]).toBe(
-      'COMS101,Computing,Alice,alice@example.test,2026-08-17,2026-08-18,2.50,Lab prep,500.00',
+      'COMS101,Computing,Alice,alice@example.test,2026-08-17,2026-08-18,2.50,Lab prep,500.00'
     );
   });
 
   it('escapes a description containing a comma', () => {
     const rows = buildPayrollRows([
-      timesheet({ entries: [{ id: 'e1', date: '2026-08-18', hoursWorked: 2, description: 'Tutorial, prep' }] }),
+      timesheet({
+        entries: [{ id: 'e1', date: '2026-08-18', hoursWorked: 2, description: 'Tutorial, prep' }],
+      }),
     ]);
     const csv = buildPayrollCsv(rows);
 
