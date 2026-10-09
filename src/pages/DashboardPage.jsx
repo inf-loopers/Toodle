@@ -30,7 +30,6 @@ import { allocationsApi } from '../api/allocations';
 import { overflowApi } from '../api/overflow';
 import { timesheetsApi } from '../api/timesheets';
 import { swapsApi } from '../api/swaps';
-import { usersApi } from '../api/users';
 import { ROLES } from '../utils/constants';
 import { formatDay, formatHours, formatTime } from '../utils/helpers';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
@@ -251,15 +250,14 @@ function TutorDashboard({ user }) {
     error: tsError,
   } = useApi(timesheetsApi.getTimesheets);
   const { data: swaps, loading: swapsLoading, error: swapsError } = useApi(swapsApi.getSwaps);
-  const {
-    data: profileData,
-    loading: profileLoading,
-    error: profileError,
-  } = useApi(usersApi.getCurrentUser);
+  // The DB profile (availability, maxHoursPerWeek) is fetched once at login by
+  // AuthProvider and exposed through useAuth(); reusing it here avoids a
+  // redundant GET /users/me round-trip on every tutor dashboard load (B07).
+  const { dbUser } = useAuth();
 
-  if (allocLoading || tsLoading || swapsLoading || profileLoading)
+  if (allocLoading || tsLoading || swapsLoading)
     return <Spinner fullPage label="Loading your dashboard…" />;
-  const dashError = allocError || tsError || swapsError || profileError;
+  const dashError = allocError || tsError || swapsError;
   if (dashError) {
     return (
       <ErrorState
@@ -280,7 +278,7 @@ function TutorDashboard({ user }) {
   const allocationList = allocations?.data ?? allocations ?? [];
   const timesheetList = timesheets?.data ?? timesheets ?? [];
   const swapList = swaps?.data ?? swaps ?? [];
-  const profile = profileData?.data ?? profileData ?? {};
+  const profile = dbUser ?? {};
   const availability = profile.availability ?? [];
 
   const totalHours = allocationList.reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
