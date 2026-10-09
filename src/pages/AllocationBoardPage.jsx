@@ -78,6 +78,7 @@ import { ErrorState, EmptyState } from '../components/ui/EmptyState';
 import AllocationMarkVerification from '../components/AllocationMarkVerification';
 import { allocationCollisionDetection } from '../utils/allocationCollision';
 import { describeAllocationError, isStaleAllocationError } from '../utils/allocationErrors';
+import GenerateAllocationModal from '../components/GenerateAllocationModal';
 
 // ── Stat Chip ──────────────────────────────────────────────────────────
 
@@ -700,6 +701,8 @@ function AllocationBoard() {
   const isMobile = useIsMobile();
   const dndEnabled = !isMobile;
 
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+
   // DnD sensors — pointer for mouse/touch/pen, keyboard for accessibility
   // (Space/Enter to pick up, arrows to move, Space/Enter to drop, Esc to cancel).
   const sensors = useSensors(
@@ -782,11 +785,9 @@ function AllocationBoard() {
             </Button>
           </span>
 
-          <span title="Generate Allocation is not available yet." className="inline-flex">
-            <Button variant="accent" disabled>
-              <Sparkles className="h-4 w-4" /> Generate Allocation
-            </Button>
-          </span>
+          <Button variant="accent" onClick={() => setShowGenerateModal(true)}>
+            <Sparkles className="h-4 w-4" /> Generate Allocation
+          </Button>
         </div>
       </div>
 
@@ -968,6 +969,12 @@ function AllocationBoard() {
         onAssigned={refetchAll}
         onMarkSaved={updateTutorMark}
         onStale={refetchAll}
+      />
+
+      <GenerateAllocationModal
+        open={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        onCommitted={refetchAll}
       />
     </div>
   );

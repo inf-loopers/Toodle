@@ -14,6 +14,8 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { useAuthContext } from '../context/AuthContext';
 
+const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 // Must match the namespace used in the Auth0 "Add Roles to Token" Action
 const ROLES_CLAIM = 'https://toodle.app/roles';
 
@@ -47,19 +49,22 @@ export function useAuth() {
 
   // Prefer the authoritative database role over the JWT claim
   const role = (dbUser?.role || jwtRole)?.toLowerCase() ?? null;
-  const error = syncError || auth0Error?.message || null;
+  const error = devBypassEnabled ? syncError : syncError || auth0Error?.message || null;
 
-  const login = (options) => loginWithRedirect(options);
+  const login = (options) => (devBypassEnabled ? Promise.resolve() : loginWithRedirect(options));
 
-  const logout = () => auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  const logout = () => {
+    if (devBypassEnabled) return window.location.assign('/allocations');
+    return auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  };
 
   /** Get a bearer token to attach to API requests (see api/client.js) */
-  const getToken = () => getAccessTokenSilently();
+  const getToken = () => (devBypassEnabled ? Promise.resolve(null) : getAccessTokenSilently());
 
   return {
-    isAuthenticated,
-    isLoading: isLoading || isSyncing,
-    user,
+    isAuthenticated: devBypassEnabled || isAuthenticated,
+    isLoading: devBypassEnabled ? isSyncing : isLoading || isSyncing,
+    user: devBypassEnabled ? dbUser : user,
     dbUser,
     updateDbUser,
     role,
