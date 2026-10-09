@@ -480,7 +480,7 @@ function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
             {locked && <Lock className="h-3 w-3 text-slate-400" aria-label="Locked" />}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 focus-within:opacity-100">
           <button
             onClick={() => onToggleLock(allocation)}
             className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
@@ -875,7 +875,7 @@ function AllocationBoard() {
                   : 'Tap a tutor’s Assign button to get started.'}
               </p>
 
-              <div className="mt-3 flex items-center rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2">
+              <div className="mt-3 flex items-center rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 focus-within:ring-2 focus-within:ring-primary">
                 <Search className="mr-2 h-3.5 w-3.5 text-slate-400" />
                 <input
                   value={tutorSearch}
@@ -890,6 +890,7 @@ function AllocationBoard() {
             <div
               className="max-h-[46.5rem] min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
               data-testid="tutor-pool-list"
+                  aria-label="Search tutors"
             >
               {filteredTutors.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -939,6 +940,9 @@ function AllocationBoard() {
                     validation={hoverValidation?.courseId === course.id ? hoverValidation : null}
                     dndEnabled={dndEnabled}
                     onToggleLock={toggleLock}
+                onFocusCapture={(event) =>
+                  event.target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+                }
                     onRemove={removeAllocation}
                     onAssignClick={(course) => openAssignModal(course)}
                   />

@@ -471,11 +471,9 @@ export function VolunteersPage() {
 
                     {claim.status === 'APPROVED' && (
                       <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
-                        <Link to="/timesheets">
-                          <Button size="sm">
-                            <Clock className="h-3.5 w-3.5" /> Record hours
-                          </Button>
-                        </Link>
+                        <Button as={Link} to="/timesheets" size="sm">
+                          <Clock className="h-3.5 w-3.5" /> Record hours
+                        </Button>
                       </div>
                     )}
                   </Card>

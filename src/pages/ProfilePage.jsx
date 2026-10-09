@@ -233,21 +233,21 @@ export function ProfilePage() {
           <div className="flex flex-col items-center">
             <UserAvatar user={profile || user} />
 
-            <label
-              htmlFor="profile-photo"
-              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              <Camera className="h-4 w-4" />
-              Change profile photo
-            </label>
-
             <input
               id="profile-photo"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={handlePhotoChange}
-              className="hidden"
+              className="peer sr-only"
             />
+            <label
+              htmlFor="profile-photo"
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              <Camera className="h-4 w-4" />
+              Change profile photo
+            </label>
+
             {profile?.avatarUrl && (
               <button
                 type="button"

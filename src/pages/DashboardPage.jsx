@@ -164,11 +164,9 @@ function StaffDashboard({ user }) {
             title="Courses needing tutors"
             description="Prioritise these on the allocation board."
             action={
-              <Link to="/allocations">
-                <Button size="sm" variant="secondary">
-                  Open board <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+              <Button as={Link} to="/allocations" size="sm" variant="secondary">
+                Open board <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             }
           />
           <CardBody>
@@ -363,11 +361,9 @@ function TutorDashboard({ user }) {
             title="My courses"
             description="Sessions you're currently tutoring."
             action={
-              <Link to="/timesheets">
-                <Button size="sm" variant="secondary">
-                  Log hours <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+              <Button as={Link} to="/timesheets" size="sm" variant="secondary">
+                Log hours <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             }
           />
           <CardBody>
@@ -399,11 +395,9 @@ function TutorDashboard({ user }) {
             title="My availability"
             description="Your available times for timetable planning."
             action={
-              <Link to="/profile">
-                <Button size="sm" variant="secondary">
-                  Edit availability
-                </Button>
-              </Link>
+              <Button as={Link} to="/profile" size="sm" variant="secondary">
+                Edit availability
+              </Button>
             }
           />
           <CardBody>

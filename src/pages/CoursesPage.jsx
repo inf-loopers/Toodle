@@ -200,8 +200,8 @@ export function CoursesPage() {
               : 'Browse courses, check requirements and apply to tutor.'}
           </p>
         </div>
-        <div className="flex gap-3">
-          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 focus-within:ring-2 focus-within:ring-primary">
             <Search className="mr-2 h-4 w-4 text-slate-400" />
             <input
               value={search}
@@ -210,6 +210,7 @@ export function CoursesPage() {
               className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
+              aria-label="Search courses"
           {isAdmin && (
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> New course

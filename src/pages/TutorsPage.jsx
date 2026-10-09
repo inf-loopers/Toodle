@@ -370,7 +370,7 @@ export function TutorsPage() {
             Marks, availability and weekly hours for every tutor.
           </p>
         </div>
-        <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+        <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 focus-within:ring-2 focus-within:ring-primary">
           <Search className="mr-2 h-4 w-4 text-slate-400" />
           <input
             value={search}
@@ -379,6 +379,7 @@ export function TutorsPage() {
             className="w-48 bg-transparent text-sm outline-none placeholder:text-slate-400"
           />
         </div>
+            aria-label="Search tutors"
       </div>
 
       {filtered.length === 0 ? (
