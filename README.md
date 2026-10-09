@@ -110,6 +110,12 @@ To use a deployed backend locally, set `VITE_API_URL` in the ignored
 The URL must serve the Express API; a React frontend URL will return HTML for
 GET requests and can reject the sign-in POST with 405 Method Not Allowed.
 
+Local development uses Auth0 sign-in by default (`VITE_DEV_BYPASS_AUTH=false`).
+Keep this setting disabled when the API requires Auth0 tokens. Enabling the
+frontend demo bypass alone skips login and sends requests without a token,
+which causes `/auth/me` to return 401. Demo mode requires a separately configured
+development API with `DEV_BYPASS_AUTH=true` and the demo user already seeded.
+
 Production builds use `VITE_API_URL` from the deployment environment or
 `.env.production`, not `.env.development`. Set it to the deployed backend API
 URL, and allow the deployed frontend origin in the backend's `FRONTEND_URL`.
