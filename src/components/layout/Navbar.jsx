@@ -26,7 +26,7 @@ import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import NotificationBell from './NotificationBell';
 import UserAvatar from '../ui/UserAvatar';
-import toodleLogo from '../../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../ui/AppLogo';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, dbUser, role, logout } = useAuth();
@@ -112,7 +112,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
             aria-label="Toodle dashboard"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <img src={toodleLogo} alt="" className="h-9 w-9 object-contain" />
+            <AppLogo alt="" className="h-9 w-9 object-contain" />
           </Link>
 
           {/* Desktop page title */}
