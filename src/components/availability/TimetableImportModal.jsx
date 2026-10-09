@@ -65,11 +65,11 @@ function SlotSummary({ title, slots, emptyText }) {
       ) : (
         <dl className="mt-2 space-y-1 text-sm">
           {days.map(({ day, windows }) => (
-            <div key={day} className="flex gap-2">
-              <dt className="w-24 shrink-0 font-medium text-slate-700 dark:text-slate-200">
+            <div key={day} className="flex flex-col sm:flex-row sm:gap-2">
+              <dt className="shrink-0 font-medium sm:w-24 text-slate-700 dark:text-slate-200">
                 {formatDay(day)}
               </dt>
-              <dd className="text-slate-600 dark:text-slate-300">{windows.join(', ')}</dd>
+              <dd className="break-words text-slate-600 dark:text-slate-300">{windows.join(', ')}</dd>
             </div>
           ))}
         </dl>
@@ -180,9 +180,9 @@ export function TimetableImportModal({ open, onClose, tutorId, onImported }) {
 
         {step === 'select' && (
           <div className="space-y-4">
-            <label className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-200 px-4 py-8 text-center hover:border-primary/50">
+            <label className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-200 px-4 py-6 text-center sm:py-8 hover:border-primary/50">
               <FileUp className="mx-auto h-6 w-6 text-slate-400" />
-              <span className="mt-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span className="mt-2 block break-all text-sm font-medium text-slate-700 dark:text-slate-200">
                 {file ? file.name : 'Choose a timetable CSV'}
               </span>
               <span className="mt-1 block text-xs text-slate-400">
@@ -217,8 +217,8 @@ export function TimetableImportModal({ open, onClose, tutorId, onImported }) {
               )}
             </div>
 
-            <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-100 dark:border-slate-800">
-              <table className="w-full text-left text-sm">
+            <div className="max-h-56 overflow-auto rounded-xl border border-slate-100 dark:border-slate-800">
+              <table className="w-full min-w-[32rem] text-left text-sm">
                 <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500 dark:bg-slate-900">
                   <tr>
                     <th className="px-3 py-2 font-medium">Row</th>
@@ -245,7 +245,7 @@ export function TimetableImportModal({ open, onClose, tutorId, onImported }) {
                       ) : (
                         <>
                           <td className="px-3 py-2">{formatDay(row.dayOfWeek)}</td>
-                          <td className="px-3 py-2">
+                          <td className="whitespace-nowrap px-3 py-2">
                             {row.startTime}–{row.endTime}
                           </td>
                           <td className="px-3 py-2">{row.module}</td>

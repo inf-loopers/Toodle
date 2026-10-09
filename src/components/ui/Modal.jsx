@@ -122,7 +122,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   const sizes = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
         onClick={onClose}
@@ -138,12 +138,14 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-label={title ? undefined : 'Dialog'}
         tabIndex={-1}
         className={cn(
-          'relative w-full rounded-2xl bg-white p-6 shadow-xl outline-none',
+          // Cap the dialog at the viewport; header and footer stay put and
+          // the body scrolls, so tall content is never cut off.
+          'relative flex max-h-full w-full flex-col rounded-2xl bg-white p-4 shadow-xl outline-none sm:p-6',
           sizes[size]
         )}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex shrink-0 items-start justify-between gap-4">
+          <div className="min-w-0">
             {title && (
               <h3 id={titleId} className="text-lg font-bold text-slate-900">
                 {title}
@@ -158,18 +160,20 @@ export function Modal({ open, onClose, title, description, children, footer, siz
 
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div ref={bodyRef} className="mt-5">
+        <div ref={bodyRef} className="-mx-1 mt-5 min-h-0 flex-1 overflow-y-auto px-1">
           {children}
         </div>
 
-        {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
+        {footer && (
+          <div className="mt-4 flex shrink-0 flex-wrap justify-end gap-3 sm:mt-6">{footer}</div>
+        )}
       </div>
     </div>
   );
