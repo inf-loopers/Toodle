@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Navbar from '../src/components/layout/Navbar';
 
@@ -28,6 +28,41 @@ async function openProfileMenu() {
 }
 
 describe('Profile dropdown sign out', () => {
+  it('navigates from another page to the dashboard when the logo is activated by keyboard', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/courses']}>
+        <Navbar title="Courses" />
+        <Routes>
+          <Route path="/courses" element={<p>Course content</p>} />
+          <Route path="/dashboard" element={<p>Dashboard content</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const logo = screen.getByRole('link', { name: 'Toodle dashboard' });
+    expect(logo).toHaveAttribute('href', '/dashboard');
+    await user.tab();
+    await user.tab();
+    expect(logo).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByText('Dashboard content')).toBeInTheDocument();
+    expect(screen.queryByText('Course content')).not.toBeInTheDocument();
+  });
+  it('opens by keyboard and restores focus to its named trigger on Escape', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <Navbar title="Dashboard" />
+      </MemoryRouter>
+    );
+    const trigger = screen.getByRole('button', { name: 'Account menu for Test User' });
+    trigger.focus();
+    await user.keyboard('{Enter}{Tab}');
+    expect(screen.getByRole('menuitem', { name: 'My Profile' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
   beforeEach(() => {
     logout.mockReset();
   });

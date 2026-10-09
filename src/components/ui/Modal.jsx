@@ -138,7 +138,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-label={title ? undefined : 'Dialog'}
         tabIndex={-1}
         className={cn(
-          'relative w-full rounded-2xl bg-white p-6 shadow-xl outline-none',
+          'relative max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-xl outline-none',
           sizes[size]
         )}
       >
@@ -157,6 +157,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             aria-label="Close"
@@ -169,7 +170,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
           {children}
         </div>
 
-        {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
+        {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
       </div>
     </div>
   );

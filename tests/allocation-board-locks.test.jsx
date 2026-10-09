@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -62,7 +63,9 @@ function allocation(overrides = {}) {
 function renderBoard(authValue) {
   const board = <AllocationBoardPage />;
   return render(
-    authValue ? <AuthContext.Provider value={authValue}>{board}</AuthContext.Provider> : board
+    <MemoryRouter initialEntries={['/allocations']}>
+      {authValue ? <AuthContext.Provider value={authValue}>{board}</AuthContext.Provider> : board}
+    </MemoryRouter>
   );
 }
 

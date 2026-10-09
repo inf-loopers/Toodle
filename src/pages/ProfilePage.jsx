@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ProfilePage.jsx
  * @description User profile and tutor work preferences.
@@ -19,7 +20,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Camera, Save } from 'lucide-react';
+import { AlertTriangle, Camera, Save } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -28,22 +29,26 @@ import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
 import { ROLES, ROLE_LABELS } from '../utils/constants';
+import { getApiErrorMessage } from '../utils/apiError';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
+import Modal from '../components/ui/Modal';
+import FormError from '../components/ui/FormError';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 import UserAvatar from '../components/ui/UserAvatar';
 import AvailabilityEditor from '../components/availability/AvailabilityEditor';
 
 export function ProfilePage() {
-  const { user, role, updateDbUser } = useAuth();
+  const { user, role, updateDbUser, logout } = useAuth();
 
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
 
   const [maxHours, setMaxHours] = useState(10);
+  const [hoursError, setHoursError] = useState('');
   const [savingHours, setSavingHours] = useState(false);
   const [hoursSaved, setHoursSaved] = useState(false);
 
@@ -53,6 +58,11 @@ export function ProfilePage() {
 
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const profile = currentUser?.data ?? currentUser;
 
@@ -77,6 +87,15 @@ export function ProfilePage() {
       setYearOfStudy(String(profile.yearOfStudy));
     }
   }, [profile]);
+
+  // Reset-on-open: a failed deletion never closes the dialog, so clear the
+  // confirmation text and error each time it is (re)opened rather than on close.
+  useEffect(() => {
+    if (deleteOpen) {
+      setDeleteConfirm('');
+      setDeleteError('');
+    }
+  }, [deleteOpen]);
 
   if (loading) {
     return <Spinner fullPage label="Loading your profile…" />;
@@ -135,6 +154,7 @@ export function ProfilePage() {
 
     setSavingHours(true);
     setHoursSaved(false);
+    setHoursError('');
 
     try {
       await usersApi.updateUser(profile.id, {
@@ -144,6 +164,8 @@ export function ProfilePage() {
       setHoursSaved(true);
 
       await refetch();
+    } catch (err) {
+      setHoursError(err?.response?.data?.error || 'Could not save weekly hours.');
     } finally {
       setSavingHours(false);
     }
@@ -170,13 +192,33 @@ export function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await usersApi.deleteCurrentUser();
+      // The account is gone server-side (local record + Auth0 identity), so sign
+      // out; Auth0 redirects back to the app root as a signed-out visitor. A
+      // deleted user who returns is no longer recreated because the identity is
+      // removed, not just the local row.
+      logout();
+    } catch (deleteAccountError) {
+      setDeleteError(
+        getApiErrorMessage(deleteAccountError, 'Could not delete your account. Please try again.')
+      );
+      setDeleting(false);
+    }
+  };
+
+  const confirmMatches = deleteConfirm.trim().toLowerCase() === displayEmail.trim().toLowerCase();
+
   return (
     <>
       {/* Page heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           My Profile
-        </h1>
+        </FeatureHeading>
 
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Your details and how you're set up on Toodle.
@@ -192,21 +234,21 @@ export function ProfilePage() {
           <div className="flex flex-col items-center">
             <UserAvatar user={profile || user} />
 
-            <label
-              htmlFor="profile-photo"
-              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              <Camera className="h-4 w-4" />
-              Change profile photo
-            </label>
-
             <input
               id="profile-photo"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={handlePhotoChange}
-              className="hidden"
+              className="peer sr-only"
             />
+            <label
+              htmlFor="profile-photo"
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              <Camera className="h-4 w-4" />
+              Change profile photo
+            </label>
+
             {profile?.avatarUrl && (
               <button
                 type="button"
@@ -331,9 +373,15 @@ export function ProfilePage() {
                 onChange={(event) => {
                   setMaxHours(event.target.value);
                   setHoursSaved(false);
+                  setHoursError('');
                 }}
                 className="max-w-36"
               />
+              {hoursError && (
+                <p role="alert" className="text-sm text-rose-600">
+                  {hoursError}
+                </p>
+              )}
 
               <Button onClick={handleSaveHours} loading={savingHours}>
                 <Save className="h-4 w-4" />
@@ -368,6 +416,71 @@ export function ProfilePage() {
           />
         )}
       </div>
+
+      {/* Danger zone: permanent account deletion */}
+      <Card className="mt-6">
+        <CardHeader
+          title="Delete account"
+          description="Permanently close your Toodle account and remove your sign-in details."
+        />
+
+        <CardBody>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              This deletes your profile, your sign-in, and the records you own. Records you reviewed
+              on someone else's behalf are kept as history. This cannot be undone.
+            </p>
+
+            <Button variant="danger" onClick={() => setDeleteOpen(true)} className="shrink-0">
+              <AlertTriangle className="h-4 w-4" />
+              Delete account
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => {
+          if (!deleting) setDeleteOpen(false);
+        }}
+        title="Delete your account?"
+        description="This action is permanent and cannot be undone."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteAccount}
+              loading={deleting}
+              disabled={!confirmMatches}
+            >
+              Delete permanently
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            You will be signed out immediately. Your account and Auth0 sign-in are deleted; any work
+            you owned is removed, while records you actioned for others stay on file with your name
+            cleared.
+          </p>
+
+          <Input
+            label={`Type your email (${displayEmail}) to confirm`}
+            type="email"
+            value={deleteConfirm}
+            onChange={(event) => setDeleteConfirm(event.target.value)}
+            autoComplete="off"
+          />
+
+          <FormError message={deleteError} />
+        </div>
+      </Modal>
     </>
   );
 }

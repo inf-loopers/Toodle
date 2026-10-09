@@ -26,7 +26,9 @@ vi.mock('../src/hooks/useAuth', () => ({
 vi.mock('../src/components/auth/LogoutButton', () => ({ default: () => null }));
 vi.mock('../src/api/allocations', () => ({ allocationsApi: { getAllocations: vi.fn() } }));
 vi.mock('../src/api/timesheets', () => ({ timesheetsApi: { getTimesheets: vi.fn() } }));
-vi.mock('../src/api/swaps', () => ({ swapsApi: { getSwaps: vi.fn() } }));
+vi.mock('../src/api/swaps', () => ({
+  swapsApi: { getSwaps: vi.fn(), getCoverage: vi.fn(), getWorkload: vi.fn() },
+}));
 vi.mock('../src/api/users', () => ({ usersApi: { getCurrentUser: vi.fn() } }));
 
 beforeEach(() => {
@@ -34,6 +36,8 @@ beforeEach(() => {
   allocationsApi.getAllocations.mockResolvedValue({ data: [] });
   timesheetsApi.getTimesheets.mockResolvedValue({ data: [] });
   swapsApi.getSwaps.mockResolvedValue({ data: [] });
+  swapsApi.getCoverage.mockResolvedValue({ data: [] });
+  swapsApi.getWorkload.mockResolvedValue({ data: {} });
 });
 
 describe('Tutor dashboard profile sourcing (B07)', () => {

@@ -118,5 +118,10 @@ describe('NotificationBell integration', () => {
 
     await user.click(screen.getByRole('button', { name: /close notification panel/i }));
     expect(screen.queryByRole('region', { name: /notifications panel/i })).not.toBeInTheDocument();
+    expect(bellBtn).toHaveFocus();
+    await user.keyboard('{Enter}{Tab}');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('region', { name: /notifications panel/i })).not.toBeInTheDocument();
+    expect(bellBtn).toHaveFocus();
   });
 });
