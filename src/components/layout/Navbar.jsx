@@ -114,6 +114,9 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
           >
             <AppLogo alt="" className="h-9 w-9 object-contain" />
           </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <AppLogo alt="" className="h-9 w-9 object-contain" />
+          </div>
 
           {/* Desktop page title */}
           {title && (
