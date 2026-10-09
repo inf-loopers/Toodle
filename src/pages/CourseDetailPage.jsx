@@ -32,6 +32,7 @@ import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { usersApi } from '../api/users';
 import CourseApplications from '../components/CourseApplications';
+import AllocationSessionsModal from '../components/AllocationSessionsModal';
 import EditCourseModal from '../components/EditCourseModal';
 import MarkImportModal from '../components/MarkImportModal';
 import { useAuth } from '../hooks/useAuth';
@@ -321,6 +322,7 @@ export function CourseDetailPage() {
   const [editingSession, setEditingSession] = useState(null);
   const [deletingSession, setDeletingSession] = useState(null);
   const [sessionNotice, setSessionNotice] = useState('');
+  const [sessionAllocation, setSessionAllocation] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [coordinatorModalOpen, setCoordinatorModalOpen] = useState(false);
   const [markImportModalOpen, setMarkImportModalOpen] = useState(false);
@@ -539,6 +541,11 @@ export function CourseDetailPage() {
                     <p className="text-xs text-slate-400">{formatHours(a.hoursPerWeek)} / week</p>
                   </div>
                   <Badge tone={a.status === 'ACTIVE' ? 'success' : 'neutral'}>{a.status}</Badge>
+                  {canManageCourse && (
+                    <Button size="sm" variant="secondary" onClick={() => setSessionAllocation(a)}>
+                      Choose sessions
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -585,6 +592,14 @@ export function CourseDetailPage() {
           onClose={() => setCoordinatorModalOpen(false)}
           course={courseData}
           onUpdated={refetch}
+        />
+      )}
+      {canManageCourse && sessionAllocation && (
+        <AllocationSessionsModal
+          allocation={sessionAllocation}
+          sessions={sessionList}
+          onClose={() => setSessionAllocation(null)}
+          onSaved={refetch}
         />
       )}
     </>

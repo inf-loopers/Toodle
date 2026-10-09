@@ -5,6 +5,7 @@ import { ExcusalsPage } from '../src/pages/ExcusalsPage';
 import { useAuth } from '../src/hooks/useAuth';
 import { excusalsApi } from '../src/api/excusals';
 import { swapsApi } from '../src/api/swaps';
+import { tutorsApi } from '../src/api/tutors';
 import { coursesApi } from '../src/api/courses';
 
 vi.mock('../src/hooks/useAuth', () => ({ useAuth: vi.fn() }));
@@ -16,7 +17,8 @@ vi.mock('../src/api/excusals', () => ({
     declineExcusal: vi.fn(),
   },
 }));
-vi.mock('../src/api/swaps', () => ({ swapsApi: { getOptions: vi.fn() } }));
+vi.mock('../src/api/swaps', () => ({ swapsApi: { getCoverage: vi.fn() } }));
+vi.mock('../src/api/tutors', () => ({ tutorsApi: { getTutor: vi.fn() } }));
 vi.mock('../src/api/courses', () => ({ coursesApi: { getCourseSessions: vi.fn() } }));
 
 const lab = {
@@ -49,16 +51,19 @@ beforeEach(() => {
   asTutor();
   excusalsApi.getExcusals.mockResolvedValue({ data: [] });
   excusalsApi.requestExcusal.mockResolvedValue({ data: {} });
-  swapsApi.getOptions.mockResolvedValue({
-    data: [
-      {
-        id: 'alloc-1',
-        userId: 'tutor-1',
-        courseId: 'course-1',
-        status: 'ACTIVE',
-        course: { code: 'COMS3011A', name: 'SDP' },
-      },
-    ],
+  swapsApi.getCoverage.mockResolvedValue({ data: [] });
+  tutorsApi.getTutor.mockResolvedValue({
+    data: {
+      allocations: [
+        {
+          id: 'alloc-1',
+          userId: 'tutor-1',
+          courseId: 'course-1',
+          status: 'ACTIVE',
+          course: { code: 'COMS3011A', name: 'SDP' },
+        },
+      ],
+    },
   });
   coursesApi.getCourseSessions.mockResolvedValue({ data: [lab, tutorial] });
 });

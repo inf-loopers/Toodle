@@ -20,6 +20,9 @@
 import apiClient from './client';
 
 export const coursesApi = {
+  getOpportunities: async () => (await apiClient.get('/courses/opportunities')).data,
+  getEligibility: async (id, hoursPerWeek) =>
+    (await apiClient.get(`/courses/${id}/eligibility`, { params: { hoursPerWeek } })).data,
   getApplications: async (id) => (await apiClient.get(`/courses/${id}/applications`)).data,
   apply: async (id, data) => (await apiClient.post(`/courses/${id}/applications`, data)).data,
   reviewApplication: async (id, applicationId, data) =>

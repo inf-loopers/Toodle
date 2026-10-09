@@ -16,6 +16,7 @@ import { CalendarX, Plus, Check, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { excusalsApi } from '../api/excusals';
+import { tutorsApi } from '../api/tutors';
 import { swapsApi } from '../api/swaps';
 import { coursesApi } from '../api/courses';
 import { EXCUSAL_STATUS_TONE } from '../utils/constants';
@@ -284,9 +285,16 @@ export function ExcusalsPage() {
   const { dbUser: user, isStaff, isTutor } = useAuth();
 
   const { data, loading, error, refetch } = useApi(excusalsApi.getExcusals);
-
-  const { data: allocationData, error: allocationError } = useApi(swapsApi.getOptions, {
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
     immediate: isTutor,
+  });
+  const coverage = (coverageData?.data ?? coverageData ?? []).filter(
+    (r) => new Date(`${String(r.sessionDate).slice(0, 10)}T${r.startTime}:00+02:00`) > new Date()
+  );
+
+  const { data: allocationData, error: allocationError } = useApi(tutorsApi.getTutor, {
+    immediate: isTutor && Boolean(user?.id),
+    params: [user?.id],
   });
 
   const [requestOpen, setRequestOpen] = useState(false);
@@ -295,11 +303,14 @@ export function ExcusalsPage() {
   const [actionError, setActionError] = useState('');
 
   const excusals = data?.data ?? data ?? [];
-  const allocations = allocationData?.data ?? allocationData ?? [];
+  const allocations = (allocationData?.data ?? allocationData)?.allocations ?? [];
 
-  const myActiveAllocations = allocations.filter(
-    (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
-  );
+  const myActiveAllocations = [
+    ...allocations.filter(
+      (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
+    ),
+    ...coverage.map((r) => ({ id: r.allocationId, courseId: r.courseId, course: r.course })),
+  ].filter((a, i, all) => all.findIndex((b) => b.id === a.id) === i);
 
   const approve = async (id) => {
     setBusyId(id);
@@ -350,9 +361,9 @@ export function ExcusalsPage() {
         )}
       </div>
 
-      {(actionError || allocationError) && (
+      {(actionError || allocationError || coverageError) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
-          {actionError || allocationError}
+          {actionError || allocationError || coverageError}
         </p>
       )}
 
@@ -404,7 +415,9 @@ export function ExcusalsPage() {
                   <p className="mt-2 text-xs text-slate-500">
                     {excusal.session
                       ? `${formatSessionLabel(excusal.session)} · `
-                      : 'Session date: '}
+                      : excusal.sessionStartTime
+                        ? `${excusal.sessionStartTime}–${excusal.sessionEndTime} · `
+                        : 'Session date: '}
                     {formatOccurrenceDate(excusal.sessionDate)}
                     {excusal.durationMinutes ? ` (${formatDuration(excusal.durationMinutes)})` : ''}
                   </p>
@@ -428,7 +441,7 @@ export function ExcusalsPage() {
                       {excusal.status === 'DECLINED' ? 'Declined' : 'Approved'} by{' '}
                       {excusal.reviewedBy.name}
                       {excusal.resolvedAt
-                        ? ` · ${new Date(excusal.resolvedAt).toLocaleString()}`
+                        ? ` · ${new Date(excusal.resolvedAt).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`
                         : ''}
                     </p>
                   )}
