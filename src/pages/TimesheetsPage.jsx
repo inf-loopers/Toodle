@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file TimesheetsPage.jsx
  * @description Weekly timesheet and hours tracking page for tutors.
@@ -765,7 +766,9 @@ export function TimesheetsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Timesheets</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Timesheets
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             {isStaff

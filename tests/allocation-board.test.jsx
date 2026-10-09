@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -58,7 +59,11 @@ beforeEach(() => {
 
 async function openAssignment() {
   const user = userEvent.setup();
-  render(<AllocationBoardPage />);
+  render(
+    <MemoryRouter initialEntries={['/allocations']}>
+      <AllocationBoardPage />
+    </MemoryRouter>
+  );
   await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
   await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
   await screen.findByText('Mark must be verified');
@@ -69,7 +74,11 @@ describe('Allocation board verification', () => {
   it.each([21, 40])('submits %ih within the API range and blocks 41h', async (hours) => {
     allocationsApi.validateAllocation.mockResolvedValue(valid);
     const user = userEvent.setup();
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
     await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
     const field = screen.getByLabelText('Hours per week');
@@ -185,7 +194,11 @@ describe('Allocation board verification', () => {
         { id: 'a1', userId: 't1', courseId: 'c1', status: 'PENDING', hoursPerWeek: 8, user: tutor },
       ],
     });
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('Needs tutor')).toBeInTheDocument();
     expect(screen.getByText('10h left')).toBeInTheDocument();
     expect(screen.getByText('PENDING')).toBeInTheDocument();
@@ -194,7 +207,11 @@ describe('Allocation board verification', () => {
 
   it('surfaces tutor-loading errors instead of an empty pool', async () => {
     tutorsApi.getTutors.mockRejectedValue(new Error('Tutor service unavailable'));
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('Tutor service unavailable')).toBeInTheDocument();
   });
 

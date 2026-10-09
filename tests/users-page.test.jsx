@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import UsersPage from '../src/pages/UsersPage';
@@ -29,7 +30,11 @@ function changeRoleButtonFor(name) {
 }
 
 test("lists every user with their role, and hides the action on the admin's own row", async () => {
-  render(<UsersPage />);
+  render(
+    <MemoryRouter initialEntries={['/users']}>
+      <UsersPage />
+    </MemoryRouter>
+  );
 
   expect(await screen.findByText('Ada Admin')).toBeInTheDocument();
   expect(screen.getByText('Leroy Lecturer')).toBeInTheDocument();
@@ -44,7 +49,11 @@ test("lists every user with their role, and hides the action on the admin's own 
 });
 
 test('filters users by search text and by role chip', async () => {
-  render(<UsersPage />);
+  render(
+    <MemoryRouter initialEntries={['/users']}>
+      <UsersPage />
+    </MemoryRouter>
+  );
   await screen.findByText('Ada Admin');
 
   fireEvent.change(screen.getByLabelText('Search users'), { target: { value: 'sam' } });
@@ -58,7 +67,11 @@ test('filters users by search text and by role chip', async () => {
 });
 
 test("changes a user's role, warns about consequences, and refreshes the list", async () => {
-  render(<UsersPage />);
+  render(
+    <MemoryRouter initialEntries={['/users']}>
+      <UsersPage />
+    </MemoryRouter>
+  );
   await screen.findByText('Tessa Tutor');
 
   fireEvent.click(changeRoleButtonFor('Tessa Tutor'));
@@ -82,7 +95,11 @@ test('surfaces the server conflict message when the change is refused', async ()
     response: { data: { error: 'At least one administrator account must remain.' } },
   });
 
-  render(<UsersPage />);
+  render(
+    <MemoryRouter initialEntries={['/users']}>
+      <UsersPage />
+    </MemoryRouter>
+  );
   await screen.findByText('Leroy Lecturer');
 
   fireEvent.click(changeRoleButtonFor('Leroy Lecturer'));

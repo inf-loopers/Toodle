@@ -40,7 +40,14 @@ import Spinner from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/EmptyState';
 import LogoutButton from '../components/auth/LogoutButton';
 
-function StatCard({ icon: Icon, label, value, description, tone = 'primary' }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  description,
+  tone = 'primary',
+  compactMobile = false,
+}) {
   const tones = {
     primary: 'bg-primary-subtle text-primary',
     amber: 'bg-amber-50 text-amber-600',
@@ -48,17 +55,31 @@ function StatCard({ icon: Icon, label, value, description, tone = 'primary' }) {
     rose: 'bg-rose-50 text-rose-600',
   };
   return (
-    <Card>
+    <Card className={compactMobile ? 'relative min-w-0 max-sm:p-3' : undefined}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+          <p
+            className={`text-sm font-medium text-slate-500 ${compactMobile ? 'max-sm:pr-6 max-sm:text-xs' : ''}`}
+          >
+            {label}
+          </p>
+          <p
+            className={`mt-2 text-3xl font-bold text-slate-900 ${compactMobile ? 'max-sm:mt-1 max-sm:text-2xl' : ''}`}
+          >
+            {value}
+          </p>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]} ${compactMobile ? 'max-sm:absolute max-sm:right-3 max-sm:top-3 max-sm:h-6 max-sm:w-6 max-sm:[&_svg]:h-4 max-sm:[&_svg]:w-4' : ''}`}
+        >
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      {description && <p className="mt-3 text-xs text-slate-400">{description}</p>}
+      {description && (
+        <p className={`mt-3 text-xs text-slate-400 ${compactMobile ? 'max-sm:mt-1' : ''}`}>
+          {description}
+        </p>
+      )}
     </Card>
   );
 }
@@ -126,14 +147,16 @@ function StaffDashboard({ user }) {
         tagline="Here's how allocations are shaping up across the school this week."
       />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2 xl:grid-cols-4">
         <StatCard
+          compactMobile
           icon={BookOpen}
           label="Courses"
           value={courseList.length}
           description="Courses this semester"
         />
         <StatCard
+          compactMobile
           icon={Users}
           label="Tutors"
           value={tutorList.length}
@@ -141,6 +164,7 @@ function StaffDashboard({ user }) {
           description="Registered tutors"
         />
         <StatCard
+          compactMobile
           icon={CheckCircle2}
           label="Allocations"
           value={activeAllocations.length}
@@ -150,6 +174,7 @@ function StaffDashboard({ user }) {
           }
         />
         <StatCard
+          compactMobile
           icon={AlertTriangle}
           label="Unfilled Courses"
           value={unfilled.length}
@@ -164,11 +189,9 @@ function StaffDashboard({ user }) {
             title="Courses needing tutors"
             description="Prioritise these on the allocation board."
             action={
-              <Link to="/allocations">
-                <Button size="sm" variant="secondary">
-                  Open board <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+              <Button as={Link} to="/allocations" size="sm" variant="secondary">
+                Open board <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             }
           />
           <CardBody>
@@ -177,17 +200,19 @@ function StaffDashboard({ user }) {
                 Every course has at least one tutor. Nice work.
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="grid auto-rows-fr gap-3">
                 {unfilled.slice(0, 5).map((course) => (
                   <div
                     key={course.id}
-                    className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/50 p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 dark:border-[#334155] dark:bg-[#17243a]"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1 break-words">
                       <p className="text-sm font-semibold text-slate-800">{course.code}</p>
                       <p className="text-xs text-slate-500">{course.name}</p>
                     </div>
-                    <Badge tone="warning">Needs tutor</Badge>
+                    <Badge tone="warning" className="shrink-0 whitespace-nowrap">
+                      Needs tutor
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -363,11 +388,9 @@ function TutorDashboard({ user }) {
             title="My courses"
             description="Sessions you're currently tutoring."
             action={
-              <Link to="/timesheets">
-                <Button size="sm" variant="secondary">
-                  Log hours <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+              <Button as={Link} to="/timesheets" size="sm" variant="secondary">
+                Log hours <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             }
           />
           <CardBody>
@@ -399,11 +422,9 @@ function TutorDashboard({ user }) {
             title="My availability"
             description="Your available times for timetable planning."
             action={
-              <Link to="/profile">
-                <Button size="sm" variant="secondary">
-                  Edit availability
-                </Button>
-              </Link>
+              <Button as={Link} to="/profile" size="sm" variant="secondary">
+                Edit availability
+              </Button>
             }
           />
           <CardBody>
@@ -463,14 +484,16 @@ function StudentDashboard({ user }) {
     <>
       <Welcome name={user?.name} tagline="Overflow work nobody has claimed yet is listed below." />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+      <div className="mb-8 grid grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2">
         <StatCard
+          compactMobile
           icon={HandHeart}
           label="Open Opportunities"
           value={postList.length}
           description="Ready to claim"
         />
         <StatCard
+          compactMobile
           icon={Clock}
           label="Weekly Cap"
           value={`${user?.maxHoursPerWeek ?? 10}h`}
@@ -479,19 +502,24 @@ function StudentDashboard({ user }) {
         />
       </div>
 
-      <Card>
+      <Card className="max-sm:p-3">
         <CardHeader
           title="Overflow work"
+          className="max-sm:grid max-sm:grid-cols-[1fr_auto] max-sm:gap-2 max-sm:[&>div:first-child]:contents max-sm:[&_h2]:col-start-1 max-sm:[&_p]:col-span-2 max-sm:[&_p]:row-start-2 max-sm:[&>div:last-child]:col-start-2 max-sm:[&>div:last-child]:row-start-1"
           description="First come, first served — a course coordinator approves each claim."
           action={
-            <Link to="/volunteers">
-              <Button size="sm" variant="secondary">
-                Browse all <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+            <Button
+              as={Link}
+              to="/volunteers"
+              size="sm"
+              variant="secondary"
+              className="max-sm:min-h-11"
+            >
+              Browse all <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
           }
         />
-        <CardBody>
+        <CardBody className="max-sm:mt-3">
           {postList.length === 0 ? (
             <p className="text-sm text-slate-400">
               No overflow work is open right now — check back soon.
@@ -501,9 +529,9 @@ function StudentDashboard({ user }) {
               {postList.slice(0, 5).map((post) => (
                 <div
                   key={post.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 p-3 max-sm:p-2"
                 >
-                  <div>
+                  <div className="min-w-0 break-words">
                     <p className="text-sm font-semibold text-slate-800">
                       {post.course?.code || post.courseId}
                     </p>

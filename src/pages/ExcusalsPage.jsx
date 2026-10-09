@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ExcusalsPage.jsx
  * @description Tutor and staff workflow for excusal requests.
@@ -306,7 +307,9 @@ export function ExcusalsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Excusals</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Excusals
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
