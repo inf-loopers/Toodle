@@ -21,6 +21,12 @@ vi.mock('../src/api/allocations', () => ({
   },
 }));
 vi.mock('../src/hooks/useIsMobile', () => ({ useIsMobile: () => false }));
+// GenerateAllocationModal (rendered by the board) reads the current user to
+// decide draft-delete rights. A plain function keeps the stub intact across the
+// `vi.resetAllMocks()` in beforeEach.
+vi.mock('../src/hooks/useAuth', () => ({
+  useAuth: () => ({ isAdmin: true, dbUser: { id: 'admin-1' } }),
+}));
 
 const course = {
   id: 'c1',
