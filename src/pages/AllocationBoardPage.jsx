@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file AllocationBoardPage.jsx
  * @description Core Sprint 1 Feature — Staff's Interactive Course Allocation Board.
@@ -78,14 +79,15 @@ import { ErrorState, EmptyState } from '../components/ui/EmptyState';
 import AllocationMarkVerification from '../components/AllocationMarkVerification';
 import { allocationCollisionDetection } from '../utils/allocationCollision';
 import { describeAllocationError, isStaleAllocationError } from '../utils/allocationErrors';
+import GenerateAllocationModal from '../components/GenerateAllocationModal';
 
 // ── Stat Chip ──────────────────────────────────────────────────────────
 
 function StatChip({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm max-sm:p-3">
       <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+      <p className="mt-2 text-3xl font-bold text-slate-900 max-sm:mt-1 max-sm:text-2xl">{value}</p>
     </div>
   );
 }
@@ -479,7 +481,7 @@ function AssignedTutorCard({ allocation, onToggleLock, onRemove }) {
             {locked && <Lock className="h-3 w-3 text-slate-400" aria-label="Locked" />}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 focus-within:opacity-100">
           <button
             onClick={() => onToggleLock(allocation)}
             className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
@@ -700,6 +702,8 @@ function AllocationBoard() {
   const isMobile = useIsMobile();
   const dndEnabled = !isMobile;
 
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+
   // DnD sensors — pointer for mouse/touch/pen, keyboard for accessibility
   // (Space/Enter to pick up, arrows to move, Space/Enter to drop, Esc to cancel).
   const sensors = useSensors(
@@ -762,9 +766,9 @@ function AllocationBoard() {
       <div className="mb-6 flex shrink-0 flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <p className="text-sm font-medium text-primary">2026 Academic Year</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+          <FeatureHeading className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
             Allocation Board
-          </h1>
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             {dndEnabled
               ? 'Drag tutors from the pool and drop them onto course columns to assign.'
@@ -775,18 +779,24 @@ function AllocationBoard() {
             under Courses; approval assigns them automatically.
           </p>
         </div>
-        <div className="flex gap-3">
-          <span title="Import Timetable is not available yet." className="inline-flex">
-            <Button variant="secondary" disabled>
+        <div className="flex gap-3 max-sm:grid max-sm:grid-cols-2 max-sm:gap-2">
+          <span title="Import Timetable is not available yet." className="inline-flex min-w-0">
+            <Button
+              variant="secondary"
+              className="max-sm:min-h-11 max-sm:w-full max-sm:px-2 max-sm:text-xs"
+              disabled
+            >
               <Upload className="h-4 w-4" /> Import Timetable
             </Button>
           </span>
 
-          <span title="Generate Allocation is not available yet." className="inline-flex">
-            <Button variant="accent" disabled>
-              <Sparkles className="h-4 w-4" /> Generate Allocation
-            </Button>
-          </span>
+          <Button
+            variant="ghost"
+            className="bg-primary-subtle text-primary enabled:hover:bg-primary/10 disabled:text-primary max-sm:min-h-11 max-sm:w-full max-sm:px-2 max-sm:text-xs"
+            onClick={() => setShowGenerateModal(true)}
+          >
+            <Sparkles className="h-4 w-4" /> Generate Allocation
+          </Button>
         </div>
       </div>
 
@@ -831,7 +841,7 @@ function AllocationBoard() {
       )}
 
       {/* Stat chips */}
-      <div className="mb-6 grid shrink-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid shrink-0 grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2 xl:grid-cols-4">
         <StatChip label="Courses" value={courseList.length} />
         <StatChip label="Available Tutors" value={tutorList.length} />
         <StatChip
@@ -874,12 +884,13 @@ function AllocationBoard() {
                   : 'Tap a tutor’s Assign button to get started.'}
               </p>
 
-              <div className="mt-3 flex items-center rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2">
+              <div className="mt-3 flex items-center rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 focus-within:ring-2 focus-within:ring-primary">
                 <Search className="mr-2 h-3.5 w-3.5 text-slate-400" />
                 <input
                   value={tutorSearch}
                   onChange={(e) => setTutorSearch(e.target.value)}
                   placeholder="Search tutors…"
+                  aria-label="Search tutors"
                   className="w-full bg-transparent text-xs outline-none placeholder:text-slate-400"
                 />
               </div>
@@ -929,6 +940,9 @@ function AllocationBoard() {
               <div
                 className="flex h-full min-h-0 gap-4 overflow-x-auto pb-4"
                 data-testid="board-columns"
+                onFocusCapture={(event) =>
+                  event.target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+                }
               >
                 {courseList.map((course) => (
                   <CourseColumn
@@ -968,6 +982,12 @@ function AllocationBoard() {
         onAssigned={refetchAll}
         onMarkSaved={updateTutorMark}
         onStale={refetchAll}
+      />
+
+      <GenerateAllocationModal
+        open={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        onCommitted={refetchAll}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file UsersPage.jsx
  * @description Admin-only user administration: browse every account, search and
@@ -166,7 +167,12 @@ export function UsersPage() {
     <div data-testid="users-page">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Users</h2>
+          <FeatureHeading
+            as="h2"
+            className="text-xl font-semibold text-slate-900 dark:text-slate-100"
+          >
+            Users
+          </FeatureHeading>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Every account on the platform. Change a role to promote or demote someone.
           </p>
