@@ -17,7 +17,7 @@ import { useAuth } from '../hooks/useAuth';
 import LoginButton from '../components/auth/LoginButton';
 import Card from '../components/ui/Card';
 import { applyTheme, getInitialTheme, persistTheme } from '../utils/theme';
-import toodleLogo from '../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../components/ui/AppLogo';
 
 export function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -55,7 +55,7 @@ export function LoginPage() {
 
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src={toodleLogo} alt="Toodle logo" className="h-16 w-16 object-contain" />
+          <AppLogo className="h-16 w-16 object-contain" />
 
           <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-slate-100">
             Welcome to Toodle

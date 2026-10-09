@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
+import heroIllustrationWebp from '../../assets/toodle_hero_part1.webp';
 import heroIllustration from '../../assets/toodle_hero_part1.png';
 
 export default function Hero() {
@@ -130,11 +131,18 @@ export default function Hero() {
             transition={{ duration: 0.7, delay: 0.15 }}
             className="absolute bottom-[-108px] left-1/2 z-10 w-[585px] -translate-x-1/2"
           >
-            <img
-              src={heroIllustration}
-              alt="Tutor and students learning around an open book"
-              className="w-full object-contain"
-            />
+            <picture>
+              <source srcSet={heroIllustrationWebp} type="image/webp" />
+              <img
+                src={heroIllustration}
+                alt="Tutor and students learning around an open book"
+                className="w-full object-contain"
+                width={1254}
+                height={1254}
+                fetchPriority="high"
+                decoding="async"
+              />
+            </picture>
           </Motion.div>
 
           {/* TOP LEFT CARD */}

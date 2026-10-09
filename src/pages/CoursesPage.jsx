@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file CoursesPage.jsx
  * @description Course catalog and management page.
@@ -17,6 +18,7 @@ import { Plus, BookOpen, Search, ArrowRight } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { useAuth } from '../hooks/useAuth';
+import OpportunityEligibility from '../components/OpportunityEligibility';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -158,17 +160,25 @@ function CreateCourseModal({ open, onClose, onCreated }) {
 }
 
 export function CoursesPage() {
-  const { isAdmin } = useAuth();
-  const { data, loading, error, refetch } = useApi(coursesApi.getCourses);
+  const { isAdmin, role } = useAuth();
+  const applicant = ['student', 'tutor'].includes(role);
+  const { data, loading, error, refetch } = useApi(
+    applicant ? coursesApi.getOpportunities : coursesApi.getCourses
+  );
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
 
   const courses = data?.data ?? data ?? [];
-  const filtered = courses.filter(
-    (c) =>
-      c.code?.toLowerCase().includes(search.toLowerCase()) ||
-      c.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = [...courses]
+    .sort(
+      (a, b) =>
+        Number(b.eligibility?.status === 'eligible') - Number(a.eligibility?.status === 'eligible')
+    )
+    .filter(
+      (c) =>
+        c.code?.toLowerCase().includes(search.toLowerCase()) ||
+        c.name?.toLowerCase().includes(search.toLowerCase())
+    );
 
   if (loading) return <Spinner fullPage label="Loading courses…" />;
   if (error)
@@ -184,20 +194,23 @@ export function CoursesPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Courses</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Courses
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             {isAdmin
               ? 'Everything the school is running this semester.'
               : 'Browse courses, check requirements and apply to tutor.'}
           </p>
         </div>
-        <div className="flex gap-3">
-          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 focus-within:ring-2 focus-within:ring-primary">
             <Search className="mr-2 h-4 w-4 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search courses…"
+              aria-label="Search courses"
               className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
@@ -220,35 +233,42 @@ export function CoursesPage() {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((course) => (
-            <Link key={course.id} to={`/courses/${course.id}`}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
-                    <BookOpen className="h-5 w-5" />
-                  </div>
-                  <Badge tone="neutral">
-                    Sem {course.semester} · {course.year}
-                  </Badge>
+            <Card
+              key={course.id}
+              className={`h-full transition-shadow hover:shadow-md ${course.eligibility?.status === 'ineligible' ? 'bg-slate-50' : ''}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
+                  <BookOpen className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
-                <p className="text-sm text-slate-500">{course.name}</p>
-                <p className="mt-2 text-xs text-slate-600">
-                  Minimum mark: {course.minMarkRequired}% · Applications{' '}
-                  {course.applicationsOpen ? 'open' : 'closed'}
-                </p>
-                {course.description && (
-                  <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
-                )}
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className="text-xs text-slate-400">
-                    {course.requiredTutors ?? 1} tutor(s) needed
-                  </span>
-                  <span className="flex items-center gap-1 text-xs font-semibold text-primary">
-                    Details <ArrowRight className="h-3 w-3" />
-                  </span>
-                </div>
-              </Card>
-            </Link>
+                <Badge tone="neutral">
+                  Sem {course.semester} · {course.year}
+                </Badge>
+              </div>
+              <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
+              <p className="text-sm text-slate-500">{course.name}</p>
+              <p className="mt-2 text-xs text-slate-600">
+                Minimum mark: {course.minMarkRequired}% · Applications{' '}
+                {course.applicationsOpen ? 'open' : 'closed'}
+              </p>
+              {course.description && (
+                <p className="mt-2 line-clamp-2 text-xs text-slate-400">{course.description}</p>
+              )}
+              {applicant && (
+                <OpportunityEligibility eligibility={course.eligibility} courseId={course.id} />
+              )}
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                <span className="text-xs text-slate-400">
+                  {course.requiredTutors ?? 1} tutor(s) needed
+                </span>
+                <Link
+                  to={`/courses/${course.id}`}
+                  className="flex items-center gap-1 text-xs font-semibold text-primary"
+                >
+                  Details <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </Card>
           ))}
         </div>
       )}

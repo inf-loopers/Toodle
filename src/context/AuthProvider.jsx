@@ -15,6 +15,8 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AuthContext } from './AuthContext';
 import { usersApi } from '../api/users';
 
+const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 export default function AuthProvider({ children }) {
   const {
     isAuthenticated,
@@ -39,35 +41,31 @@ export default function AuthProvider({ children }) {
   }, [auth0Loading, isAuthenticated, auth0User, auth0Error]);
 
   useEffect(() => {
-    if (auth0Loading || !isAuthenticated) return;
+    if (!devBypassEnabled && (auth0Loading || !isAuthenticated)) return;
 
     let cancelled = false;
 
     const sync = async () => {
-      console.log('[Auth] Starting backend sync…');
+      console.log(
+        devBypassEnabled ? '[Auth] Loading local demo account…' : '[Auth] Starting backend sync…'
+      );
       setIsSyncing(true);
       setSyncError(null);
       try {
-        const token = await getAccessTokenSilently();
-        if (cancelled || !token) {
-          console.log('[Auth] Token retrieval cancelled or empty');
-          return;
+        if (!devBypassEnabled) {
+          const token = await getAccessTokenSilently();
+          if (cancelled || !token) {
+            console.log('[Auth] Token retrieval cancelled or empty');
+            return;
+          }
+          console.log('[Auth] Got token, calling POST /auth/callback');
+          await usersApi.syncUser({});
         }
-        console.log('[Auth] Got token, calling POST /auth/callback');
-
-        await usersApi.syncUser({});
         if (cancelled) return;
-        console.log('[Auth] User synced, fetching profile…');
-
         const me = await usersApi.getCurrentUser();
         if (cancelled) return;
 
         const profile = me.data ?? me;
-        console.log('[Auth] Profile loaded:', {
-          id: profile.id,
-          role: profile.role,
-          email: profile.email,
-        });
         setDbUser({ ...profile, role: (profile.role ?? 'student').toLowerCase() });
       } catch (err) {
         console.error('[Auth] Backend sync failed:', {

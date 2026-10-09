@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file CalendarPage.jsx
  * @description The signed-in user's sessions on a FullCalendar grid (Scope A).
@@ -154,7 +155,9 @@ export function CalendarPage() {
     <div className="flex h-full flex-col">
       <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Calendar</h1>
+          <FeatureHeading className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Calendar
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             Your scheduled sessions across every course you are allocated to or coordinate.
@@ -194,6 +197,7 @@ export function CalendarPage() {
             plugins={CALENDAR_PLUGINS}
             initialView={isMobile ? MOBILE_VIEW : DESKTOP_VIEW}
             headerToolbar={isMobile ? HEADER_TOOLBAR_MOBILE : HEADER_TOOLBAR}
+            buttonText={{ today: 'Today', list: 'List', month: 'Month', week: 'Week' }}
             height="100%"
             slotMinTime="07:00:00"
             slotMaxTime="21:00:00"
