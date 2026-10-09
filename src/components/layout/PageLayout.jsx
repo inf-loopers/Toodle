@@ -19,10 +19,11 @@
  * ```
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import Spinner from '../ui/Spinner';
 import { applyTheme, getInitialTheme, persistTheme } from '../../utils/theme';
 
 const SIDEBAR_STORAGE_KEY = 'toodle.sidebarCollapsed';
@@ -91,7 +92,12 @@ export function PageLayout() {
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-50 p-4 dark:bg-[#0b1220] sm:p-6 lg:p-8">
-            <Outlet />
+            {/* Route pages are lazy-loaded (see AppRoutes); this boundary shows an
+                in-shell spinner while a page chunk resolves, keeping the navbar
+                and sidebar mounted instead of flashing a blank full page. */}
+            <Suspense fallback={<Spinner fullPage label="Loading…" />}>
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>

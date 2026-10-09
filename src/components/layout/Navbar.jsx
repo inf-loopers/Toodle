@@ -26,7 +26,7 @@ import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import NotificationBell from './NotificationBell';
 import UserAvatar from '../ui/UserAvatar';
-import toodleLogo from '../../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../ui/AppLogo';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, dbUser, role, logout } = useAuth();
@@ -104,7 +104,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
           </button>
 
           <div className="flex shrink-0 items-center gap-2">
-            <img src={toodleLogo} alt="" className="h-9 w-9 object-contain" />
+            <AppLogo alt="" className="h-9 w-9 object-contain" />
           </div>
 
           {/* Desktop page title */}
