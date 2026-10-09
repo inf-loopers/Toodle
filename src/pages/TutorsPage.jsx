@@ -14,10 +14,12 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Search, Users, Clock, Award, Plus } from 'lucide-react';
+import { Search, Users, Clock, Award, Plus, DollarSign } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { tutorsApi } from '../api/tutors';
 import { coursesApi } from '../api/courses';
+import { ratesApi } from '../api/rates';
 import { getInitials, formatDay, formatTime } from '../utils/helpers';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -30,11 +32,42 @@ import FormError from '../components/ui/FormError';
 import { getApiErrorMessage } from '../utils/apiError';
 
 function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
+  const { isAdmin, isLecturer } = useAuth();
   const [courseId, setCourseId] = useState('');
   const [mark, setMark] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const tutorId = tutor?.id;
+
+  // A lecturer may only manage pay rates for a tutor who currently holds an
+  // active allocation on one of the courses that lecturer coordinates — the
+  // tutor's `allocations` list is already scoped by the backend, so a
+  // non-empty list proves this lecturer manages at least one shared course.
+  const canManageRate = isAdmin || (isLecturer && (tutor?.allocations ?? []).length > 0);
+
+  const [rateHistory, setRateHistory] = useState([]);
+  const [rateHistoryLoading, setRateHistoryLoading] = useState(false);
+  const [newRate, setNewRate] = useState('');
+  const [newRateEffectiveFrom, setNewRateEffectiveFrom] = useState('');
+  const [rateSubmitting, setRateSubmitting] = useState(false);
+  const [rateError, setRateError] = useState('');
+  const [correctingId, setCorrectingId] = useState(null);
+  const [correctingValue, setCorrectingValue] = useState('');
+  const [correctingSubmitting, setCorrectingSubmitting] = useState(false);
+  const [correctingError, setCorrectingError] = useState('');
+
+  const loadRateHistory = async () => {
+    if (!tutorId || !canManageRate) return;
+    setRateHistoryLoading(true);
+    try {
+      const result = await ratesApi.getRateHistory(tutorId);
+      setRateHistory(result?.data ?? result ?? []);
+    } catch (err) {
+      setRateError(getApiErrorMessage(err, 'Could not load the rate history.'));
+    } finally {
+      setRateHistoryLoading(false);
+    }
+  };
 
   // Clear the mark form when a different tutor is opened. A failed save keeps
   // whatever was typed so the staff member can correct it and retry.
@@ -42,9 +75,55 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
     setCourseId('');
     setMark('');
     setError('');
-  }, [tutorId]);
+    setNewRate('');
+    setNewRateEffectiveFrom('');
+    setRateError('');
+    setCorrectingId(null);
+    setCorrectingValue('');
+    setCorrectingError('');
+    setRateHistory([]);
+    if (open) loadRateHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tutorId, open]);
 
   if (!tutor) return null;
+
+  const handleAddRate = async () => {
+    if (!newRate || !newRateEffectiveFrom) return;
+    setRateSubmitting(true);
+    setRateError('');
+    try {
+      await ratesApi.createRate(tutor.id, {
+        rate: Number(newRate),
+        effectiveFrom: newRateEffectiveFrom,
+      });
+      setNewRate('');
+      setNewRateEffectiveFrom('');
+      await loadRateHistory();
+      onUpdated();
+    } catch (err) {
+      setRateError(getApiErrorMessage(err, 'Could not save the rate.'));
+    } finally {
+      setRateSubmitting(false);
+    }
+  };
+
+  const handleCorrectRate = async (rateId) => {
+    if (correctingValue === '') return;
+    setCorrectingSubmitting(true);
+    setCorrectingError('');
+    try {
+      await ratesApi.correctRate(tutor.id, rateId, { rate: Number(correctingValue) });
+      setCorrectingId(null);
+      setCorrectingValue('');
+      await loadRateHistory();
+      onUpdated();
+    } catch (err) {
+      setCorrectingError(getApiErrorMessage(err, 'Could not save the correction.'));
+    } finally {
+      setCorrectingSubmitting(false);
+    }
+  };
 
   const handleAddMark = async () => {
     if (!courseId || mark === '') return;
@@ -137,6 +216,122 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
           </div>
           <p className="mt-4 text-xs text-slate-400">Max {tutor.maxHoursPerWeek ?? 10}h / week</p>
         </div>
+
+        {canManageRate && (
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Pay rate
+            </p>
+            <div className="mb-3 flex items-center gap-2 text-sm text-slate-600">
+              <DollarSign className="h-4 w-4 text-slate-400" />
+              {tutor.currentRate ? (
+                <span>
+                  Current rate: R{Number(tutor.currentRate.rate).toFixed(2)}/hr since{' '}
+                  {new Date(tutor.currentRate.effectiveFrom).toISOString().slice(0, 10)}
+                </span>
+              ) : (
+                <span className="text-amber-600">No pay rate configured yet.</span>
+              )}
+            </div>
+
+            {rateHistoryLoading ? (
+              <p className="text-sm text-slate-400">Loading history…</p>
+            ) : (
+              <div className="mb-3 space-y-2">
+                {rateHistory.length === 0 && (
+                  <p className="text-sm text-slate-400">No rate history yet.</p>
+                )}
+                {rateHistory.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm"
+                  >
+                    {correctingId === r.id ? (
+                      <div className="flex flex-1 items-center gap-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={correctingValue}
+                          onChange={(e) => setCorrectingValue(e.target.value)}
+                          className="w-24"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleCorrectRate(r.id)}
+                          loading={correctingSubmitting}
+                          disabled={correctingValue === ''}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setCorrectingId(null);
+                            setCorrectingValue('');
+                            setCorrectingError('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-slate-600">
+                          {new Date(r.effectiveFrom).toISOString().slice(0, 10)} — R
+                          {Number(r.rate).toFixed(2)}/hr
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {r.isCorrection && <Badge tone="neutral">Correction</Badge>}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setCorrectingId(r.id);
+                              setCorrectingValue(String(r.rate));
+                              setCorrectingError('');
+                            }}
+                          >
+                            Fix
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+                <FormError message={correctingError} />
+              </div>
+            )}
+
+            <div className="space-y-3 rounded-xl border border-slate-100 p-3">
+              <FormError message={rateError} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="New rate from"
+                  type="date"
+                  value={newRateEffectiveFrom}
+                  onChange={(e) => setNewRateEffectiveFrom(e.target.value)}
+                />
+                <Input
+                  label="Rate (R / hr)"
+                  type="number"
+                  min={0}
+                  value={newRate}
+                  onChange={(e) => setNewRate(e.target.value)}
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={handleAddRate}
+                loading={rateSubmitting}
+                disabled={!newRate || !newRateEffectiveFrom}
+                className="w-full justify-center"
+              >
+                <Plus className="h-4 w-4" /> Save new rate
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
