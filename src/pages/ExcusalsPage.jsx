@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ExcusalsPage.jsx
  * @description Tutor and staff workflow for excusal requests.
@@ -16,8 +17,9 @@ import { CalendarX, Plus, Check, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { excusalsApi } from '../api/excusals';
-import { swapsApi } from '../api/swaps';
 import { coursesApi } from '../api/courses';
+import { tutorsApi } from '../api/tutors';
+import { swapsApi } from '../api/swaps';
 import { EXCUSAL_STATUS_TONE } from '../utils/constants';
 
 import Card from '../components/ui/Card';
@@ -25,7 +27,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
-import { Select, Input, Textarea } from '../components/ui/Input';
+import { Select, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
@@ -284,9 +286,16 @@ export function ExcusalsPage() {
   const { dbUser: user, isStaff, isTutor } = useAuth();
 
   const { data, loading, error, refetch } = useApi(excusalsApi.getExcusals);
-
-  const { data: allocationData, error: allocationError } = useApi(swapsApi.getOptions, {
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
     immediate: isTutor,
+  });
+  const coverage = (coverageData?.data ?? coverageData ?? []).filter(
+    (r) => new Date(`${String(r.sessionDate).slice(0, 10)}T${r.startTime}:00+02:00`) > new Date()
+  );
+
+  const { data: allocationData, error: allocationError } = useApi(tutorsApi.getTutor, {
+    immediate: isTutor && Boolean(user?.id),
+    params: [user?.id],
   });
 
   const [requestOpen, setRequestOpen] = useState(false);
@@ -295,11 +304,14 @@ export function ExcusalsPage() {
   const [actionError, setActionError] = useState('');
 
   const excusals = data?.data ?? data ?? [];
-  const allocations = allocationData?.data ?? allocationData ?? [];
+  const allocations = (allocationData?.data ?? allocationData)?.allocations ?? [];
 
-  const myActiveAllocations = allocations.filter(
-    (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
-  );
+  const myActiveAllocations = [
+    ...allocations.filter(
+      (allocation) => allocation.userId === user?.id && allocation.status === 'ACTIVE'
+    ),
+    ...coverage.map((r) => ({ id: r.allocationId, courseId: r.courseId, course: r.course })),
+  ].filter((a, i, all) => all.findIndex((b) => b.id === a.id) === i);
 
   const approve = async (id) => {
     setBusyId(id);
@@ -333,7 +345,9 @@ export function ExcusalsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Excusals</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Excusals
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
@@ -350,9 +364,9 @@ export function ExcusalsPage() {
         )}
       </div>
 
-      {(actionError || allocationError) && (
+      {(actionError || allocationError || coverageError) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
-          {actionError || allocationError}
+          {actionError || allocationError || coverageError}
         </p>
       )}
 
@@ -428,7 +442,7 @@ export function ExcusalsPage() {
                       {excusal.status === 'DECLINED' ? 'Declined' : 'Approved'} by{' '}
                       {excusal.reviewedBy.name}
                       {excusal.resolvedAt
-                        ? ` · ${new Date(excusal.resolvedAt).toLocaleString()}`
+                        ? ` · ${new Date(excusal.resolvedAt).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`
                         : ''}
                     </p>
                   )}

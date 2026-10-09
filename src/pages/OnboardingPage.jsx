@@ -37,7 +37,7 @@ import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
-import toodleLogo from '../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../components/ui/AppLogo';
 
 const STEPS = [
   { key: 'yearOfStudy', label: 'Year of study' },
@@ -183,11 +183,7 @@ export function OnboardingPage() {
 
         {/* Heading */}
         <div className="mb-8 text-center">
-          <img
-            src={toodleLogo}
-            alt="Toodle logo"
-            className="mx-auto mb-4 h-16 w-16 object-contain"
-          />
+          <AppLogo className="mx-auto mb-4 h-16 w-16 object-contain" />
 
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Welcome to Toodle

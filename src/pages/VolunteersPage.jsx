@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file VolunteersPage.jsx
  * @description Volunteer overflow work page with role-split views.
@@ -19,6 +20,7 @@ import { overflowApi } from '../api/overflow';
 import { coursesApi } from '../api/courses';
 import { useAuth } from '../hooks/useAuth';
 import { formatHours, formatShortDate, getInitials } from '../utils/helpers';
+import OpportunityEligibility from '../components/OpportunityEligibility';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -161,18 +163,22 @@ export function VolunteersPage() {
 
   // Student/tutor: only OPEN posts they have not already claimed (those
   // appear under My claims instead).
-  const openPosts = filteredPosts.filter(
-    (p) => p.status === 'OPEN' && !p.claims?.some((c) => c.user?.id === dbUser?.id)
-  );
+  const openPosts = [...filteredPosts]
+    .sort(
+      (a, b) =>
+        Number(b.eligibility?.status === 'eligible') - Number(a.eligibility?.status === 'eligible')
+    )
+    .filter((p) => p.status === 'OPEN' && !p.claims?.some((c) => c.user?.id === dbUser?.id));
 
   const handleClaim = async (postId) => {
     setBusyId(postId);
     setActionError('');
     try {
       await overflowApi.claimPost(postId);
-      refetch();
+      await refetch();
     } catch (err) {
       setActionError(getApiErrorMessage(err, 'Could not claim this work.'));
+      await Promise.allSettled([refetch()]);
     } finally {
       setBusyId(null);
     }
@@ -204,14 +210,32 @@ export function VolunteersPage() {
     }
   };
 
+  const actionErrorNotice = actionError && (
+    <div
+      role="alert"
+      className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/80 p-4"
+    >
+      <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
+      <div>
+        <p className="text-sm font-medium text-rose-700">{actionError}</p>
+        <p className="mt-0.5 text-xs text-rose-500">
+          You can try again — if it keeps failing, reload the page for the latest state.
+        </p>
+      </div>
+    </div>
+  );
+
   if (loading) return <Spinner fullPage label="Loading overflow work…" />;
   if (error)
     return (
-      <ErrorState
-        title="Couldn't load overflow work"
-        description={error}
-        action={<Button onClick={refetch}>Try again</Button>}
-      />
+      <>
+        {actionErrorNotice}
+        <ErrorState
+          title="Couldn't load overflow work"
+          description={error}
+          action={<Button onClick={refetch}>Try again</Button>}
+        />
+      </>
     );
 
   // --- Course filter dropdown (shared by both views) ---
@@ -235,7 +259,7 @@ export function VolunteersPage() {
   // --- Shared post card header (icon + course info + hours badge) ---
   function PostCardShell({ post, children }) {
     return (
-      <Card>
+      <Card className={post.approvalEligibility?.status === 'ineligible' ? 'bg-slate-50' : ''}>
         <div className="flex items-start justify-between">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
             <HandHeart className="h-5 w-5" />
@@ -272,7 +296,9 @@ export function VolunteersPage() {
       {/* ── Page header ── */}
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Volunteer Overflow</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Volunteer Overflow
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
               ? 'Post work nobody is allocated to and approve claims.'
@@ -286,24 +312,7 @@ export function VolunteersPage() {
         )}
       </div>
 
-      {/* Page-level action failure (claim / approve / reject). These actions
-          carry no form input, so the copy points at retrying rather than at
-          keeping data. */}
-      {actionError && (
-        <div
-          role="alert"
-          className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/80 p-4"
-        >
-          <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
-          <div>
-            <p className="text-sm font-medium text-rose-700">{actionError}</p>
-            <p className="mt-0.5 text-xs text-rose-500">
-              You can try again — if it keeps failing, reload the page for the latest state.
-            </p>
-          </div>
-        </div>
-      )}
-
+      {actionErrorNotice}
       {courseFilterBar}
 
       {/* ══════════════════════════════════════════════════
@@ -478,11 +487,9 @@ export function VolunteersPage() {
 
                     {claim.status === 'APPROVED' && (
                       <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
-                        <Link to="/timesheets">
-                          <Button size="sm">
-                            <Clock className="h-3.5 w-3.5" /> Record hours
-                          </Button>
-                        </Link>
+                        <Button as={Link} to="/timesheets" size="sm">
+                          <Clock className="h-3.5 w-3.5" /> Record hours
+                        </Button>
                       </div>
                     )}
                   </Card>
@@ -508,9 +515,33 @@ export function VolunteersPage() {
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {openPosts.map((post) => (
                 <PostCardShell key={post.id} post={post}>
+                  <OpportunityEligibility
+                    eligibility={post.eligibility}
+                    label="Eligible to claim"
+                    courseId={post.courseId ?? post.course?.id}
+                  />
+                  {post.approvalEligibility && (
+                    <>
+                      <p className="text-xs font-semibold">Approval readiness</p>
+                      <OpportunityEligibility
+                        eligibility={post.approvalEligibility}
+                        courseId={post.courseId ?? post.course?.id}
+                        label="Ready for approval"
+                      />
+                    </>
+                  )}
+                  {post.eligibility?.status === 'eligible' &&
+                    post.approvalEligibility?.status !== 'eligible' &&
+                    post.approvalEligibility && (
+                      <p className="text-xs text-slate-500">
+                        You may submit a claim for review. Resolve the approval checks before you
+                        can be assigned.
+                      </p>
+                    )}
                   <div className="mt-3 flex justify-end">
                     <Button
                       size="sm"
+                      disabled={post.eligibility?.status !== 'eligible'}
                       onClick={() => handleClaim(post.id)}
                       loading={busyId === post.id}
                     >
