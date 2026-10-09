@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -46,7 +47,11 @@ beforeEach(() => {
 describe('excusal occurrence form', () => {
   it('submits a scheduled session and date without converting the date to a timestamp', async () => {
     const user = userEvent.setup();
-    render(<ExcusalsPage />);
+    render(
+      <MemoryRouter initialEntries={['/excusals']}>
+        <ExcusalsPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'Request excusal' }));
     await user.selectOptions(screen.getByLabelText('Course'), 'a1');
     await screen.findByRole('option', { name: /THURSDAY 09:00/ });
@@ -82,7 +87,11 @@ describe('excusal occurrence form', () => {
         },
       ],
     });
-    render(<ExcusalsPage />);
+    render(
+      <MemoryRouter initialEntries={['/excusals']}>
+        <ExcusalsPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('Appointment')).toBeInTheDocument();
     expect(screen.getByText('Review reason: Short notice')).toBeInTheDocument();
     expect(screen.getByText(/Reviewed by Coordinator/)).toHaveTextContent('09:00');

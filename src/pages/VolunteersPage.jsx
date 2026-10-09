@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file VolunteersPage.jsx
  * @description Volunteer overflow work page with role-split views.
@@ -282,7 +283,9 @@ export function VolunteersPage() {
       {/* ── Page header ── */}
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Volunteer Overflow</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Volunteer Overflow
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
               ? 'Post work nobody is allocated to and approve claims.'

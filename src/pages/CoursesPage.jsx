@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file CoursesPage.jsx
  * @description Course catalog and management page.
@@ -193,7 +194,9 @@ export function CoursesPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Courses</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Courses
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             {isAdmin
               ? 'Everything the school is running this semester.'
@@ -207,10 +210,10 @@ export function CoursesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search courses…"
+              aria-label="Search courses"
               className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
-              aria-label="Search courses"
           {isAdmin && (
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> New course

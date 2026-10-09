@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ProfilePage.jsx
  * @description User profile and tutor work preferences.
@@ -215,9 +216,9 @@ export function ProfilePage() {
     <>
       {/* Page heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           My Profile
-        </h1>
+        </FeatureHeading>
 
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Your details and how you're set up on Toodle.

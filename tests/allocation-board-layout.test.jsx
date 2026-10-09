@@ -55,7 +55,11 @@ beforeEach(() => {
 
 describe('Allocation board scrolling containment', () => {
   it('keeps course columns inside a horizontally scrolling region instead of growing the page', async () => {
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
 
     const columns = await screen.findByTestId('board-columns');
     expect(columns).toHaveClass('overflow-x-auto', 'min-h-0');
@@ -67,7 +71,11 @@ describe('Allocation board scrolling containment', () => {
   });
 
   it('aligns every course column with the tutor pool level', async () => {
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
 
     // Columns stretch (no self-start) to the pool-driven row height, so tops
     // and bottoms line up across the board regardless of allocation count.
@@ -82,7 +90,11 @@ describe('Allocation board scrolling containment', () => {
   });
 
   it('limits the tutor pool to five visible cards, then scrolls vertically', async () => {
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
 
     // The pool section hugs its capped content height (self-start) — this
     // makes it the height benchmark the course columns align to.
@@ -97,7 +109,11 @@ describe('Allocation board scrolling containment', () => {
   });
 
   it('sizes the board to the pool instead of stretching the page', async () => {
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
 
     // The row hugs the pool-driven height (no flex-1); the page root only
     // guarantees containment inside main's scroll region (lg:min-h-full).
