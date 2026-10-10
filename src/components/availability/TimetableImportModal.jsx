@@ -69,7 +69,9 @@ function SlotSummary({ title, slots, emptyText }) {
               <dt className="shrink-0 font-medium sm:w-24 text-slate-700 dark:text-slate-200">
                 {formatDay(day)}
               </dt>
-              <dd className="break-words text-slate-600 dark:text-slate-300">{windows.join(', ')}</dd>
+              <dd className="break-words text-slate-600 dark:text-slate-300">
+                {windows.join(', ')}
+              </dd>
             </div>
           ))}
         </dl>

@@ -93,7 +93,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#0b1220]/85 lg:px-8">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#000000]/85 lg:px-8">
         {/* Left section */}
         <div className="flex min-w-0 items-center gap-3">
           <button

@@ -38,7 +38,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="toodle-app relative flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12 dark:bg-[#0b1220]">
+    <div className="toodle-app relative flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12 dark:bg-[#000000]">
       <button
         type="button"
         onClick={() => setTheme((value) => (value === 'dark' ? 'light' : 'dark'))}

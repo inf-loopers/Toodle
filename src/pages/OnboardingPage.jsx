@@ -169,7 +169,7 @@ export function OnboardingPage() {
   const showMarkStep = markStepHeld || (!done && currentStep === 2);
 
   return (
-    <div className="toodle-app min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
+    <div className="toodle-app min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
       <div className="relative mx-auto max-w-2xl px-4 py-10">
         <button
           type="button"
