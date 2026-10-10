@@ -15,6 +15,7 @@ import FeatureHeading from '../components/layout/FeatureHeading';
  */
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, Users, Clock, Award, Plus, DollarSign } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
@@ -341,7 +342,10 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
 export function TutorsPage() {
   const { data, loading, error, refetch } = useApi(tutorsApi.getTutors);
   const { data: coursesData } = useApi(coursesApi.getCourses);
-  const [search, setSearch] = useState('');
+  // Seed the directory filter from `?q=` so a global-search person result
+  // deep-links into a pre-filtered tutor list.
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [selected, setSelected] = useState(null);
 
   const tutors = data?.data ?? data ?? [];

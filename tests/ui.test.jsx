@@ -3,7 +3,7 @@
  * @description Smoke tests verifying base UI component mounting.
  */
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -24,14 +24,21 @@ vi.mock('@auth0/auth0-react', () => ({
 import App from '../src/App';
 
 describe('App Smoke Test', () => {
-  it('renders the landing page without crashing', () => {
-    render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
+  it('renders the landing page without crashing', async () => {
+    const canvas = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    sessionStorage.setItem('toodle.welcomePlayed', 'true');
+    await act(async () =>
+      render(
+        <MemoryRouter>
+          <App />
+        </MemoryRouter>
+      )
     );
-    expect(screen.getByRole('heading', { name: 'Toodle' })).toBeInTheDocument();
-    expect(screen.getByText(/Tutor Management Made Simple/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Get Started/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sign in or sign up', exact: true })
+    ).toBeInTheDocument();
+    canvas.mockRestore();
+    sessionStorage.removeItem('toodle.welcomePlayed');
   });
 });

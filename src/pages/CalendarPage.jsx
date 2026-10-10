@@ -20,16 +20,14 @@ import FeatureHeading from '../components/layout/FeatureHeading';
  * (`height="100%"`), which preserves the PageLayout invariant that `<main>` is
  * the only page-level scroller — the calendar never adds a second one.
  *
- * Responsive note: below the `lg` breakpoint (`useIsMobile`) the seven-column
- * week grid is too cramped for a phone, so the page defaults to the list view
- * behind a compact toolbar and switches back to the week grid on desktop. A
- * breakpoint change after mount re-selects the view imperatively, because
- * FullCalendar reads `initialView` only once.
+ * Responsive note: Month is the default on every screen size. The compact
+ * toolbar keeps Month and List available on smaller screens, while desktop
+ * also offers Week. Resizing preserves the user's selected view.
  *
  * Route: `/calendar` (all authenticated roles)
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, CalendarPlus, RefreshCw } from 'lucide-react';
 
@@ -59,23 +57,18 @@ const HEADER_TOOLBAR = {
   right: 'timeGridWeek,dayGridMonth,listWeek',
 };
 
-// A phone cannot fit the seven-column week grid or the full view switcher, so
-// the compact toolbar drops the cramped week grid and the page defaults to the
-// list view, keeping the month grid reachable. Both toolbars are module-level
-// constants: FullCalendar re-configures whenever a toolbar identity changes.
+// Keep the compact toolbar on smaller screens; all views remain available on desktop.
 const HEADER_TOOLBAR_MOBILE = {
   left: 'prev,next today',
   center: 'title',
   right: 'listWeek,dayGridMonth',
 };
 
-const DESKTOP_VIEW = 'timeGridWeek';
-const MOBILE_VIEW = 'listWeek';
+const DEFAULT_VIEW = 'dayGridMonth';
 
 export function CalendarPage() {
   const navigate = useNavigate();
   const calendarRef = useRef(null);
-  const didMountRef = useRef(false);
   const isMobile = useIsMobile();
 
   const [eventCount, setEventCount] = useState(0);
@@ -135,20 +128,6 @@ export function CalendarPage() {
     calendarRef.current?.getApi().refetchEvents();
   }, []);
 
-  // FullCalendar reads `initialView` only once, at mount, so a breakpoint change
-  // afterwards (device rotation, window resize) must switch the view
-  // imperatively. The first run is skipped because `initialView` already chose
-  // the right view, and `changeView` is optional-chained so the jsdom stub —
-  // which implements only `refetchEvents` — is left untouched.
-  useEffect(() => {
-    if (!didMountRef.current) {
-      didMountRef.current = true;
-      return;
-    }
-
-    calendarRef.current?.getApi()?.changeView?.(isMobile ? MOBILE_VIEW : DESKTOP_VIEW);
-  }, [isMobile]);
-
   const showEmptyHint = hasFetched && !loading && !error && eventCount === 0;
 
   return (
@@ -195,7 +174,7 @@ export function CalendarPage() {
           <FullCalendar
             ref={calendarRef}
             plugins={CALENDAR_PLUGINS}
-            initialView={isMobile ? MOBILE_VIEW : DESKTOP_VIEW}
+            initialView={DEFAULT_VIEW}
             headerToolbar={isMobile ? HEADER_TOOLBAR_MOBILE : HEADER_TOOLBAR}
             buttonText={{ today: 'Today', list: 'List', month: 'Month', week: 'Week' }}
             height="100%"

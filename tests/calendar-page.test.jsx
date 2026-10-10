@@ -12,7 +12,7 @@
  * marker, an approved excusal reads "Excused", an empty range shows the hint, an
  * API rejection surfaces a FormError banner, clicking an event navigates to the
  * course, Refresh refetches, Subscribe opens the feed dialog, the responsive
- * view switch picks the week grid on desktop and the compact list on mobile, and
+ * opens Month on desktop and mobile while retaining the view switcher, and
  * the Calendar nav entry is wired for every role.
  */
 
@@ -270,22 +270,22 @@ describe('CalendarPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('uses the week grid and full view switcher on desktop', async () => {
+  it('opens Month with the full view switcher on desktop', async () => {
     show();
 
     const calendar = await screen.findByTestId('mock-calendar');
 
-    expect(calendar).toHaveAttribute('data-initial-view', 'timeGridWeek');
+    expect(calendar).toHaveAttribute('data-initial-view', 'dayGridMonth');
     expect(calendar).toHaveAttribute('data-header-right', 'timeGridWeek,dayGridMonth,listWeek');
   });
 
-  it('falls back to the compact list view on mobile', async () => {
+  it('opens Month with the compact view switcher on mobile', async () => {
     mobileState.isMobile = true;
     show();
 
     const calendar = await screen.findByTestId('mock-calendar');
 
-    expect(calendar).toHaveAttribute('data-initial-view', 'listWeek');
+    expect(calendar).toHaveAttribute('data-initial-view', 'dayGridMonth');
     // The cramped seven-column week grid is dropped from the mobile switcher.
     expect(calendar).toHaveAttribute('data-header-right', 'listWeek,dayGridMonth');
   });

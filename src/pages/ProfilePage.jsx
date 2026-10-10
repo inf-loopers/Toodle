@@ -20,7 +20,7 @@ import FeatureHeading from '../components/layout/FeatureHeading';
  */
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Camera, Save } from 'lucide-react';
+import { AlertTriangle, Camera, FileUp, Save } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -41,6 +41,7 @@ import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 import UserAvatar from '../components/ui/UserAvatar';
 import AvailabilityEditor from '../components/availability/AvailabilityEditor';
+import TimetableImportModal from '../components/availability/TimetableImportModal';
 
 export function ProfilePage() {
   const { user, role, updateDbUser, logout } = useAuth();
@@ -58,6 +59,8 @@ export function ProfilePage() {
 
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+
+  const [timetableOpen, setTimetableOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -407,12 +410,26 @@ export function ProfilePage() {
                 endTime: slot.endTime,
               })) ?? []
             }
+            headerActions={
+              <Button variant="secondary" size="sm" onClick={() => setTimetableOpen(true)}>
+                <FileUp className="h-3.5 w-3.5" />
+                Import timetable
+              </Button>
+            }
             onSave={async (slots) => {
               if (profile?.id) {
                 await tutorsApi.setAvailability(profile.id, slots);
                 await refetch();
               }
             }}
+          />
+        )}
+        {canManageAvailability && profile?.id && (
+          <TimetableImportModal
+            open={timetableOpen}
+            onClose={() => setTimetableOpen(false)}
+            tutorId={profile.id}
+            onImported={refetch}
           />
         )}
       </div>

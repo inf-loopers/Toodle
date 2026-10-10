@@ -134,5 +134,35 @@ describe('Session cover in tutor workflows', () => {
     expect(await screen.findByText('Sessions you are covering')).toBeInTheDocument();
     await screen.findByText(/MAT101.*2030-01-07/);
     expect(await screen.findByText(/7.*10h/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View your full schedule' })).toHaveAttribute(
+      'href',
+      '/calendar'
+    );
+    expect(screen.getByRole('link', { name: 'Log hours', exact: true })).toHaveAttribute(
+      'href',
+      '/timesheets'
+    );
+    expect(screen.getByRole('link', { name: 'Edit availability' })).toHaveAttribute(
+      'href',
+      '/profile'
+    );
+  });
+  it('keeps coverage and workload failures visible while retaining allocation-based weekly hours', async () => {
+    swapsApi.getCoverage.mockRejectedValueOnce(new Error('Cover unavailable'));
+    swapsApi.getWorkload.mockRejectedValueOnce(new Error('Workload unavailable'));
+    allocationsApi.getAllocations.mockResolvedValueOnce({
+      data: [{ id: 'a1', status: 'ACTIVE', hoursPerWeek: 2, course: cover.course }],
+    });
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+    await screen.findByText('2h / 10h');
+    expect(screen.getAllByRole('alert')).toHaveLength(2);
+    expect(screen.getByText(/Could not load session cover: Cover unavailable/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Could not load this week’s adjusted hours: Workload unavailable/)
+    ).toBeInTheDocument();
   });
 });

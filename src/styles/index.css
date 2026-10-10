@@ -46,7 +46,21 @@
 
   html.dark {
     color-scheme: dark;
-    background-color: #0b1220;
+    background-color: #000000;
+
+    /* Black theme: Tailwind's slate greys are tinted blue, so dark mode maps
+       them onto the neutral scale. Brand blues (primary, links) are kept. */
+    --color-slate-50: #fafafa;
+    --color-slate-100: #f5f5f5;
+    --color-slate-200: #e5e5e5;
+    --color-slate-300: #d4d4d4;
+    --color-slate-400: #a3a3a3;
+    --color-slate-500: #737373;
+    --color-slate-600: #525252;
+    --color-slate-700: #404040;
+    --color-slate-800: #262626;
+    --color-slate-900: #171717;
+    --color-slate-950: #0a0a0a;
   }
 
   /* Keep overscroll/overflow regions outside the app shell on-theme so a
@@ -65,7 +79,7 @@
 
   html.dark body,
   html.dark #root {
-    background-color: #0b1220;
+    background-color: #000000;
   }
 }
 
@@ -89,11 +103,11 @@
 }
 
 html.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #404040;
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #525252;
 }
 
 /* ── Sidebar section headings ──────────────────────────────────────────── */
@@ -252,7 +266,7 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 html.dark .sidebar-heading {
-  color: #64748b;
+  color: #737373;
 }
 
 html.dark .sidebar-heading::before {
@@ -260,18 +274,18 @@ html.dark .sidebar-heading::before {
 }
 
 html.dark .sidebar-section + .sidebar-section {
-  border-top-color: #1e293b;
+  border-top-color: #262626;
 }
 
 html.dark .sidebar-nav-item,
 html.dark .sidebar-theme-button {
-  color: #cbd5e1;
+  color: #d4d4d4;
 }
 
 html.dark .sidebar-nav-item:hover,
 html.dark .sidebar-theme-button:hover {
-  background-color: #111c2f;
-  color: #f8fafc;
+  background-color: #1a1a1a;
+  color: #fafafa;
 }
 
 html.dark .sidebar-nav-item.active {
@@ -281,7 +295,7 @@ html.dark .sidebar-nav-item.active {
 
 html.dark .sidebar-nav-item .icon-box,
 html.dark .sidebar-theme-button .icon-box {
-  background-color: #17243a;
+  background-color: #1f1f1f;
 }
 
 html.dark .sidebar-nav-item.active .icon-box {
@@ -297,22 +311,22 @@ html.dark .sidebar-badge {
 @layer utilities {
   html.dark .toodle-app .bg-white,
   html.dark .toodle-app .bg-white\/80 {
-    background-color: #111f33;
+    background-color: #121212;
   }
 
   html.dark .toodle-app .bg-slate-50,
   html.dark .toodle-app .bg-slate-50\/50,
   html.dark .toodle-app .bg-slate-50\/70 {
-    background-color: #0f1a2b;
+    background-color: #0a0a0a;
   }
 
   html.dark .toodle-app .bg-slate-100 {
-    background-color: #17243a;
+    background-color: #1f1f1f;
   }
 
   html.dark .toodle-app .bg-slate-200,
   html.dark .toodle-app .bg-slate-300 {
-    background-color: #334155;
+    background-color: #404040;
   }
 
   html.dark .toodle-app .bg-primary-subtle,
@@ -345,24 +359,24 @@ html.dark .sidebar-badge {
   }
 
   html.dark .toodle-app .text-slate-900 {
-    color: #f8fafc;
+    color: #fafafa;
   }
 
   html.dark .toodle-app .text-slate-800 {
-    color: #e2e8f0;
+    color: #e5e5e5;
   }
 
   html.dark .toodle-app .text-slate-700,
   html.dark .toodle-app .text-slate-600 {
-    color: #cbd5e1;
+    color: #d4d4d4;
   }
 
   html.dark .toodle-app .text-slate-500 {
-    color: #94a3b8;
+    color: #a3a3a3;
   }
 
   html.dark .toodle-app .text-slate-400 {
-    color: #64748b;
+    color: #737373;
   }
 
   html.dark .toodle-app .text-primary,
@@ -400,7 +414,7 @@ html.dark .sidebar-badge {
   html.dark .toodle-app .border-slate-50,
   html.dark .toodle-app .border-slate-100,
   html.dark .toodle-app .border-slate-200 {
-    border-color: #26384d;
+    border-color: #2e2e2e;
   }
 
   html.dark .toodle-app .border-blue-200,
@@ -422,11 +436,11 @@ html.dark .sidebar-badge {
 
   html.dark .toodle-app .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
   html.dark .toodle-app .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #26384d;
+    border-color: #2e2e2e;
   }
 
   html.dark .toodle-app .placeholder\:text-slate-400::placeholder {
-    color: #64748b;
+    color: #737373;
   }
 
   html.dark .toodle-app .shadow-sm,
@@ -440,7 +454,7 @@ html.dark .sidebar-badge {
   html.dark .toodle-app .hover\:bg-slate-50\/50:hover,
   html.dark .toodle-app .hover\:bg-slate-100:hover,
   html.dark .toodle-app .hover\:bg-slate-200:hover {
-    background-color: #17243a;
+    background-color: #1f1f1f;
   }
 
   html.dark .toodle-app .hover\:bg-rose-50:hover,
@@ -456,15 +470,15 @@ html.dark .sidebar-badge {
   html.dark .toodle-app .hover\:text-slate-700:hover,
   html.dark .toodle-app .hover\:text-slate-800:hover,
   html.dark .toodle-app .hover\:text-slate-900:hover {
-    color: #f8fafc;
+    color: #fafafa;
   }
 
   html.dark .toodle-app .disabled\:bg-slate-300:disabled {
-    background-color: #334155;
+    background-color: #404040;
   }
 
   html.dark .toodle-app .disabled\:text-slate-300:disabled {
-    color: #64748b;
+    color: #737373;
   }
 }
 
@@ -493,12 +507,12 @@ html.dark .sidebar-badge {
 }
 
 html.dark .toodle-app .toodle-calendar {
-  --fc-border-color: #26384d;
-  --fc-page-bg-color: #111f33;
-  --fc-neutral-bg-color: #0f1a2b;
+  --fc-border-color: #2e2e2e;
+  --fc-page-bg-color: #121212;
+  --fc-neutral-bg-color: #0a0a0a;
   --fc-today-bg-color: rgba(37, 99, 235, 0.16);
   --fc-now-indicator-color: #fb7185;
-  color: #e2e8f0;
+  color: #e5e5e5;
 }
 
 /* Events: state is expressed through the same --fc-event-* properties, keyed

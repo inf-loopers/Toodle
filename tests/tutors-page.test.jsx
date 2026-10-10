@@ -244,3 +244,19 @@ describe('Tutor directory load failure', () => {
     await waitFor(() => expect(tutorsApi.getTutors).toHaveBeenCalledTimes(2));
   });
 });
+
+describe('Tutor directory search seeding', () => {
+  it('seeds the filter from the ?q= param so a global-search person result deep-links in', async () => {
+    tutorsApi.getTutors.mockResolvedValue({ data: [tutor, secondTutor] });
+    render(
+      <MemoryRouter initialEntries={['/tutors?q=Tebogo']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
+
+    // The seeded query pre-filters the directory to the matching tutor only.
+    expect(await screen.findByRole('button', { name: /Tebogo Tutor/ })).toBeInTheDocument();
+    expect(screen.getByLabelText('Search tutors')).toHaveValue('Tebogo');
+    expect(screen.queryByRole('button', { name: /Lerato Lecturer/ })).not.toBeInTheDocument();
+  });
+});
