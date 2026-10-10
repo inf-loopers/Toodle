@@ -89,3 +89,20 @@ describe('Profile dropdown sign out', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
+
+describe('Navbar branding and global search', () => {
+  it('renders exactly one dashboard logo link and the global search entry', () => {
+    render(
+      <MemoryRouter>
+        <Navbar title="Dashboard" />
+      </MemoryRouter>
+    );
+
+    // Regression: github/main rendered <AppLogo> twice (a bad-merge artifact),
+    // so the live dashboard showed two logos. The navbar must expose a single
+    // dashboard logo link.
+    expect(screen.getAllByRole('link', { name: 'Toodle dashboard' })).toHaveLength(1);
+    // C05: the global search entry point lives in the navbar right section.
+    expect(screen.getByRole('button', { name: 'Global search' })).toBeInTheDocument();
+  });
+});

@@ -39,6 +39,9 @@ import Spinner from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/EmptyState';
 import LogoutButton from '../components/auth/LogoutButton';
 
+const COMPACT_MOBILE_CARD_HEADER =
+  'max-sm:grid max-sm:grid-cols-[1fr_auto] max-sm:gap-2 max-sm:[&>div:first-child]:contents max-sm:[&_h2]:col-start-1 max-sm:[&_p]:col-span-2 max-sm:[&_p]:row-start-2 max-sm:[&>div:last-child]:col-start-2 max-sm:[&>div:last-child]:row-start-1';
+
 function StatCard({
   icon: Icon,
   label,
@@ -87,8 +90,8 @@ function Welcome({ name, tagline }) {
   return (
     <div className="mb-8">
       <p className="text-sm font-medium text-primary">2026 Academic Year</p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
-        Welcome back{name ? `, ${name.split(' ')[0]}` : ''}
+      <h1 className="mt-1 break-words text-xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        Welcome{name ? `, ${name.split(' ')[0]}` : ''}
       </h1>
       <p className="mt-2 text-sm text-slate-500">{tagline}</p>
     </div>
@@ -203,7 +206,7 @@ function StaffDashboard({ user }) {
                 {unfilled.slice(0, 5).map((course) => (
                   <div
                     key={course.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 dark:border-[#334155] dark:bg-[#17243a]"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 dark:border-[#404040] dark:bg-[#1f1f1f]"
                   >
                     <div className="min-w-0 flex-1 break-words">
                       <p className="text-sm font-semibold text-slate-800">{course.code}</p>
@@ -326,38 +329,51 @@ function TutorDashboard({ user }) {
   return (
     <>
       <Welcome name={user?.name} tagline="Here's what's on your plate this week." />
-      {coverageError && <p role="alert">Could not load session cover: {coverageError}</p>}
+      {coverageError && (
+        <p role="alert" className="mb-3 break-words text-sm text-rose-700 dark:text-rose-300">
+          Could not load session cover: {coverageError}
+        </p>
+      )}
       {workloadError && (
-        <p role="alert">Could not load this week’s adjusted hours: {workloadError}</p>
+        <p role="alert" className="mb-3 break-words text-sm text-rose-700 dark:text-rose-300">
+          Could not load this week’s adjusted hours: {workloadError}
+        </p>
       )}
       {upcomingCover.length > 0 && (
-        <Card className="mb-6">
+        <Card className="mb-6 max-sm:mb-4 max-sm:p-3">
           <CardHeader
             title="Sessions you are covering"
             description="Approved swaps and volunteer cover, in Africa/Johannesburg."
           />
-          <CardBody>
+          <CardBody className="max-sm:mt-3">
             <div className="space-y-2">
               {upcomingCover.map((r) => (
-                <p key={r.id}>
+                <p key={r.id} className="break-words max-sm:text-sm">
                   {r.course?.code} · {String(r.sessionDate).slice(0, 10)} · {r.startTime}–
                   {r.endTime}
                 </p>
               ))}
             </div>
-            <Link to="/calendar">View your full schedule</Link>
+            <Link
+              to="/calendar"
+              className="inline-flex items-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-sm:min-h-11"
+            >
+              View your full schedule
+            </Link>
           </CardBody>
         </Card>
       )}
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2 xl:grid-cols-4">
         <StatCard
+          compactMobile
           icon={BookOpen}
           label="Courses"
           value={allocationList.length}
           description="Active assignments"
         />
         <StatCard
+          compactMobile
           icon={Clock}
           label="Weekly Hours"
           value={`${formatHours(totalHours)} / ${maxHours}h`}
@@ -365,6 +381,7 @@ function TutorDashboard({ user }) {
           description="This week’s planned work vs. your cap"
         />
         <StatCard
+          compactMobile
           icon={AlertTriangle}
           label="Timesheets"
           value={draftTimesheets}
@@ -372,6 +389,7 @@ function TutorDashboard({ user }) {
           description="Need your attention"
         />
         <StatCard
+          compactMobile
           icon={ArrowLeftRight}
           label="Swap Requests"
           value={pendingSwaps}
@@ -380,18 +398,25 @@ function TutorDashboard({ user }) {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 max-sm:gap-4 lg:grid-cols-2">
+        <Card className="max-sm:p-3">
           <CardHeader
             title="My courses"
+            className={COMPACT_MOBILE_CARD_HEADER}
             description="Sessions you're currently tutoring."
             action={
-              <Button as={Link} to="/timesheets" size="sm" variant="secondary">
+              <Button
+                as={Link}
+                to="/timesheets"
+                size="sm"
+                variant="secondary"
+                className="max-sm:min-h-11"
+              >
                 Log hours <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             }
           />
-          <CardBody>
+          <CardBody className="max-sm:mt-3">
             {allocationList.length === 0 ? (
               <p className="text-sm text-slate-400">You haven't been assigned to a course yet.</p>
             ) : (
@@ -399,15 +424,17 @@ function TutorDashboard({ user }) {
                 {allocationList.map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 max-sm:p-2"
                   >
-                    <div>
+                    <div className="min-w-0 break-words">
                       <p className="text-sm font-semibold text-slate-800">
                         {a.course?.code || a.courseId}
                       </p>
                       <p className="text-xs text-slate-400">{a.course?.name}</p>
                     </div>
-                    <Badge tone="primary">{formatHours(a.hoursPerWeek)} / week</Badge>
+                    <Badge tone="primary" className="shrink-0 whitespace-nowrap">
+                      {formatHours(a.hoursPerWeek)} / week
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -415,17 +442,24 @@ function TutorDashboard({ user }) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="max-sm:p-3">
           <CardHeader
             title="My availability"
+            className={COMPACT_MOBILE_CARD_HEADER}
             description="Your available times for timetable planning."
             action={
-              <Button as={Link} to="/profile" size="sm" variant="secondary">
+              <Button
+                as={Link}
+                to="/profile"
+                size="sm"
+                variant="secondary"
+                className="max-sm:min-h-11"
+              >
                 Edit availability
               </Button>
             }
           />
-          <CardBody>
+          <CardBody className="max-sm:mt-3">
             {availability.length === 0 ? (
               <p className="text-sm text-slate-400">
                 No availability submitted yet. Add your available times on your profile.
@@ -503,7 +537,7 @@ function StudentDashboard({ user }) {
       <Card className="max-sm:p-3">
         <CardHeader
           title="Overflow work"
-          className="max-sm:grid max-sm:grid-cols-[1fr_auto] max-sm:gap-2 max-sm:[&>div:first-child]:contents max-sm:[&_h2]:col-start-1 max-sm:[&_p]:col-span-2 max-sm:[&_p]:row-start-2 max-sm:[&>div:last-child]:col-start-2 max-sm:[&>div:last-child]:row-start-1"
+          className={COMPACT_MOBILE_CARD_HEADER}
           description="First come, first served — a course coordinator approves each claim."
           action={
             <Button

@@ -12,6 +12,7 @@
  *   - `/reports` (Admin)
  *   - `/users` (Admin)
  *   - `/courses`, `/courses/:id`, `/dashboard` (All authenticated roles)
+ *   - `/my-courses` (Tutor, Lecturer)
  *   - `/calendar` (All authenticated roles; lazy-loaded)
  * - Defines 404 catch-all route (`*`).
  *
@@ -105,6 +106,11 @@ export default function AppRoutes() {
               element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.ADMIN, ROLES.LECTURER]} />}
             >
               <Route path="/excusals" element={<ExcusalsPage />} />
+            </Route>
+
+            {/* Courses the user tutors or coordinates */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.LECTURER]} />}>
+              <Route path="/my-courses" element={<CoursesPage key="mine" scope="mine" />} />
             </Route>
 
             {/* Staff (admin + lecturer) */}

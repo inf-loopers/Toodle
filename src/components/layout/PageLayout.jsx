@@ -33,6 +33,7 @@ const PAGE_TITLES = [
   { match: '/calendar', title: 'Calendar' },
   { match: '/allocations', title: 'Allocation Board' },
   { match: '/courses', title: 'Courses' },
+  { match: '/my-courses', title: 'My Courses' },
   { match: '/tutors', title: 'Tutors' },
   { match: '/volunteers', title: 'Volunteer Overflow' },
   { match: '/timesheets', title: 'Timesheets' },
@@ -73,14 +74,14 @@ export function PageLayout() {
   }, [sidebarCollapsed]);
 
   return (
-    <div className="toodle-app flex h-screen h-[100dvh] flex-col overflow-hidden overscroll-none bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
+    <div className="toodle-app flex h-screen h-[100dvh] flex-col overflow-hidden overscroll-none bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
       <Navbar
         title={title}
         isSidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
-      <div className="flex min-h-0 flex-1 overflow-hidden bg-slate-50 dark:bg-[#0b1220]">
+      <div className="flex min-h-0 flex-1 overflow-hidden bg-slate-50 dark:bg-[#000000]">
         <Sidebar
           isOpen={sidebarOpen}
           isCollapsed={sidebarCollapsed}
@@ -91,7 +92,7 @@ export function PageLayout() {
         />
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-50 p-4 dark:bg-[#0b1220] sm:p-6 lg:p-8">
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-50 p-4 dark:bg-[#000000] sm:p-6 lg:p-8">
             {/* Route pages are lazy-loaded (see AppRoutes); this boundary shows an
                 in-shell spinner while a page chunk resolves, keeping the navbar
                 and sidebar mounted instead of flashing a blank full page. */}

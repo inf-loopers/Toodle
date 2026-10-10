@@ -29,6 +29,7 @@ const NEW_SLOT = { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' };
  * @param {string} [props.title]
  * @param {string} [props.description]
  * @param {string} [props.saveLabel]
+ * @param {import('react').ReactNode} [props.headerActions] - Extra buttons shown beside "Add slot".
  */
 export function AvailabilityEditor({
   initialSlots = [],
@@ -36,6 +37,7 @@ export function AvailabilityEditor({
   title = 'Availability',
   description = "When you're free to tutor. Add and save time slots covering all sessions you can attend.",
   saveLabel = 'Save availability',
+  headerActions = null,
 }) {
   const [slots, setSlots] = useState(initialSlots.length ? initialSlots : []);
   const [saving, setSaving] = useState(false);
@@ -95,10 +97,13 @@ export function AvailabilityEditor({
         title={title}
         description={description}
         action={
-          <Button variant="secondary" size="sm" onClick={addSlot}>
-            <Plus className="h-3.5 w-3.5" />
-            Add slot
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {headerActions}
+            <Button variant="secondary" size="sm" onClick={addSlot}>
+              <Plus className="h-3.5 w-3.5" />
+              Add slot
+            </Button>
+          </div>
         }
       />
 
