@@ -372,9 +372,9 @@ export function CourseDetailPage() {
             <Button variant="secondary" onClick={() => setMarkImportModalOpen(true)}>
               <FileUp className="h-4 w-4" /> Import marks (CSV)
             </Button>
-            <Link to="/allocations">
-              <Button variant="secondary">Manage on Allocation Board</Button>
-            </Link>
+            <Button as={Link} to="/allocations" variant="secondary">
+              Manage on Allocation Board
+            </Button>
           </div>
         )}
       </div>

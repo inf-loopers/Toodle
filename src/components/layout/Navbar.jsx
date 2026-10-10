@@ -19,14 +19,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X, ChevronDown, UserRound, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../hooks/useAuth';
 import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import NotificationBell from './NotificationBell';
 import UserAvatar from '../ui/UserAvatar';
-import toodleLogo from '../../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../ui/AppLogo';
 
 export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const { user, dbUser, role, logout } = useAuth();
@@ -39,6 +39,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   const [logoutError, setLogoutError] = useState(null);
 
   const menuRef = useRef(null);
+  const menuTriggerRef = useRef(null);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -58,8 +59,9 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
   // Close menus with Escape
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && menuOpen) {
         setMenuOpen(false);
+        menuTriggerRef.current?.focus();
       }
     };
 
@@ -68,7 +70,7 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, []);
+  }, [menuOpen]);
 
   const handleProfile = () => {
     setMenuOpen(false);
@@ -99,13 +101,19 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
             onClick={onToggleSidebar}
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden"
             aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            aria-expanded={isSidebarOpen}
+            aria-controls="app-sidebar"
           >
             {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <img src={toodleLogo} alt="" className="h-9 w-9 object-contain" />
-          </div>
+          <Link
+            to="/dashboard"
+            aria-label="Toodle dashboard"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <AppLogo alt="" className="h-9 w-9 object-contain" />
+          </Link>
 
           {/* Desktop page title */}
           {title && (
@@ -125,11 +133,13 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
             <div className="relative" ref={menuRef}>
               {/* Profile trigger */}
               <button
+                ref={menuTriggerRef}
                 type="button"
                 onClick={() => setMenuOpen((open) => !open)}
                 className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition-colors hover:border-slate-200 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:border-slate-700 dark:hover:bg-slate-800"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
+                aria-label={`Account menu for ${profile.name || profile.email || 'user'}`}
               >
                 <UserAvatar user={profile} size="sm" className="text-xs font-semibold" />
 

@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 /**
  * @file tutors-page.test.jsx
  * @description Failure and recovery behaviour of the tutor directory: a failed
@@ -55,7 +56,11 @@ describe('Tutor detail modal mark entry', () => {
   it('saves a mark and then clears the inputs', async () => {
     tutorsApi.addOrUpdateMark.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await user.selectOptions(within(dialog).getByLabelText('Add / update a mark'), 'c1');
@@ -74,7 +79,11 @@ describe('Tutor detail modal mark entry', () => {
       response: { data: { error: 'Mark must be between 0 and 100' } },
     });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await user.selectOptions(within(dialog).getByLabelText('Add / update a mark'), 'c1');
@@ -98,7 +107,11 @@ describe('Tutor detail modal mark entry', () => {
       response: { data: { error: 'Mark must be between 0 and 100' } },
     });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await user.selectOptions(within(dialog).getByLabelText('Add / update a mark'), 'c1');
@@ -125,7 +138,11 @@ describe('Tutor pay rate', () => {
     });
     ratesApi.createRate.mockResolvedValue({ data: { id: 'r2' } });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     expect(
@@ -154,7 +171,11 @@ describe('Tutor pay rate', () => {
     });
     ratesApi.correctRate.mockResolvedValue({ data: { id: 'r1', rate: 175 } });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await waitFor(() => expect(ratesApi.getRateHistory).toHaveBeenCalled());
@@ -174,7 +195,11 @@ describe('Tutor pay rate', () => {
     useAuth.mockReturnValue({ isAdmin: false, isLecturer: true });
     tutorsApi.getTutors.mockResolvedValue({ data: [{ ...tutor, allocations: [] }] });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     expect(within(dialog).queryByText('Pay rate')).not.toBeInTheDocument();
@@ -188,7 +213,11 @@ describe('Tutor pay rate', () => {
     });
     ratesApi.getRateHistory.mockResolvedValue({ data: [] });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     expect(within(dialog).getByText('Pay rate')).toBeInTheDocument();
@@ -201,7 +230,11 @@ describe('Tutor directory load failure', () => {
     // by refetch() is handled (models real recovery, avoids an unhandled rejection).
     tutorsApi.getTutors.mockRejectedValueOnce(new Error('Network Error'));
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText("Couldn't load tutors")).toBeInTheDocument();
     expect(screen.getByText('Network Error')).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ExcusalsPage.jsx
  * @description Tutor and staff workflow for excusal requests.
@@ -16,9 +17,9 @@ import { CalendarX, Plus, Check, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { excusalsApi } from '../api/excusals';
+import { coursesApi } from '../api/courses';
 import { tutorsApi } from '../api/tutors';
 import { swapsApi } from '../api/swaps';
-import { coursesApi } from '../api/courses';
 import { EXCUSAL_STATUS_TONE } from '../utils/constants';
 
 import Card from '../components/ui/Card';
@@ -26,7 +27,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
-import { Select, Input, Textarea } from '../components/ui/Input';
+import { Select, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
@@ -344,7 +345,9 @@ export function ExcusalsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Excusals</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Excusals
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
@@ -415,9 +418,7 @@ export function ExcusalsPage() {
                   <p className="mt-2 text-xs text-slate-500">
                     {excusal.session
                       ? `${formatSessionLabel(excusal.session)} · `
-                      : excusal.sessionStartTime
-                        ? `${excusal.sessionStartTime}–${excusal.sessionEndTime} · `
-                        : 'Session date: '}
+                      : 'Session date: '}
                     {formatOccurrenceDate(excusal.sessionDate)}
                     {excusal.durationMinutes ? ` (${formatDuration(excusal.durationMinutes)})` : ''}
                   </p>

@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file CoursesPage.jsx
  * @description Course catalog and management page.
@@ -186,13 +187,17 @@ function pageCopy({ mine, isAdmin, isTutor }) {
   };
 }
 
+const coursesSource = ({ mine, applicant }) => {
+  if (mine) return coursesApi.getMyCourses;
+  return applicant ? coursesApi.getOpportunities : coursesApi.getCourses;
+};
+
 export function CoursesPage({ scope = 'all' }) {
   const { isAdmin, isTutor, role } = useAuth();
   const mine = scope === 'mine';
+  // Students and tutors browsing all courses see their eligibility for each.
   const applicant = !mine && ['student', 'tutor'].includes(role);
-  const { data, loading, error, refetch } = useApi(
-    mine ? coursesApi.getMyCourses : applicant ? coursesApi.getOpportunities : coursesApi.getCourses
-  );
+  const { data, loading, error, refetch } = useApi(coursesSource({ mine, applicant }));
   const copy = pageCopy({ mine, isAdmin, isTutor });
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -223,16 +228,19 @@ export function CoursesPage({ scope = 'all' }) {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{copy.title}</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            {copy.title}
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">{copy.description}</p>
         </div>
-        <div className="flex gap-3">
-          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 focus-within:ring-2 focus-within:ring-primary">
             <Search className="mr-2 h-4 w-4 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search courses…"
+              aria-label="Search courses"
               className="w-44 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>

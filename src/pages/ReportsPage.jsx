@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ReportsPage.jsx
  * @description Analytics and reporting dashboard for the Admin.
@@ -340,7 +341,9 @@ export function ReportsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Reports</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Reports
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             Allocated vs logged hours, staffing and tutor workload — computed live from API records.
           </p>

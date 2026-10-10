@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -21,6 +22,12 @@ vi.mock('../src/api/allocations', () => ({
   },
 }));
 vi.mock('../src/hooks/useIsMobile', () => ({ useIsMobile: () => false }));
+// GenerateAllocationModal (rendered by the board) reads the current user to
+// decide draft-delete rights. A plain function keeps the stub intact across the
+// `vi.resetAllMocks()` in beforeEach.
+vi.mock('../src/hooks/useAuth', () => ({
+  useAuth: () => ({ isAdmin: true, role: 'admin', dbUser: { id: 'admin-1' } }),
+}));
 
 const course = {
   id: 'c1',
@@ -62,7 +69,9 @@ function allocation(overrides = {}) {
 function renderBoard(authValue) {
   const board = <AllocationBoardPage />;
   return render(
-    authValue ? <AuthContext.Provider value={authValue}>{board}</AuthContext.Provider> : board
+    <MemoryRouter initialEntries={['/allocations']}>
+      {authValue ? <AuthContext.Provider value={authValue}>{board}</AuthContext.Provider> : board}
+    </MemoryRouter>
   );
 }
 

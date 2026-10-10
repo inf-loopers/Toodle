@@ -16,6 +16,13 @@
  *   - `/calendar` (All authenticated roles; lazy-loaded)
  * - Defines 404 catch-all route (`*`).
  *
+ * Performance (B07): every authenticated page is lazy-loaded so its code (and
+ * heavy deps like FullCalendar on `/calendar` or dnd-kit on `/allocations`) is
+ * split into its own on-demand chunk instead of shipping in the initial bundle.
+ * Public entry routes (landing/login/callback/404) stay eager for a fast first
+ * paint. Lazy pages resolve inside the `<Suspense>` boundary in `PageLayout`
+ * (or the onboarding-specific boundary below), keeping the shell mounted.
+ *
  * Expected Usage:
  * Rendered inside `<BrowserRouter>` in `App.jsx`.
  */
@@ -29,24 +36,29 @@ import ProtectedRoute from '../components/auth/ProtectedRoute';
 import OnboardingGate from '../components/auth/OnboardingGate';
 import Spinner from '../components/ui/Spinner';
 
+// Public entry routes are kept in the initial bundle so the first paint is not
+// blocked waiting on a lazy chunk.
 import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
 import CallbackPage from '../pages/CallbackPage';
-import DashboardPage from '../pages/DashboardPage';
-import AllocationBoardPage from '../pages/AllocationBoardPage';
-import CoursesPage from '../pages/CoursesPage';
-import CourseDetailPage from '../pages/CourseDetailPage';
-import TutorsPage from '../pages/TutorsPage';
-import VolunteersPage from '../pages/VolunteersPage';
-import TimesheetsPage from '../pages/TimesheetsPage';
-import SessionSwapPage from '../pages/SessionSwapPage';
-import ReportsPage from '../pages/ReportsPage';
-import UsersPage from '../pages/UsersPage';
-import ProfilePage from '../pages/ProfilePage';
-import OnboardingPage from '../pages/OnboardingPage';
 import NotFoundPage from '../pages/NotFoundPage';
-import ExcusalsPage from '../pages/ExcusalsPage';
 
+// Authenticated pages are lazy-loaded: each becomes its own route chunk fetched
+// only when the user navigates there. Heavy per-page dependencies (FullCalendar,
+// dnd-kit, etc.) are therefore kept out of the main bundle.
+const OnboardingPage = lazy(() => import('../pages/OnboardingPage'));
+const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const AllocationBoardPage = lazy(() => import('../pages/AllocationBoardPage'));
+const CoursesPage = lazy(() => import('../pages/CoursesPage'));
+const CourseDetailPage = lazy(() => import('../pages/CourseDetailPage'));
+const TutorsPage = lazy(() => import('../pages/TutorsPage'));
+const VolunteersPage = lazy(() => import('../pages/VolunteersPage'));
+const TimesheetsPage = lazy(() => import('../pages/TimesheetsPage'));
+const SessionSwapPage = lazy(() => import('../pages/SessionSwapPage'));
+const ReportsPage = lazy(() => import('../pages/ReportsPage'));
+const UsersPage = lazy(() => import('../pages/UsersPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const ExcusalsPage = lazy(() => import('../pages/ExcusalsPage'));
 // Lazy-loaded so FullCalendar is split into its own chunk and kept out of the
 // main bundle; it is only needed on /calendar.
 const CalendarPage = lazy(() => import('../pages/CalendarPage'));
@@ -63,7 +75,14 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<OnboardingGate />}>
           {/* First-time onboarding (outside the page layout, no sidebar) */}
-          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route
+            path="/onboarding"
+            element={
+              <Suspense fallback={<Spinner fullPage label="Loading…" />}>
+                <OnboardingPage />
+              </Suspense>
+            }
+          />
 
           <Route element={<PageLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />

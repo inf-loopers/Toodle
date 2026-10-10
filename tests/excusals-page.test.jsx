@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -72,8 +73,15 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+const renderPage = () =>
+  render(
+    <MemoryRouter initialEntries={['/excusals']}>
+      <ExcusalsPage />
+    </MemoryRouter>
+  );
+
 const openRequest = async (user) => {
-  render(<ExcusalsPage />);
+  renderPage();
   const button = await screen.findByRole('button', { name: /Request excusal/ });
   await waitFor(() => expect(button).toBeEnabled());
   await user.click(button);
@@ -192,7 +200,7 @@ describe('Excusal list', () => {
       ],
     });
 
-    render(<ExcusalsPage />);
+    renderPage();
 
     expect(
       await screen.findByText(/Lab · Tuesday 14:00–15:30 · MSL 004 · .*6 Oct 2026 \(1h 30m\)/)

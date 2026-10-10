@@ -20,7 +20,7 @@
  * - onToggleTheme: Callback to switch application theme.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import {
@@ -42,9 +42,11 @@ import {
   UserCog,
   Users,
   Wifi,
+  X,
 } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { NAV_SECTIONS, ROLE_LABELS } from '../../utils/constants';
 import { cn } from '../../utils/helpers';
 
@@ -101,6 +103,51 @@ export function Sidebar({
   const { pathname } = useLocation();
 
   const [reportOpen, setReportOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const drawerRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isMobile || !isOpen) return undefined;
+    const previousFocus = document.activeElement;
+    const drawer = drawerRef.current;
+    const controls = () =>
+      Array.from(drawer.querySelectorAll('a[href], button:not([disabled])')).filter(
+        (element) => !element.closest('[hidden], .hidden')
+      );
+    controls()[0]?.focus();
+    const handleKeyDown = (event) => {
+      // A report dialog opened from the drawer owns its own keyboard handling.
+      if (reportOpen) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current?.();
+      } else if (event.key === 'Tab') {
+        const items = controls();
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (!drawer.contains(document.activeElement)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first)?.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (document.contains(previousFocus)) previousFocus.focus();
+    };
+  }, [isMobile, isOpen, reportOpen]);
 
   const sections = NAV_SECTIONS[role] || NAV_SECTIONS.student;
   const roleLabel = ROLE_LABELS[role] || 'Guest';
@@ -135,6 +182,12 @@ export function Sidebar({
       )}
 
       <aside
+        ref={drawerRef}
+        id="app-sidebar"
+        inert={isMobile && !isOpen ? true : undefined}
+        role={isMobile && isOpen ? 'dialog' : undefined}
+        aria-modal={isMobile && isOpen ? true : undefined}
+        aria-label="Main navigation"
         data-testid="app-sidebar"
         className={cn(
           'fixed bottom-0 left-0 top-16 z-50 flex h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-64 shrink-0 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-[#0a1020]',
@@ -143,6 +196,16 @@ export function Sidebar({
           isCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64'
         )}
       >
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="self-end rounded-lg p-2 text-slate-500"
+            aria-label="Close navigation"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
         {/* Desktop collapse button */}
         <button
           type="button"

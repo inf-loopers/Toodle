@@ -23,9 +23,9 @@ export function NotFoundPage() {
       <p className="mt-2 text-sm text-slate-500">
         This page doesn't exist, or you don't have access to it.
       </p>
-      <Link to="/dashboard" className="mt-6">
-        <Button>Back to dashboard</Button>
-      </Link>
+      <Button as={Link} to="/dashboard" className="mt-6">
+        Back to dashboard
+      </Button>
     </div>
   );
 }

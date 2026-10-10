@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TimesheetsPage } from '../src/pages/TimesheetsPage';
@@ -46,7 +47,11 @@ describe('Timesheet due dates', () => {
       ],
     });
 
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText('Due soon')).toBeInTheDocument();
     expect(screen.getByText('Overdue')).toBeInTheDocument();
@@ -61,7 +66,11 @@ describe('Timesheet due dates', () => {
       ],
     });
 
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText(/Due 27 Nov/)).toBeInTheDocument();
     expect(screen.queryByText('Due soon')).not.toBeInTheDocument();

@@ -1,4 +1,5 @@
-﻿import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionSwapPage } from '../src/pages/SessionSwapPage';
@@ -73,7 +74,11 @@ beforeEach(() => {
 });
 async function choose() {
   const user = userEvent.setup();
-  render(<SessionSwapPage />);
+  render(
+    <MemoryRouter initialEntries={['/swaps']}>
+      <SessionSwapPage />
+    </MemoryRouter>
+  );
   await user.click(await screen.findByRole('button', { name: 'Request swap' }));
   await user.selectOptions(screen.getByLabelText('Your session'), 'origin');
   await user.selectOptions(screen.getByLabelText('Other tutor’s session'), 'target');
@@ -139,7 +144,11 @@ describe('Dated session swap interface', () => {
       .mockResolvedValueOnce({ data: [pending] })
       .mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: '2030-01-01' }] });
     const user = userEvent.setup();
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'Accept swap' }));
     expect(swapsApi.acceptSwap).toHaveBeenCalledWith('swap');
     await screen.findByText('Tutor accepted · awaiting organiser');
@@ -147,14 +156,22 @@ describe('Dated session swap interface', () => {
   });
   it('requires consent before staff approval', async () => {
     useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByRole('button', { name: 'Approve' })).toBeDisabled();
     expect(swapsApi.getOptions).not.toHaveBeenCalled();
   });
   it('collects staff rejection reasons', async () => {
     useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
     const user = userEvent.setup();
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'Reject' }));
     await user.type(screen.getByLabelText('Reason'), 'Course needs continuity');
     await user.click(screen.getByRole('button', { name: 'Confirm rejection' }));
@@ -164,7 +181,11 @@ describe('Dated session swap interface', () => {
     useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
     swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, status: 'APPROVED' }] });
     const user = userEvent.setup();
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'Reverse swap' }));
     expect(screen.getByRole('button', { name: 'Confirm reversal' })).toBeDisabled();
     await user.type(screen.getByLabelText('Reason'), 'Plans restored');
@@ -184,7 +205,11 @@ describe('Dated session swap interface', () => {
       ],
     });
     const user = userEvent.setup();
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'View history' }));
     await screen.findByText('Swap approved · Coordinator');
   });
@@ -193,7 +218,11 @@ describe('Dated session swap interface', () => {
     swapsApi.getSwaps.mockResolvedValue({
       data: [{ ...pending, requesterOccurrence: null, requesteeAcceptedAt: '2030-01-01' }],
     });
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByRole('button', { name: 'Approve' })).toBeDisabled();
     expect(screen.getByText(/Historical course swap/)).toBeInTheDocument();
   });

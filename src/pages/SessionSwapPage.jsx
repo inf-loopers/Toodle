@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from 'react';
+import FeatureHeading from '../components/layout/FeatureHeading';
+import { useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
 import { swapsApi } from '../api/swaps';
@@ -259,7 +260,7 @@ export function SessionSwapPage() {
     <>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Session Swaps</h1>
+          <FeatureHeading className="text-3xl font-bold">Session Swaps</FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             Trade one session at a time, with tutor consent and organiser approval.
           </p>

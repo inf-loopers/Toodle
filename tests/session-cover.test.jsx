@@ -81,13 +81,21 @@ beforeEach(() => {
 describe('Session cover in tutor workflows', () => {
   it('lets a tutor start a timesheet for a course they only cover', async () => {
     const user = userEvent.setup();
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'New timesheet' }));
     expect(screen.getByRole('option', { name: /MAT101/ })).toHaveValue('incoming-course');
   });
   it('logs the covered session using the original slot and correct date', async () => {
     const user = userEvent.setup();
-    render(<TimesheetsPage />);
+    render(
+      <MemoryRouter initialEntries={['/timesheets']}>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: 'Log hours' }));
     await user.selectOptions(screen.getByLabelText('Session or other work'), 'cover-cover');
     expect(screen.getByLabelText('Date')).toHaveValue('2030-01-07');
@@ -106,7 +114,11 @@ describe('Session cover in tutor workflows', () => {
   });
   it('allows an excusal for an incoming covered course', async () => {
     const user = userEvent.setup();
-    render(<ExcusalsPage />);
+    render(
+      <MemoryRouter initialEntries={['/excusals']}>
+        <ExcusalsPage />
+      </MemoryRouter>
+    );
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Request excusal' })).toBeEnabled()
     );
