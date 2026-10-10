@@ -203,7 +203,7 @@ function StaffDashboard({ user }) {
                 {unfilled.slice(0, 5).map((course) => (
                   <div
                     key={course.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 dark:border-[#334155] dark:bg-[#17243a]"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 dark:border-[#404040] dark:bg-[#1f1f1f]"
                   >
                     <div className="min-w-0 flex-1 break-words">
                       <p className="text-sm font-semibold text-slate-800">{course.code}</p>
