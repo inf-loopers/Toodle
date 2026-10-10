@@ -25,6 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getRoleBadgeStyle } from '../../utils/helpers';
 import { ROLE_LABELS } from '../../utils/constants';
 import NotificationBell from './NotificationBell';
+import GlobalSearch from './GlobalSearch';
 import UserAvatar from '../ui/UserAvatar';
 import AppLogo from '../ui/AppLogo';
 
@@ -125,6 +126,9 @@ export default function Navbar({ title, isSidebarOpen, onToggleSidebar }) {
 
         {/* Right section */}
         <div className="flex items-center gap-3">
+          {/* Global search */}
+          {user && <GlobalSearch />}
+
           {/* Notifications */}
           {user && <NotificationBell />}
 
