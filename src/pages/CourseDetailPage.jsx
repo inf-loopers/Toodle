@@ -353,7 +353,9 @@ export function CourseDetailPage() {
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{courseData?.code}</h1>
+            <h1 className="break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              {courseData?.code}
+            </h1>
             <Badge tone="neutral">
               Sem {courseData?.semester} · {courseData?.year}
             </Badge>

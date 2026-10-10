@@ -19,7 +19,11 @@ export default function FeatureHeading({ children, className, as: Heading = 'h1'
   const { pathname } = useLocation();
   return (
     <div className="flex items-start justify-between gap-2 md:contents">
-      <Heading className={className}>{children}</Heading>
+      <Heading
+        className={`${className ?? ''} min-w-0 break-words ${Heading === 'h1' ? 'max-sm:text-2xl' : ''}`}
+      >
+        {children}
+      </Heading>
       {FEATURE_PATHS.has(pathname) && (
         <Link
           to="/dashboard"

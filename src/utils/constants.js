@@ -52,7 +52,7 @@ export const DAYS_OF_WEEK = [
 
 export const ROLE_LABELS = {
   [ROLES.ADMIN]: 'Admin',
-  [ROLES.LECTURER]: 'Lecturer (Course Coordinator)',
+  [ROLES.LECTURER]: 'Lecturer',
   [ROLES.TUTOR]: 'Tutor',
   [ROLES.STUDENT]: 'Student',
 };

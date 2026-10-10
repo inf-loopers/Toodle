@@ -40,7 +40,9 @@ test("lists every user with their role, and hides the action on the admin's own 
   expect(screen.getByText('Leroy Lecturer')).toBeInTheDocument();
   expect(screen.getByText('Tessa Tutor')).toBeInTheDocument();
   expect(screen.getByText('Sam Student')).toBeInTheDocument();
-  expect(screen.getByText('Lecturer (Course Coordinator)')).toBeInTheDocument();
+  expect(
+    within(screen.getByText('Leroy Lecturer').closest('li')).getByText('Lecturer')
+  ).toBeInTheDocument();
   expect(screen.getByText('(you)')).toBeInTheDocument();
 
   // Three change-role actions: every row except the signed-in admin's own.
