@@ -33,6 +33,7 @@ const PAGE_TITLES = [
   { match: '/calendar', title: 'Calendar' },
   { match: '/allocations', title: 'Allocation Board' },
   { match: '/courses', title: 'Courses' },
+  { match: '/my-courses', title: 'My Courses' },
   { match: '/tutors', title: 'Tutors' },
   { match: '/volunteers', title: 'Volunteer Overflow' },
   { match: '/timesheets', title: 'Timesheets' },

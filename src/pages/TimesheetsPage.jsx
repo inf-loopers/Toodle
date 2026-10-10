@@ -39,6 +39,13 @@ import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
 
+// B08: timesheets are due on the 27th that closes their monthly cycle. The API
+// derives dueDate/deadlineStatus; NOT_DUE and finished sheets get no badge.
+const DEADLINE_BADGES = {
+  DUE_SOON: { tone: 'warning', label: 'Due soon' },
+  OVERDUE: { tone: 'danger', label: 'Overdue' },
+};
+
 function getCurrentMonday() {
   const today = new Date();
   const monday = new Date(
@@ -842,6 +849,12 @@ export function TimesheetsPage() {
                         <Badge tone={TIMESHEET_STATUS_TONE[timesheet.status] || 'neutral'}>
                           {timesheet.status}
                         </Badge>
+
+                        {DEADLINE_BADGES[timesheet.deadlineStatus] && (
+                          <Badge tone={DEADLINE_BADGES[timesheet.deadlineStatus].tone}>
+                            {DEADLINE_BADGES[timesheet.deadlineStatus].label}
+                          </Badge>
+                        )}
                       </div>
 
                       {timesheet.course?.name && (
@@ -851,6 +864,9 @@ export function TimesheetsPage() {
                       <p className="mt-2 text-xs text-slate-400">
                         Week of {formatShortDate(timesheet.weekStartDate)}
                         {isStaff && timesheet.user?.name ? ` · ${timesheet.user.name}` : ''}
+                        {timesheet.dueDate && timesheet.deadlineStatus
+                          ? ` · Due ${formatShortDate(timesheet.dueDate)}`
+                          : ''}
                       </p>
 
                       <p className="mt-2 text-sm font-medium text-slate-700">

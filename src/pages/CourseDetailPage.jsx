@@ -11,12 +11,23 @@
  * - Admin-only coordinator assignment via `PUT /courses/:id/coordinators`.
  *
  * Route: `/courses/:id`
- * Endpoint Connections: `GET /courses/:id`, `GET /courses/:id/sessions`
+ * Endpoint Connections: `GET /courses/:id`, `GET /courses/:id/sessions`,
+ * `POST /courses/:id/sessions`, `PATCH /sessions/:id`, `DELETE /sessions/:id`
  */
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Plus, MapPin, Wallet, Pencil, Users, FileUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  Plus,
+  MapPin,
+  Wallet,
+  Pencil,
+  Trash2,
+  Users,
+  FileUp,
+} from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { usersApi } from '../api/users';
@@ -45,29 +56,62 @@ const emptySessionForm = () => ({
   sessionType: 'TUTORIAL',
 });
 
-function AddSessionModal({ open, onClose, courseId, onCreated }) {
+const sessionToForm = (session) => ({
+  dayOfWeek: session.dayOfWeek,
+  startTime: session.startTime,
+  endTime: session.endTime,
+  venue: session.venue ?? '',
+  sessionType: session.sessionType,
+});
+
+const demotionNotice = (result) => {
+  const demoted = result?.data?.revalidation?.demoted ?? result?.revalidation?.demoted ?? 0;
+  if (!demoted) return '';
+  return `${demoted} tutor allocation${demoted === 1 ? ' was' : 's were'} moved back to pending because the new time no longer fits. Review them on the Allocation Board.`;
+};
+
+/**
+ * Add a session, or edit one when `session` is given. Editing sends every
+ * field so the API can validate the full start/end pair.
+ */
+function SessionModal({ open, onClose, courseId, session, onSaved, onNotice }) {
+  const editing = Boolean(session);
   const [form, setForm] = useState(emptySessionForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  // Reset on open: a failed add keeps the entered times and venue so they can
-  // be corrected and retried, while a successful one starts fresh next time.
+  // Reset on open: a failed save keeps the entered values so they can be
+  // corrected and retried, while the next open starts from the session (or blank).
   useEffect(() => {
     if (!open) return;
-    setForm(emptySessionForm());
+    setForm(session ? sessionToForm(session) : emptySessionForm());
     setError('');
-  }, [open]);
+  }, [open, session]);
 
   const handleSubmit = async () => {
+    if (form.startTime >= form.endTime) {
+      setError('The end time must be after the start time.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
-      await coursesApi.createCourseSession(courseId, form);
-      await onCreated();
+      if (editing) {
+        const result = await coursesApi.updateSession(session.id, form);
+        onNotice?.(demotionNotice(result));
+      } else {
+        await coursesApi.createCourseSession(courseId, form);
+      }
+      await onSaved();
       onClose();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Could not add the session.'));
+      setError(
+        getApiErrorMessage(
+          err,
+          editing ? 'Could not save the session.' : 'Could not add the session.'
+        )
+      );
     } finally {
       setSubmitting(false);
     }
@@ -77,14 +121,19 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Add a session"
+      title={editing ? 'Edit session' : 'Add a session'}
+      description={
+        editing
+          ? 'Changes apply to every week of this session. Tutors whose availability no longer fits are moved back to pending.'
+          : undefined
+      }
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} loading={submitting}>
-            Add session
+            {editing ? 'Save changes' : 'Add session'}
           </Button>
         </>
       }
@@ -121,6 +170,54 @@ function AddSessionModal({ open, onClose, courseId, onCreated }) {
           ))}
         </Select>
       </div>
+    </Modal>
+  );
+}
+
+function DeleteSessionModal({ session, onClose, onDeleted }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (session) setError('');
+  }, [session]);
+
+  const handleDelete = async () => {
+    setSubmitting(true);
+    setError('');
+    try {
+      await coursesApi.deleteSession(session.id);
+      await onDeleted();
+      onClose();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not remove the session.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={Boolean(session)}
+      onClose={onClose}
+      title="Remove session"
+      description={
+        session
+          ? `Remove the ${session.sessionType.toLowerCase()} on ${formatDay(session.dayOfWeek)}s, ${formatTime(session.startTime)}–${formatTime(session.endTime)}? Excusal requests for this session are deleted with it. To fix a wrong day or time, edit the session instead.`
+          : undefined
+      }
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDelete} loading={submitting}>
+            Remove session
+          </Button>
+        </>
+      }
+    >
+      <FormError message={error} />
     </Modal>
   );
 }
@@ -222,6 +319,9 @@ export function CourseDetailPage() {
     params: [id],
   });
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
+  const [deletingSession, setDeletingSession] = useState(null);
+  const [sessionNotice, setSessionNotice] = useState('');
   const [sessionAllocation, setSessionAllocation] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [coordinatorModalOpen, setCoordinatorModalOpen] = useState(false);
@@ -310,7 +410,7 @@ export function CourseDetailPage() {
         </Card>
       </div>
 
-      {isStaff && courseData?.coordinators && (
+      {courseData?.coordinators && (
         <Card className="mb-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
@@ -350,13 +450,27 @@ export function CourseDetailPage() {
               description="The term's timetable for this course."
               action={
                 canManageCourse && (
-                  <Button size="sm" onClick={() => setSessionModalOpen(true)}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingSession(null);
+                      setSessionModalOpen(true);
+                    }}
+                  >
                     <Plus className="h-3.5 w-3.5" /> Add
                   </Button>
                 )
               }
             />
           </div>
+          {sessionNotice && (
+            <p
+              role="status"
+              className="mx-5 mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800"
+            >
+              {sessionNotice}
+            </p>
+          )}
           {sessionList.length === 0 ? (
             <EmptyState className="border-0" icon={Calendar} title="No sessions yet" />
           ) : (
@@ -376,6 +490,30 @@ export function CourseDetailPage() {
                       {s.sessionType}
                     </p>
                   </div>
+                  {canManageCourse && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Edit ${formatDay(s.dayOfWeek)} ${s.sessionType.toLowerCase()}`}
+                        onClick={() => {
+                          setSessionNotice('');
+                          setEditingSession(s);
+                          setSessionModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Remove ${formatDay(s.dayOfWeek)} ${s.sessionType.toLowerCase()}`}
+                        onClick={() => setDeletingSession(s)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -416,11 +554,20 @@ export function CourseDetailPage() {
       </div>
 
       {canManageCourse && (
-        <AddSessionModal
+        <SessionModal
           open={sessionModalOpen}
           onClose={() => setSessionModalOpen(false)}
           courseId={id}
-          onCreated={() => Promise.all([refetchSessions(), refetch()])}
+          session={editingSession}
+          onSaved={() => Promise.all([refetchSessions(), refetch()])}
+          onNotice={setSessionNotice}
+        />
+      )}
+      {canManageCourse && (
+        <DeleteSessionModal
+          session={deletingSession}
+          onClose={() => setDeletingSession(null)}
+          onDeleted={() => Promise.all([refetchSessions(), refetch()])}
         />
       )}
       {canManageCourse && courseData && (
