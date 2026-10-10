@@ -22,6 +22,12 @@ vi.mock('../src/api/timesheets', () => ({
   },
 }));
 vi.mock('../src/api/allocations', () => ({ allocationsApi: { getAllocations: vi.fn() } }));
+vi.mock('../src/api/rates', () => ({
+  ratesApi: { getCurrentRate: vi.fn(async () => ({ data: null })) },
+}));
+vi.mock('../src/api/swaps', () => ({
+  swapsApi: { getCoverage: vi.fn(async () => ({ data: [] })) },
+}));
 
 const sheet = (overrides) => ({
   totalHours: 2,
