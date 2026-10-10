@@ -122,7 +122,34 @@ await page.route('**/api/v1/**', async (request) => {
   else if (['/users', '/tutors'].includes(endpoint))
     data = [user, { ...user, id: 'u2', name: 'Second Tutor' }];
   else if (['/allocations', '/swaps/options'].includes(endpoint))
-    data = [allocation, { ...allocation, id: 'a2', userId: 'u2', user: { ...user, id: 'u2' } }];
+    data = [
+      allocation,
+      {
+        ...allocation,
+        id: 'a2',
+        userId: 'u2',
+        user: { ...user, id: 'u2' },
+        course:
+          role === 'tutor'
+            ? {
+                ...course,
+                code: 'COMS1015A',
+                name: 'Introduction to Data Structures and Algorithms with Extended Laboratory Sessions',
+              }
+            : course,
+      },
+    ];
+  else if (endpoint === '/swaps/coverage')
+    data = [
+      {
+        id: 'cover1',
+        course,
+        sessionDate: '2030-01-07',
+        startTime: '14:15',
+        endTime: '17:00',
+      },
+    ];
+  else if (endpoint === '/swaps/workload') data = { hours: 7, remainingHours: 3 };
   else if (endpoint === '/overflow-posts')
     data = [
       {
@@ -333,6 +360,16 @@ try {
         '/excusals',
         '/users',
       ].includes(nextPath);
+      if (topLevelFeature || nextPath.startsWith('/courses/')) {
+        const heading = page.getByRole('heading', { level: nextPath === '/users' ? 2 : 1 }).first();
+        if (width === 360) {
+          assert.equal(
+            await heading.evaluate((element) => getComputedStyle(element).fontSize),
+            nextPath === '/users' ? '20px' : '24px',
+            'Feature and course detail headings use a compact mobile size'
+          );
+        }
+      }
       if (topLevelFeature && width === 360) {
         await featureClose.waitFor({ state: 'visible' });
         const closeBounds = await featureClose.boundingBox();
@@ -352,6 +389,74 @@ try {
           0,
           'No visible dashboard-close control on desktop, dashboard or nested pages'
         );
+      }
+      if (nextPath === '/dashboard') {
+        const welcome = page.getByRole('heading', { name: 'Welcome, Accessibility', exact: true });
+        assert.equal(
+          await welcome.evaluate((heading) => getComputedStyle(heading).fontSize),
+          width < 640 ? '20px' : '30px',
+          'Every role has a compact mobile greeting and preserves the larger screen heading'
+        );
+      }
+      if (nextRole === 'tutor' && nextPath === '/dashboard') {
+        const summary = await page.getByText('Weekly Hours', { exact: true }).evaluate((label) =>
+          Array.from(label.closest('.grid').children).map((card) => {
+            const bounds = card.getBoundingClientRect();
+            return {
+              top: bounds.top,
+              left: bounds.left,
+              height: bounds.height,
+              padding: getComputedStyle(card).paddingTop,
+              contained: card.scrollWidth <= card.clientWidth,
+            };
+          })
+        );
+        assert.equal(summary.length, 4, 'Tutor dashboard retains all four statistics');
+        assert(
+          summary.every((card) => card.contained),
+          'Tutor statistics remain contained'
+        );
+        assert.equal(await page.getByText('7h / 10h', { exact: true }).count(), 1);
+        const rows = page
+          .getByRole('heading', { name: 'My courses', exact: true })
+          .locator('xpath=../../..')
+          .locator('div.rounded-xl');
+        assert.equal(await rows.count(), 2);
+        assert(
+          await rows.evaluateAll((elements) =>
+            elements.every((element) => element.scrollWidth <= element.clientWidth)
+          ),
+          'Long tutor course names wrap without clipping hours badges'
+        );
+        if (width === 360) {
+          assert(summary.every((card) => card.height <= 132 && card.padding === '12px'));
+          assert.equal(summary[0].top, summary[1].top);
+          assert.equal(summary[2].top, summary[3].top);
+          assert(summary[2].top > summary[0].top && summary[1].left > summary[0].left);
+          for (const name of ['Log hours', 'Edit availability', 'View your full schedule']) {
+            const link = page.getByRole('link', { name, exact: true });
+            assert.equal(
+              await link.evaluate((element) => element.getBoundingClientRect().height >= 44),
+              true,
+              `${name} retains a 44px mobile target`
+            );
+            await link.focus();
+            assert(await link.evaluate((element) => element === document.activeElement));
+          }
+          await page.screenshot({
+            path: path.join(output, 'tutor-dashboard-360.png'),
+            fullPage: true,
+          });
+          await page.evaluate(() => document.documentElement.classList.add('dark'));
+          await page.screenshot({
+            path: path.join(output, 'tutor-dashboard-dark-360.png'),
+            fullPage: true,
+          });
+          await page.evaluate(() => document.documentElement.classList.remove('dark'));
+        } else {
+          assert(summary.every((card) => card.padding === '20px'));
+          if (width === 1440) assert(summary.every((card) => card.top === summary[0].top));
+        }
       }
       if (nextRole === 'student' && nextPath === '/dashboard') {
         const summary = await page

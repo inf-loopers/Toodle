@@ -46,6 +46,32 @@ beforeEach(() => {
 });
 
 describe('Volunteer overflow workflow', () => {
+  it('shows the exact session occurrence an excusal cover post replaces', async () => {
+    overflowApi.getPosts.mockResolvedValue({
+      data: [
+        post({
+          sessionDate: '2026-10-06T00:00:00.000Z',
+          durationMinutes: 90,
+          hoursNeeded: 2,
+          session: {
+            dayOfWeek: 'TUESDAY',
+            startTime: '14:00',
+            endTime: '15:30',
+            venue: 'MSL 004',
+            sessionType: 'LAB',
+          },
+        }),
+      ],
+    });
+    show();
+
+    expect(
+      await screen.findByText(/Covers Lab · Tuesday 14:00–15:30 · MSL 004 · .*6 Oct 2026/)
+    ).toBeInTheDocument();
+    expect(screen.getByText('1h 30m · one session')).toBeInTheDocument();
+    expect(screen.queryByText(/\/ week/)).not.toBeInTheDocument();
+  });
+
   it('lets a student claim an open post', async () => {
     overflowApi.getPosts.mockResolvedValue({ data: [post()] });
     overflowApi.claimPost.mockResolvedValue({ data: {} });

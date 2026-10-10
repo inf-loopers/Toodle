@@ -42,6 +42,7 @@ describe('Dashboard allocation counts', () => {
       </MemoryRouter>
     );
     expect(await screen.findByText('Courses needing tutors')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Welcome, Ada', level: 1 })).toBeInTheDocument();
     expect(screen.getByText('COMS101')).toBeInTheDocument();
     expect(within(screen.getByText('Unfilled Courses').parentElement).getByText('1'));
     expect(within(screen.getByText('Allocations').parentElement).getByText('0'));

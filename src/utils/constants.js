@@ -52,7 +52,7 @@ export const DAYS_OF_WEEK = [
 
 export const ROLE_LABELS = {
   [ROLES.ADMIN]: 'Admin',
-  [ROLES.LECTURER]: 'Lecturer (Course Coordinator)',
+  [ROLES.LECTURER]: 'Lecturer',
   [ROLES.TUTOR]: 'Tutor',
   [ROLES.STUDENT]: 'Student',
 };
@@ -155,6 +155,7 @@ export const NAV_SECTIONS = {
         { name: 'Allocation Board', path: '/allocations', icon: 'LayoutGrid' },
         { name: 'Tutors', path: '/tutors', icon: 'Users' },
         { name: 'Courses', path: '/courses', icon: 'BookOpen' },
+        { name: 'My Courses', path: '/my-courses', icon: 'BookMarked' },
       ],
     },
     {
@@ -182,7 +183,8 @@ export const NAV_SECTIONS = {
     {
       heading: 'My Work',
       items: [
-        { name: 'My Courses', path: '/courses', icon: 'BookOpen' },
+        { name: 'Courses', path: '/courses', icon: 'BookOpen' },
+        { name: 'My Courses', path: '/my-courses', icon: 'BookMarked' },
         { name: 'Timesheets', path: '/timesheets', icon: 'Clock' },
         { name: 'Excusals', path: '/excusals', icon: 'CalendarX' },
         { name: 'Swaps', path: '/swaps', icon: 'ArrowLeftRight' },

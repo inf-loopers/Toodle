@@ -11,7 +11,7 @@ import FeatureHeading from '../components/layout/FeatureHeading';
  * Route: `/excusals`
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarX, Plus, Check, X } from 'lucide-react';
 
 import { useAuth } from '../hooks/useAuth';
@@ -27,19 +27,24 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import Modal from '../components/ui/Modal';
-import { Select, Input, Textarea } from '../components/ui/Input';
+import { Select, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
+import {
+  formatDuration,
+  formatOccurrenceDate,
+  formatSessionLabel,
+  sessionDurationMinutes,
+  upcomingOccurrences,
+} from '../utils/excusals';
 
 function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
   const [allocationId, setAllocationId] = useState('');
-  const [sessionDate, setSessionDate] = useState('');
-  const [sessionId, setSessionId] = useState('');
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [sessionsError, setSessionsError] = useState('');
-  const courseId = allocations.find((allocation) => allocation.id === allocationId)?.courseId;
+  const [sessionId, setSessionId] = useState('');
+  const [sessionDate, setSessionDate] = useState('');
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -47,40 +52,58 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
   useEffect(() => {
     if (!open) {
       setAllocationId('');
-      setSessionDate('');
+      setSessions([]);
       setSessionId('');
+      setSessionDate('');
       setReason('');
       setError('');
     }
   }, [open]);
 
+  // Load the chosen course's scheduled sessions; an excusal must name one.
+  const courseId = allocations.find((a) => a.id === allocationId)?.courseId;
   useEffect(() => {
+    if (!courseId) return undefined;
+
     let cancelled = false;
-    setSessions([]);
-    setSessionId('');
-    setSessionsError('');
-    setSessionsLoading(Boolean(open && courseId));
-    if (open && courseId) {
-      coursesApi
-        .getCourseSessions(courseId)
-        .then((response) => {
-          if (!cancelled) setSessions(response.data ?? response);
-        })
-        .catch((err) => {
-          if (!cancelled)
-            setSessionsError(getErrorMessage(err, 'Could not load scheduled sessions.'));
-        })
-        .finally(() => {
-          if (!cancelled) setSessionsLoading(false);
-        });
-    }
+    setSessionsLoading(true);
+    coursesApi
+      .getCourseSessions(courseId)
+      .then((response) => {
+        if (!cancelled) setSessions(response?.data ?? response ?? []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(getErrorMessage(err, 'Could not load the course sessions.'));
+      })
+      .finally(() => {
+        if (!cancelled) setSessionsLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };
-  }, [open, courseId]);
+  }, [courseId]);
+
+  const session = sessions.find((s) => s.id === sessionId);
+  const occurrences = useMemo(() => (session ? upcomingOccurrences(session) : []), [session]);
+
+  const chooseAllocation = (value) => {
+    setAllocationId(value);
+    setSessions([]);
+    setSessionId('');
+    setSessionDate('');
+    setError('');
+  };
+
+  const chooseSession = (value) => {
+    setSessionId(value);
+    setSessionDate('');
+  };
+
+  const canSubmit = Boolean(allocationId && sessionId && sessionDate && reason.trim());
 
   const handleSubmit = async () => {
-    if (!allocationId || !sessionId || !sessionDate || !reason.trim()) return;
+    if (!canSubmit) return;
 
     setSubmitting(true);
     setError('');
@@ -102,23 +125,23 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
     }
   };
 
+  let sessionPlaceholder = 'Choose the session you will miss…';
+  if (sessionsLoading) sessionPlaceholder = 'Loading sessions…';
+  else if (sessions.length === 0) sessionPlaceholder = 'This course has no scheduled sessions';
+
   return (
     <Modal
       open={open}
       onClose={onClose}
       title="Request an excusal"
-      description="Request to be excused from one of your allocated sessions."
+      description="Choose the scheduled session you will miss and the date it falls on."
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
 
-          <Button
-            onClick={handleSubmit}
-            loading={submitting}
-            disabled={!allocationId || !sessionId || !sessionDate || !reason.trim()}
-          >
+          <Button onClick={handleSubmit} loading={submitting} disabled={!canSubmit}>
             Send request
           </Button>
         </>
@@ -128,7 +151,7 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
         <Select
           label="Course"
           value={allocationId}
-          onChange={(e) => setAllocationId(e.target.value)}
+          onChange={(e) => chooseAllocation(e.target.value)}
         >
           <option value="">Choose an active allocation…</option>
 
@@ -140,35 +163,50 @@ function RequestExcusalModal({ open, onClose, allocations, onRequested }) {
           ))}
         </Select>
 
-        <Select
-          label="Scheduled session (Africa/Johannesburg)"
-          value={sessionId}
-          disabled={sessionsLoading || !sessions.length}
-          onChange={(event) => setSessionId(event.target.value)}
-        >
-          <option value="">
-            {sessionsLoading ? 'Loading sessions?' : 'Choose a scheduled session?'}
-          </option>
-          {sessions.map((session) => (
-            <option key={session.id} value={session.id}>
-              {session.dayOfWeek} {session.startTime}?{session.endTime} ? {session.sessionType}
+        {allocationId && (
+          <Select
+            label="Session"
+            value={sessionId}
+            onChange={(e) => chooseSession(e.target.value)}
+            disabled={sessionsLoading || sessions.length === 0}
+          >
+            <option value="">{sessionPlaceholder}</option>
+
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {formatSessionLabel(s)}
+              </option>
+            ))}
+          </Select>
+        )}
+
+        {session && (
+          <Select
+            label="Date"
+            value={sessionDate}
+            onChange={(e) => setSessionDate(e.target.value)}
+            disabled={occurrences.length === 0}
+          >
+            <option value="">
+              {occurrences.length === 0
+                ? 'No upcoming dates for this session'
+                : 'Choose which week…'}
             </option>
-          ))}
-        </Select>
-        {sessionsError && (
-          <p role="alert" className="text-xs text-rose-600">
-            {sessionsError}
+
+            {occurrences.map((date) => (
+              <option key={date} value={date}>
+                {formatOccurrenceDate(date)}
+              </option>
+            ))}
+          </Select>
+        )}
+
+        {session && sessionDate && (
+          <p className="text-xs text-slate-500">
+            You will miss {formatDuration(sessionDurationMinutes(session))} on{' '}
+            {formatOccurrenceDate(sessionDate)}, {session.startTime}–{session.endTime}.
           </p>
         )}
-        {courseId && !sessionsLoading && !sessionsError && !sessions.length && (
-          <p className="text-sm text-slate-500">This course has no scheduled sessions.</p>
-        )}
-        <Input
-          label="Occurrence date (must match the scheduled day)"
-          type="date"
-          value={sessionDate}
-          onChange={(e) => setSessionDate(e.target.value)}
-        />
 
         <Textarea
           label="Reason"
@@ -377,28 +415,41 @@ export function ExcusalsPage() {
                     </p>
                   )}
 
-                  <p className="mt-2 text-xs text-slate-400">
-                    Session: {String(excusal.sessionDate).slice(0, 10)}
-                    {excusal.sessionStartTime &&
-                      ` ? ${excusal.sessionStartTime}?${excusal.sessionEndTime} (Africa/Johannesburg)`}
+                  <p className="mt-2 text-xs text-slate-500">
+                    {excusal.session
+                      ? `${formatSessionLabel(excusal.session)} · `
+                      : 'Session date: '}
+                    {formatOccurrenceDate(excusal.sessionDate)}
+                    {excusal.durationMinutes ? ` (${formatDuration(excusal.durationMinutes)})` : ''}
                   </p>
 
                   {excusal.reason && (
-                    <p className="mt-2 text-sm text-slate-600">{excusal.reason}</p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      <span className="font-medium text-slate-700">Tutor&apos;s reason:</span>{' '}
+                      {excusal.reason}
+                    </p>
                   )}
 
                   {excusal.reviewReason && (
-                    <p className="mt-2 text-sm text-slate-600">
-                      Review reason: {excusal.reviewReason}
+                    <p className="mt-1 text-sm text-slate-600">
+                      <span className="font-medium text-slate-700">Reviewer&apos;s note:</span>{' '}
+                      {excusal.reviewReason}
                     </p>
                   )}
 
                   {excusal.reviewedBy && (
                     <p className="mt-2 text-xs text-slate-400">
-                      Reviewed by {excusal.reviewedBy.name}
+                      {excusal.status === 'DECLINED' ? 'Declined' : 'Approved'} by{' '}
+                      {excusal.reviewedBy.name}
                       {excusal.resolvedAt
                         ? ` · ${new Date(excusal.resolvedAt).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`
                         : ''}
+                    </p>
+                  )}
+
+                  {excusal.overflowPost && (
+                    <p className="mt-1 text-xs text-slate-400">
+                      Cover post: {excusal.overflowPost.status}
                     </p>
                   )}
                 </div>

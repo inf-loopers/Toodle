@@ -9,6 +9,15 @@ import { Bell, CheckCheck, X } from 'lucide-react';
 import { notificationsApi } from '../../api/notifications';
 import { formatShortDate } from '../../utils/helpers';
 
+/**
+ * Truthful label for a notification's email copy. Delivered (or never
+ * attempted) emails need no label; anything else must not look delivered.
+ */
+const EMAIL_STATUS_LABELS = {
+  FAILED: 'Email copy could not be delivered',
+  SKIPPED: 'Not emailed — in-app only',
+};
+
 export default function NotificationBell() {
   const navigate = useNavigate();
   const panelId = 'notification-panel';
@@ -213,6 +222,18 @@ export default function NotificationBell() {
 
                         <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
                           {formatShortDate(notification.createdAt)}
+                          {EMAIL_STATUS_LABELS[notification.emailStatus] && (
+                            <span
+                              className={
+                                notification.emailStatus === 'FAILED'
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : undefined
+                              }
+                            >
+                              {' · '}
+                              {EMAIL_STATUS_LABELS[notification.emailStatus]}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
