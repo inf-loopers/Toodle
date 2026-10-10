@@ -1,6 +1,6 @@
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within, act } from '@testing-library/react';
+import { render, screen, waitFor, within, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AllocationBoardPage from '../src/pages/AllocationBoardPage';
 import { AllocationProvider, useAllocationContext } from '../src/context/AllocationContext';
@@ -79,8 +79,8 @@ async function openAssignment() {
 describe('Allocation board verification', () => {
   // Renders the whole board and types into the modal twice; ~2s locally but
   // slower CI runners exceed Vitest's 5s default, so allow more time.
-  it.each([21, 40])(
-    'submits %ih within the API range and blocks 41h',
+  it.each([0.01, 0.25, 1.5, 21, 40])(
+    'submits %sh within the API range and blocks 41h',
     { timeout: 15000 },
     async (hours) => {
       allocationsApi.validateAllocation.mockResolvedValue(valid);
@@ -93,6 +93,8 @@ describe('Allocation board verification', () => {
       await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
       await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
       const field = screen.getByLabelText('Hours per week');
+      expect(field).toHaveAttribute('min', '0.01');
+      expect(field).toHaveAttribute('step', '0.01');
       await user.clear(field);
       await user.type(field, '41');
       expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeDisabled();
@@ -107,6 +109,27 @@ describe('Allocation board verification', () => {
       );
     }
   );
+  it('blocks empty, negative, and tiny weekly hours before calling the allocation API', async () => {
+    allocationsApi.validateAllocation.mockResolvedValue(valid);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
+    await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
+    await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
+    const submit = screen.getByRole('button', { name: 'Confirm assignment' });
+    await waitFor(() => expect(submit).toBeEnabled());
+    const field = screen.getByLabelText('Hours per week');
+    for (const value of ['', '0', '-1', '0.001', '5e-324']) {
+      fireEvent.change(field, { target: { value } });
+      expect(submit).toBeDisabled();
+      await user.click(submit);
+    }
+    expect(allocationsApi.createAllocation).not.toHaveBeenCalled();
+  });
+
   it('reloads transferred allocations and recomputes tutor hours when returning to the board', async () => {
     let board;
     function Probe() {
