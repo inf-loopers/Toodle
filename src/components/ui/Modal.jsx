@@ -13,6 +13,13 @@
  *   user can never act on the page behind it.
  * - Restores focus to the element that was focused before the dialog opened.
  * - Closes on Escape and backdrop click, and locks body scroll while open.
+ * - Keeps the header (title + close) and footer pinned while only the body
+ *   scrolls, so a tall dialog on a short viewport never hides its own title or
+ *   close control, and stays usable on mobile.
+ * - Supports `placement`: `center` (default) floats the dialog mid-viewport;
+ *   `top` hangs it just below the sticky navbar (a command-palette style panel
+ *   that opens from the bar that triggered it) and sizes itself to the space
+ *   under the bar.
  *
  * Note: the open/close effect deliberately depends only on `open` and reads
  * `onClose` through a ref. Callers such as the allocation board pass an inline
@@ -46,7 +53,16 @@ const FOCUSABLE_SELECTOR = [
   .map((selector) => `${selector}:not([hidden])`)
   .join(', ');
 
-export function Modal({ open, onClose, title, description, children, footer, size = 'md' }) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  size = 'md',
+  placement = 'center',
+}) {
   const dialogRef = useRef(null);
   const bodyRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -120,9 +136,16 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   if (!open) return null;
 
   const sizes = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' };
+  const topPlaced = placement === 'top';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex justify-center',
+        // `top` starts the panel flush under the h-16 navbar; `center` floats it.
+        topPlaced ? 'items-start px-3 pt-16 sm:px-4' : 'items-center p-4'
+      )}
+    >
       <div
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
         onClick={onClose}
@@ -138,11 +161,12 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-label={title ? undefined : 'Dialog'}
         tabIndex={-1}
         className={cn(
-          'relative max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-xl outline-none',
+          'relative flex w-full flex-col overflow-hidden rounded-2xl bg-white p-4 shadow-xl outline-none sm:p-6',
+          topPlaced ? 'max-h-[calc(100dvh-5rem)]' : 'max-h-[calc(100dvh-2rem)]',
           sizes[size]
         )}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex shrink-0 items-start justify-between gap-4">
           <div>
             {title && (
               <h3 id={titleId} className="text-lg font-bold text-slate-900">
@@ -166,11 +190,11 @@ export function Modal({ open, onClose, title, description, children, footer, siz
           </button>
         </div>
 
-        <div ref={bodyRef} className="mt-5">
+        <div ref={bodyRef} data-testid="modal-body" className="mt-5 min-h-0 flex-1 overflow-y-auto">
           {children}
         </div>
 
-        {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
+        {footer && <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-3">{footer}</div>}
       </div>
     </div>
   );
