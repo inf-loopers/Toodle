@@ -256,7 +256,7 @@ function DottedPath({ d, color }) {
 function FloatingCard({ children, className = '', delay = 0, duration = 4, baseRotate = 0 }) {
   return (
     <Motion.aside
-      className={`absolute z-30 min-w-[180px] rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-lg shadow-slate-200/60 transition-colors dark:border-slate-700/70 dark:bg-[#111f33] dark:shadow-black/30 ${className}`}
+      className={`absolute z-30 min-w-[180px] rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-lg shadow-slate-200/60 transition-colors dark:border-slate-700/70 dark:bg-[#121212] dark:shadow-black/30 ${className}`}
       animate={{
         y: [0, -7, 0],
         rotate: [baseRotate, baseRotate + 1, baseRotate],

@@ -9,6 +9,8 @@
  * - `PUT /tutors/:id/availability`  - Set weekly availability time slots (Tutor self-service).
  * - `POST /tutors/marks/import/preview` - Preview a CSV class-list mark import (Staff only).
  * - `POST /tutors/marks/import/commit`  - Apply a previewed CSV mark import (Staff only).
+ * - `POST /tutors/:id/timetable/import/preview` - Preview a timetable CSV as availability (no writes).
+ * - `POST /tutors/:id/timetable/import/commit`  - Replace availability from a timetable CSV.
  */
 
 import apiClient from './client';
@@ -50,6 +52,22 @@ export const tutorsApi = {
     formData.append('file', file);
     formData.append('excludedRows', JSON.stringify(excludedRows));
     const response = await apiClient.post('/tutors/marks/import/commit', formData);
+    return response.data;
+  },
+
+  // POST /tutors/:id/timetable/import/preview - multipart CSV upload, no writes
+  previewTimetableImport: async (tutorId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post(`/tutors/${tutorId}/timetable/import/preview`, formData);
+    return response.data;
+  },
+
+  // POST /tutors/:id/timetable/import/commit - re-uploads the CSV; the server re-validates it
+  commitTimetableImport: async (tutorId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post(`/tutors/${tutorId}/timetable/import/commit`, formData);
     return response.data;
   },
 
