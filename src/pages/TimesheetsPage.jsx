@@ -46,6 +46,23 @@ const DEADLINE_BADGES = {
   OVERDUE: { tone: 'danger', label: 'Overdue' },
 };
 
+// Decimal API values may arrive as strings. Missing/blank values are unknown,
+// rather than zero. Minute-based allocations may contain repeating fractions.
+function validAmount(value, max) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0.01 && amount <= max ? amount : null;
+}
+
+function validPayRate(value) {
+  const amount = validAmount(value, 100000);
+  return amount !== null && Math.round(amount * 100) / 100 === amount ? amount : null;
+}
+
+const formatHours = (hours) =>
+  hours.toLocaleString('en-GB', { useGrouping: false, maximumFractionDigits: 2 });
+
 function getCurrentMonday() {
   const today = new Date();
   const monday = new Date(
@@ -654,6 +671,8 @@ export function TimesheetsPage() {
   // viewing their own timesheets, so staff never see a stray "your rate"
   // figure that doesn't apply to the tutor whose card they are looking at.
   const [currentRate, setCurrentRate] = useState(null);
+  const [rateStatus, setRateStatus] = useState('loading');
+  const currentRateAmount = validPayRate(currentRate?.rate);
 
   const [manageTarget, setManageTarget] = useState(null);
 
@@ -723,13 +742,24 @@ export function TimesheetsPage() {
       return;
     }
     let cancelled = false;
+    setCurrentRate(null);
+    setRateStatus('loading');
     ratesApi
       .getCurrentRate(user.id)
       .then((result) => {
-        if (!cancelled) setCurrentRate(result?.data ?? result ?? null);
+        if (cancelled) return;
+        // A successful envelope with data: null means no effective rate.
+        const rate = result && Object.hasOwn(result, 'data') ? result.data : result;
+        setCurrentRate(rate ?? null);
+        setRateStatus(
+          rate == null ? 'missing' : validPayRate(rate.rate) === null ? 'invalid' : 'ready'
+        );
       })
       .catch(() => {
-        if (!cancelled) setCurrentRate(null);
+        if (!cancelled) {
+          setCurrentRate(null);
+          setRateStatus('error');
+        }
       });
     return () => {
       cancelled = true;
@@ -792,9 +822,20 @@ export function TimesheetsPage() {
         )}
       </div>
 
-      {!isStaff && currentRate && (
-        <p className="mb-4 text-sm font-medium text-slate-600">
-          Your current rate: R{Number(currentRate.rate).toFixed(2)}/hr
+      {!isStaff && (
+        <p
+          role={rateStatus === 'error' || rateStatus === 'invalid' ? 'alert' : undefined}
+          className="mb-4 text-sm font-medium text-slate-600"
+        >
+          {rateStatus === 'ready'
+            ? `Your current rate: R${currentRateAmount.toFixed(2)}/hr`
+            : rateStatus === 'missing'
+              ? 'Pay rate not configured. Ask your organiser to set it before approval.'
+              : rateStatus === 'invalid'
+                ? 'Your pay rate is invalid. Ask your organiser to correct it before approval.'
+                : rateStatus === 'error'
+                  ? 'Could not load your pay rate. Reload the page to try again.'
+                  : 'Loading your pay rate…'}
         </p>
       )}
 
@@ -832,10 +873,9 @@ export function TimesheetsPage() {
               const rawAllocatedHours =
                 allocation?.hoursPerWeek ?? allocation?.allocatedHours ?? allocation?.weeklyHours;
 
-              const allocatedHours =
-                rawAllocatedHours !== undefined && rawAllocatedHours !== null
-                  ? Number(rawAllocatedHours)
-                  : null;
+              const allocatedHours = validAmount(rawAllocatedHours, 40);
+              const invalidAllocation = allocation && allocatedHours === null;
+              const appliedRate = validPayRate(timesheet.appliedRate);
 
               return (
                 <div key={timesheet.id} className="px-5 py-5">
@@ -871,9 +911,15 @@ export function TimesheetsPage() {
 
                       <p className="mt-2 text-sm font-medium text-slate-700">
                         {allocatedHours !== null
-                          ? `${loggedHours}h / ${allocatedHours}h allocated`
-                          : `${loggedHours}h logged`}
+                          ? `${formatHours(loggedHours)}h / ${formatHours(allocatedHours)}h allocated`
+                          : `${formatHours(loggedHours)}h logged`}
                       </p>
+
+                      {invalidAllocation && (
+                        <p className="mt-1 text-xs text-amber-700">
+                          Allocated hours are invalid. Ask the organiser to correct the allocation.
+                        </p>
+                      )}
 
                       {allocatedHours !== null && allocatedHours > 0 && (
                         <div className="mt-2 h-2 max-w-sm overflow-hidden rounded-full bg-slate-100">
@@ -898,19 +944,19 @@ export function TimesheetsPage() {
                         </div>
                       )}
 
-                      {timesheet.status === 'APPROVED' && timesheet.appliedRate != null && (
+                      {['APPROVED', 'PAID'].includes(timesheet.status) && appliedRate !== null && (
                         <div className="mt-3 text-sm text-slate-500">
                           <p>
-                            Paid at R{Number(timesheet.appliedRate).toFixed(2)}/hr · R
-                            {(loggedHours * Number(timesheet.appliedRate)).toFixed(2)} total
+                            {timesheet.status === 'PAID' ? 'Paid' : 'Approved'} at R
+                            {appliedRate.toFixed(2)}/hr · R{(loggedHours * appliedRate).toFixed(2)}{' '}
+                            total
                           </p>
 
                           {!isStaff &&
-                            currentRate &&
-                            Number(currentRate.rate) !== Number(timesheet.appliedRate) && (
+                            currentRateAmount !== null &&
+                            currentRateAmount !== appliedRate && (
                               <p className="mt-1 text-xs text-amber-600">
-                                Your rate has since changed to R
-                                {Number(currentRate.rate).toFixed(2)}
+                                Your rate has since changed to R{currentRateAmount.toFixed(2)}
                                 /hr (from {formatShortDate(currentRate.effectiveFrom)})
                               </p>
                             )}
