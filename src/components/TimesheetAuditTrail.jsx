@@ -69,9 +69,7 @@ export function TimesheetAuditTrail({ timesheet }) {
         color: 'amber',
         title: `Disputed (v${version})`,
         description:
-          snapshot.disputeReason ||
-          (isLatest && timesheet.disputeReason) ||
-          'Timesheet disputed',
+          snapshot.disputeReason || (isLatest && timesheet.disputeReason) || 'Timesheet disputed',
         version,
       });
     }

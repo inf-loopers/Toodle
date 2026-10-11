@@ -18,7 +18,7 @@ function ApplicationDecision({ application }) {
   const line = decisionLine(
     application.status === 'APPROVED' ? 'Approved' : 'Rejected',
     application.reviewedBy,
-    application.reviewedAt,
+    application.reviewedAt
   );
   return line ? <p className="text-sm text-slate-500">{line}</p> : null;
 }

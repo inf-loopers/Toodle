@@ -60,7 +60,7 @@ function ClaimDecision({ claim }) {
   const line = decisionLine(
     claim.status === 'APPROVED' ? 'Approved' : 'Rejected',
     claim.reviewedBy,
-    claim.approvedAt,
+    claim.approvedAt
   );
   return line ? <p className="mt-2 text-xs text-slate-400">{line}</p> : null;
 }

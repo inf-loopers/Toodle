@@ -315,8 +315,7 @@ export function SessionSwapPage() {
                 )}
                 {swap.reviewedBy && (
                   <p className="text-xs text-slate-500">
-                    {swap.status === 'REJECTED' ? 'Rejected' : 'Approved'} by{' '}
-                    {swap.reviewedBy.name}
+                    {swap.status === 'REJECTED' ? 'Rejected' : 'Approved'} by {swap.reviewedBy.name}
                     {swap.reviewedAt ? ` · ${formatDecisionTime(swap.reviewedAt)}` : ''}
                   </p>
                 )}
