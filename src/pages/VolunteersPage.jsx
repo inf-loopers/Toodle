@@ -259,14 +259,18 @@ export function VolunteersPage() {
   // --- Shared post card header (icon + course info + hours badge) ---
   function PostCardShell({ post, children }) {
     return (
-      <Card className={post.approvalEligibility?.status === 'ineligible' ? 'bg-slate-50' : ''}>
+      <Card
+        className={`max-sm:p-4 ${post.approvalEligibility?.status === 'ineligible' ? 'bg-slate-50' : ''}`}
+      >
         <div className="flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-            <HandHeart className="h-5 w-5" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700 sm:h-10 sm:w-10 sm:rounded-xl">
+            <HandHeart className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <Badge tone={STATUS_TONE[post.status] || 'neutral'}>{post.status}</Badge>
         </div>
-        <h3 className="mt-4 font-bold text-slate-900">{post.course?.code || post.courseId}</h3>
+        <h3 className="mt-3 font-bold text-slate-900 sm:mt-4">
+          {post.course?.code || post.courseId}
+        </h3>
         <p className="text-sm text-slate-500">{post.course?.name}</p>
         <p className="mt-2 text-xs text-slate-400">
           {post.description || 'No description provided.'}
@@ -438,7 +442,7 @@ export function VolunteersPage() {
                 }
               />
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
                 {openPosts.map((post) => (
                   <PostCardShell key={post.id} post={post} />
                 ))}
@@ -512,7 +516,7 @@ export function VolunteersPage() {
               }
             />
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
               {openPosts.map((post) => (
                 <PostCardShell key={post.id} post={post}>
                   <OpportunityEligibility

@@ -115,7 +115,10 @@ function StatusStepper({ status }) {
         const current = index === currentIndex;
 
         return (
-          <div key={`${step}-${index}`} className="flex flex-1 items-center">
+          <div
+            key={`${step}-${index}`}
+            className={`flex items-center ${index < steps.length - 1 ? 'flex-1' : ''}`}
+          >
             <div className="flex flex-col items-center">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${

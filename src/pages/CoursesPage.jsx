@@ -266,17 +266,17 @@ export function CoursesPage({ scope = 'all' }) {
           }
         />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
           {filtered.map((course) => {
             const lecturers = (course.coordinators ?? []).map((c) => c.user?.name).filter(Boolean);
             return (
               <Card
                 key={course.id}
-                className={`h-full transition-shadow hover:shadow-md ${course.eligibility?.status === 'ineligible' ? 'bg-slate-50' : ''}`}
+                className={`h-full transition-shadow hover:shadow-md max-sm:p-4 ${course.eligibility?.status === 'ineligible' ? 'bg-slate-50' : ''}`}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-subtle text-primary">
-                    <BookOpen className="h-5 w-5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-subtle text-primary sm:h-10 sm:w-10 sm:rounded-xl">
+                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="flex flex-wrap justify-end gap-1.5">
                     {course.myAllocation && (
@@ -291,7 +291,7 @@ export function CoursesPage({ scope = 'all' }) {
                     </Badge>
                   </div>
                 </div>
-                <h3 className="mt-4 font-bold text-slate-900">{course.code}</h3>
+                <h3 className="mt-3 font-bold text-slate-900 sm:mt-4">{course.code}</h3>
                 <p className="text-sm text-slate-500">{course.name}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
                   <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
