@@ -9,12 +9,25 @@ import studentNavigationImage from '../assets/help/student/navigation.png';
 import lecturerNavigationImage from '../assets/help/lecturer/navigation.png';
 import { studentGuide } from '../content/studentGuide';
 import { lecturerGuide } from '../content/lecturerGuide';
+import { adminGuide } from '../content/adminGuide';
 import { useAuth } from '../hooks/useAuth';
 
 export default function HelpPage() {
-  const { isStudent, isLecturer } = useAuth();
-  const guide = isLecturer ? lecturerGuide : isStudent ? studentGuide : tutorGuide;
-  const roleLabel = isLecturer ? 'Lecturer' : isStudent ? 'Student' : 'Tutor';
+  const { isStudent, isLecturer, isAdmin } = useAuth();
+  const guide = isAdmin
+    ? adminGuide
+    : isLecturer
+      ? lecturerGuide
+      : isStudent
+        ? studentGuide
+        : tutorGuide;
+  const roleLabel = isAdmin
+    ? 'Administrator'
+    : isLecturer
+      ? 'Lecturer'
+      : isStudent
+        ? 'Student'
+        : 'Tutor';
   const guideNavigationImage = isLecturer
     ? lecturerNavigationImage
     : isStudent
@@ -37,7 +50,7 @@ export default function HelpPage() {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
         <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
-          Getting started as a {roleLabel}
+          Getting started as {isAdmin ? 'an' : 'a'} {roleLabel}
         </FeatureHeading>
         <p className="mt-2 text-sm text-slate-500">
           Start with these steps, or choose the topic you need help with.
@@ -80,7 +93,7 @@ export default function HelpPage() {
                         {topic.note}
                       </p>
                     )}
-                    {topic.id === 'navigation' && (
+                    {topic.id === 'navigation' && !isAdmin && (
                       <img
                         src={guideNavigationImage}
                         alt={`Mobile navigation menu showing ${roleLabel} pages.`}

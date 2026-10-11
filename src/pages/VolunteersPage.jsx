@@ -31,6 +31,7 @@ import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage } from '../utils/apiError';
 import { formatDuration, formatOccurrenceDate, formatSessionLabel } from '../utils/excusals';
+import { decisionLine } from '../utils/decisions';
 
 const STATUS_TONE = {
   OPEN: 'info',
@@ -53,6 +54,16 @@ const CLAIM_STATUS_LABEL = {
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
 };
+
+function ClaimDecision({ claim }) {
+  if (claim.status !== 'APPROVED' && claim.status !== 'REJECTED') return null;
+  const line = decisionLine(
+    claim.status === 'APPROVED' ? 'Approved' : 'Rejected',
+    claim.reviewedBy,
+    claim.approvedAt
+  );
+  return line ? <p className="mt-2 text-xs text-slate-400">{line}</p> : null;
+}
 
 function PostWorkModal({ open, onClose, courses, onCreated }) {
   const [form, setForm] = useState({ courseId: '', hoursPerWeek: 2, description: '' });
@@ -395,6 +406,7 @@ export function VolunteersPage() {
                                 {CLAIM_STATUS_LABEL[claim.status] || claim.status}
                               </Badge>
                             </div>
+                            <ClaimDecision claim={claim} />
 
                             {/* Approve / reject actions (only for pending claims) */}
                             {isPending && (
@@ -488,6 +500,7 @@ export function VolunteersPage() {
                         {CLAIM_STATUS_LABEL[claim.status] || claim.status}
                       </Badge>
                     </div>
+                    <ClaimDecision claim={claim} />
 
                     {claim.status === 'APPROVED' && (
                       <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">

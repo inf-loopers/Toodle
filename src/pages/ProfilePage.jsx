@@ -20,7 +20,8 @@ import FeatureHeading from '../components/layout/FeatureHeading';
  */
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Camera, FileUp, Save } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Camera, FileUp, Save } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -28,15 +29,13 @@ import { useAuth } from '../hooks/useAuth';
 import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
-import { ROLES, ROLE_LABELS } from '../utils/constants';
-import { getApiErrorMessage } from '../utils/apiError';
+import { ROLES, ROLE_LABELS, YEARS_OF_STUDY } from '../utils/constants';
+import AccountClosurePanel from '../components/AccountClosurePanel';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
-import Modal from '../components/ui/Modal';
-import FormError from '../components/ui/FormError';
 import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 import UserAvatar from '../components/ui/UserAvatar';
@@ -62,11 +61,6 @@ export function ProfilePage() {
 
   const [timetableOpen, setTimetableOpen] = useState(false);
 
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState('');
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
-
   const profile = currentUser?.data ?? currentUser;
 
   const roleKey = (role || profile?.role)?.toLowerCase();
@@ -90,15 +84,6 @@ export function ProfilePage() {
       setYearOfStudy(String(profile.yearOfStudy));
     }
   }, [profile]);
-
-  // Reset-on-open: a failed deletion never closes the dialog, so clear the
-  // confirmation text and error each time it is (re)opened rather than on close.
-  useEffect(() => {
-    if (deleteOpen) {
-      setDeleteConfirm('');
-      setDeleteError('');
-    }
-  }, [deleteOpen]);
 
   if (loading) {
     return <Spinner fullPage label="Loading your profile…" />;
@@ -194,26 +179,6 @@ export function ProfilePage() {
       setSavingYear(false);
     }
   };
-
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    setDeleteError('');
-    try {
-      await usersApi.deleteCurrentUser();
-      // The account is gone server-side (local record + Auth0 identity), so sign
-      // out; Auth0 redirects back to the app root as a signed-out visitor. A
-      // deleted user who returns is no longer recreated because the identity is
-      // removed, not just the local row.
-      logout();
-    } catch (deleteAccountError) {
-      setDeleteError(
-        getApiErrorMessage(deleteAccountError, 'Could not delete your account. Please try again.')
-      );
-      setDeleting(false);
-    }
-  };
-
-  const confirmMatches = deleteConfirm.trim().toLowerCase() === displayEmail.trim().toLowerCase();
 
   return (
     <>
@@ -333,9 +298,9 @@ export function ProfilePage() {
                   className="max-w-40"
                 >
                   <option value="">Not set</option>
-                  {Array.from({ length: 10 }, (_, index) => index + 1).map((year) => (
-                    <option key={year} value={year}>
-                      Year {year}
+                  {YEARS_OF_STUDY.map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
                 </Select>
@@ -434,70 +399,21 @@ export function ProfilePage() {
         )}
       </div>
 
-      {/* Danger zone: permanent account deletion */}
-      <Card className="mt-6">
-        <CardHeader
-          title="Delete account"
-          description="Permanently close your Toodle account and remove your sign-in details."
-        />
-
-        <CardBody>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              This deletes your profile, your sign-in, and the records you own. Records you reviewed
-              on someone else's behalf are kept as history. This cannot be undone.
-            </p>
-
-            <Button variant="danger" onClick={() => setDeleteOpen(true)} className="shrink-0">
-              <AlertTriangle className="h-4 w-4" />
-              Delete account
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Modal
-        open={deleteOpen}
-        onClose={() => {
-          if (!deleting) setDeleteOpen(false);
-        }}
-        title="Delete your account?"
-        description="This action is permanent and cannot be undone."
-        size="md"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleting}>
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDeleteAccount}
-              loading={deleting}
-              disabled={!confirmMatches}
-            >
-              Delete permanently
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            You will be signed out immediately. Your account and Auth0 sign-in are deleted; any work
-            you owned is removed, while records you actioned for others stay on file with your name
-            cleared.
-          </p>
-
-          <Input
-            label={`Type your email (${displayEmail}) to confirm`}
-            type="email"
-            value={deleteConfirm}
-            onChange={(event) => setDeleteConfirm(event.target.value)}
-            autoComplete="off"
+      {import.meta.env.DEV && (
+        <Card className="mt-8">
+          <CardHeader
+            title="Preview first-time onboarding"
+            description="Try the student, lecturer and administrator welcome flows while keeping your account and history."
           />
+          <CardBody>
+            <Link to="/onboarding-preview" className="font-semibold text-primary underline">
+              Open onboarding preview
+            </Link>
+          </CardBody>
+        </Card>
+      )}
 
-          <FormError message={deleteError} />
-        </div>
-      </Modal>
+      <AccountClosurePanel email={displayEmail} logout={logout} />
     </>
   );
 }

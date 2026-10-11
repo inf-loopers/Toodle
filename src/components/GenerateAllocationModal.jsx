@@ -724,22 +724,26 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
     [proposed]
   );
 
-  // Save as draft (no live allocations).
+  // Save as draft (no live allocations) — prompt for name, save all proposed.
   const handleSaveDraft = useCallback(async () => {
-    if (!draftName.trim()) return;
+    const name = window.prompt(
+      'Enter a name for this draft:',
+      draftName.trim() || `Allocation ${new Date().toLocaleDateString()}`
+    );
+    if (!name || !name.trim()) return;
     setPhase('saving');
     setError('');
     try {
-      const selected = proposed.filter((e) => selectedIds.has(e.id));
-      await allocationEngineApi.saveDraft({ name: draftName.trim(), proposed: selected });
-      setSavedName(draftName.trim());
+      await allocationEngineApi.saveDraft({ name: name.trim(), proposed });
+      setSavedName(name.trim());
+      setDraftName(name.trim());
       setCommitResult(null);
       setPhase('done');
     } catch (err) {
       setError(errorMessage(err, 'Could not save draft.'));
       setPhase('review');
     }
-  }, [draftName, proposed, selectedIds]);
+  }, [draftName, proposed]);
 
   /**
    * Commit the checked rows.
@@ -975,30 +979,6 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
       {/* Unmatched summary */}
       <UnmatchedPanel unmatched={unmatched} />
 
-      {/* Draft name for the "Save Draft" flow */}
-      {proposed.length > 0 && !activeDraftId && (
-        <div className="rounded-xl border border-slate-200 p-3">
-          <label
-            className="block text-xs font-semibold text-slate-700"
-            htmlFor={`${tabIdBase}-name`}
-          >
-            Draft name
-          </label>
-          <input
-            id={`${tabIdBase}-name`}
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
-            placeholder={`Engine run ${new Date().toLocaleDateString()}`}
-            disabled={busy}
-            className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-          <p className="mt-1 text-[11px] text-slate-400">
-            Required to save the plan for later. Committing re-checks every constraint, so nothing
-            stale is applied.
-          </p>
-        </div>
-      )}
-
       {error && (
         <div
           role="alert"
@@ -1063,7 +1043,7 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
               variant="secondary"
               onClick={handleSaveDraft}
               loading={phase === 'saving'}
-              disabled={busy || noneSelected || !draftName.trim()}
+              disabled={busy || proposed.length === 0}
               className="w-full sm:w-auto"
             >
               <Save className="h-4 w-4" />
