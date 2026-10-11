@@ -11,6 +11,27 @@ beforeEach(() => {
   auth.isTutor = true;
   auth.isStudent = false;
   auth.isLecturer = false;
+  auth.isAdmin = false;
+});
+
+it('offers administrator help for staff invitations and requests', async () => {
+  auth.isTutor = false;
+  auth.isAdmin = true;
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/users']}>
+      <Routes>
+        <Route path="/users" element={<HelpButton />} />
+        <Route path="/help" element={<HelpPage />} />
+      </Routes>
+    </MemoryRouter>
+  );
+  await user.click(screen.getByRole('button', { name: 'Help' }));
+  await user.click(screen.getByRole('link', { name: 'Help with this page' }));
+  expect(screen.getByText('Getting started as an Administrator')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Invite staff and review access requests' })
+  ).toHaveFocus();
 });
 
 it('opens Lecturer allocation help and shows the Lecturer navigation image', async () => {

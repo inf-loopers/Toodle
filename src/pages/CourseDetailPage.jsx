@@ -241,7 +241,9 @@ function CoordinatorsModal({ open, onClose, course, onUpdated }) {
     }
   }, [open, course]);
 
-  const lecturers = (usersData?.data ?? usersData ?? []).filter((u) => u.role === 'LECTURER');
+  const lecturers = (usersData?.data ?? usersData ?? []).filter(
+    (u) => u.role === 'LECTURER' && (!u.accountStatus || u.accountStatus === 'ACTIVE')
+  );
 
   const toggle = (id) =>
     setSelected((current) =>

@@ -6,17 +6,20 @@ import { useAuth } from '../../hooks/useAuth';
 import { tutorPageTopics } from '../../content/tutorGuide';
 import { studentPageTopics } from '../../content/studentGuide';
 import { lecturerPageTopics } from '../../content/lecturerGuide';
+import { adminPageTopics } from '../../content/adminGuide';
 import Modal from '../ui/Modal';
 
 export default function HelpButton() {
   const [open, setOpen] = useState(false);
-  const { isTutor, isStudent, isLecturer } = useAuth();
+  const { isTutor, isStudent, isLecturer, isAdmin } = useAuth();
   const { pathname } = useLocation();
-  const pageTopics = isLecturer
-    ? lecturerPageTopics
-    : isStudent
-      ? studentPageTopics
-      : tutorPageTopics;
+  const pageTopics = isAdmin
+    ? adminPageTopics
+    : isLecturer
+      ? lecturerPageTopics
+      : isStudent
+        ? studentPageTopics
+        : tutorPageTopics;
   const topic = pageTopics[pathname] ?? (pathname.startsWith('/courses/') ? 'courses' : null);
   const linkClass =
     'flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-primary-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
@@ -44,7 +47,7 @@ export default function HelpButton() {
               description="Choose a guide or contact our support team."
               size="sm"
             >
-              {(isTutor || isStudent || isLecturer) && (
+              {(isTutor || isStudent || isLecturer || isAdmin) && (
                 <>
                   <Link to="/help" className={linkClass} onClick={() => setOpen(false)}>
                     <BookOpen className="h-5 w-5 shrink-0" aria-hidden="true" /> Getting started

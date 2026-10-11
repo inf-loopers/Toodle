@@ -5,7 +5,7 @@
  * Endpoints Managed:
  * - `GET    /auth/me`        - Retrieve the authenticated user's profile and database role.
  * - `POST   /auth/callback`  - Sync newly authenticated Auth0 user profile into the PostgreSQL database.
- * - `DELETE /auth/me`        - Delete own user account.
+ * - `GET/POST /auth/me/closure` - Check or close own account while retaining history.
  * - `GET    /users`          - List users (Admin only).
  * - `GET    /users/:id`      - Retrieve specific user details.
  * - `PATCH  /users/:id`      - Update user capacity or details.
@@ -26,9 +26,27 @@ export const usersApi = {
     return response.data;
   },
 
-  // DELETE /auth/me (delete own account)
-  deleteCurrentUser: async () => {
-    const response = await apiClient.delete('/auth/me');
+  getAccountClosure: async () => {
+    const response = await apiClient.get('/auth/me/closure');
+    return response.data;
+  },
+
+  registerAgain: async (confirmationEmail, idToken) => {
+    const response = await apiClient.post('/auth/register-again', {
+      confirmationEmail,
+      idToken,
+      acceptFreshAccount: true,
+    });
+    return response.data;
+  },
+
+  closeCurrentAccount: async (confirmationEmail) => {
+    const response = await apiClient.post('/auth/me/closure', { confirmationEmail });
+    return response.data;
+  },
+
+  retryAccountClosure: async (id) => {
+    const response = await apiClient.post(`/users/${id}/closure/retry`);
     return response.data;
   },
 
