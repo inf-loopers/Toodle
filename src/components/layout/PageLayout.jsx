@@ -29,6 +29,7 @@ import { applyTheme, getInitialTheme, persistTheme } from '../../utils/theme';
 const SIDEBAR_STORAGE_KEY = 'toodle.sidebarCollapsed';
 
 const PAGE_TITLES = [
+  { match: '/help', title: 'Help' },
   { match: '/dashboard', title: 'Dashboard' },
   { match: '/calendar', title: 'Calendar' },
   { match: '/allocations', title: 'Allocation Board' },

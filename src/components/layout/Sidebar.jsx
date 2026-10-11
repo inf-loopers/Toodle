@@ -251,7 +251,7 @@ export function Sidebar({
                       to={item.path}
                       onClick={onClose}
                       aria-label={isCollapsed ? item.name : undefined}
-                      title={isCollapsed ? item.name : undefined}
+                      title={item.name}
                       className={({ isActive }) =>
                         cn(
                           'sidebar-nav-item group relative',
