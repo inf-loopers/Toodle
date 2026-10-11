@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from '../hooks/useAuth';
 import Spinner from '../components/ui/Spinner';
+import { Link } from 'react-router-dom';
+import LogoutButton from '../components/auth/LogoutButton';
 
 export default function CallbackPage() {
   const { isAuthenticated, isLoading, error } = useAuth();
@@ -32,16 +34,30 @@ export default function CallbackPage() {
 
   // If there's an auth error, show it instead of spinning forever
   if (error) {
+    const accountClosed = String(error).startsWith('This account is closed.');
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-center">
-        <p className="text-lg font-semibold text-slate-900">Authentication error</p>
+        <p className="text-lg font-semibold text-slate-900">
+          {accountClosed ? 'Account closed' : 'Authentication error'}
+        </p>
         <p className="max-w-md text-sm text-slate-500">{error}</p>
-        <a
-          href="/"
-          className="mt-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90"
-        >
-          Back to sign in
-        </a>
+        {accountClosed && (
+          <Link
+            to="/register-again"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white"
+          >
+            Create a new account
+          </Link>
+        )}
+        <LogoutButton />
+        {!accountClosed && (
+          <a
+            href="/"
+            className="mt-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90"
+          >
+            Back to sign in
+          </a>
+        )}
       </div>
     );
   }

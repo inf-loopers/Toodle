@@ -990,7 +990,7 @@ export function TimesheetsPage() {
                         <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
                           <p className="text-xs text-green-700">
                             <span className="font-medium">Approved by</span>{' '}
-                            {timesheet.approver?.name || 'Organiser'} on{' '}
+                            {timesheet.approvedBy?.name || 'a course coordinator'} on{' '}
                             {formatShortDate(timesheet.approvedAt)} at{' '}
                             {new Date(timesheet.approvedAt).toLocaleTimeString()}
                           </p>

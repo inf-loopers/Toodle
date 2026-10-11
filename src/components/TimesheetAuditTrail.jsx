@@ -8,12 +8,14 @@ import Badge from './ui/Badge';
  * Displays the complete history of actions on a timesheet:
  * - Created (DRAFT)
  * - Submitted (with version number)
- * - Disputed (with reason and organiser)
+ * - Disputed (with reason and the reviewer who disputed)
  * - Re-submitted (with version number)
- * - Approved (with organiser)
+ * - Approved (with the reviewer who approved)
  *
  * This provides full transparency into the timesheet lifecycle.
  */
+const roleLabel = (role) => (role === 'ADMIN' ? 'Administrator' : 'Course Coordinator');
+
 export function TimesheetAuditTrail({ timesheet }) {
   if (!timesheet) {
     return null;
@@ -51,45 +53,35 @@ export function TimesheetAuditTrail({ timesheet }) {
       version,
     });
 
-    // If this wasn't the last snapshot, it was disputed
-    if (index < snapshots.length - 1) {
+    // Each dispute is stamped onto the version it sent back. The latest
+    // version falls back to the timesheet's live dispute fields.
+    const isLatest = index === snapshots.length - 1;
+    const disputed = snapshot.disputedAt || (isLatest ? timesheet.status === 'DISPUTED' : true);
+    if (disputed) {
+      const disputedBy = snapshot.disputedBy || (isLatest ? timesheet.disputedBy : null);
       auditEvents.push({
         type: 'disputed',
-        timestamp: snapshot.submittedAt, // Approximate - we don't have exact dispute time
-        user: timesheet.disputedBy?.name || 'Organiser',
-        role: 'Course Coordinator',
+        timestamp:
+          snapshot.disputedAt || (isLatest && timesheet.disputedAt) || snapshot.submittedAt,
+        user: disputedBy?.name || 'Course coordinator (not recorded)',
+        role: roleLabel(disputedBy?.role),
         icon: XCircle,
         color: 'amber',
         title: `Disputed (v${version})`,
-        description: timesheet.disputeReason || 'Timesheet disputed',
+        description:
+          snapshot.disputeReason || (isLatest && timesheet.disputeReason) || 'Timesheet disputed',
         version,
       });
     }
   });
-
-  // 3. Current dispute (if DISPUTED status)
-  if (timesheet.status === 'DISPUTED' && snapshots.length > 0) {
-    const currentVersion = snapshots.length;
-    auditEvents.push({
-      type: 'disputed',
-      timestamp: timesheet.disputedAt || snapshots[snapshots.length - 1].submittedAt,
-      user: timesheet.disputedBy?.name || 'Organiser',
-      role: 'Course Coordinator',
-      icon: XCircle,
-      color: 'amber',
-      title: `Disputed (v${currentVersion})`,
-      description: timesheet.disputeReason || 'Timesheet disputed',
-      version: currentVersion,
-    });
-  }
 
   // 4. Approval event
   if (timesheet.status === 'APPROVED' && timesheet.approvedAt) {
     auditEvents.push({
       type: 'approved',
       timestamp: timesheet.approvedAt,
-      user: timesheet.approver?.name || 'Organiser',
-      role: timesheet.approverRole || 'Course Coordinator',
+      user: timesheet.approvedBy?.name || 'Course coordinator (not recorded)',
+      role: roleLabel(timesheet.approvedBy?.role),
       icon: CheckCircle2,
       color: 'green',
       title: 'Approved',
