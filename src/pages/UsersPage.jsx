@@ -22,6 +22,7 @@ import FormError from '../components/ui/FormError';
 import Spinner from '../components/ui/Spinner';
 import { ROLE_LABELS, ROLES } from '../utils/constants';
 import { getApiErrorMessage } from '../utils/apiError';
+import StaffAccessManagement from '../components/StaffAccessManagement';
 
 // DB roles are uppercase enum values; ROLES/ROLE_LABELS use lowercase keys.
 const roleKey = (role) => String(role ?? '').toLowerCase();
@@ -119,6 +120,21 @@ export function UsersPage() {
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [editing, setEditing] = useState(null);
+  const [retrying, setRetrying] = useState(null);
+  const [closureError, setClosureError] = useState('');
+
+  const retryClosure = async (user) => {
+    setRetrying(user.id);
+    setClosureError('');
+    try {
+      await usersApi.retryAccountClosure(user.id);
+      await refetch();
+    } catch (err) {
+      setClosureError(getApiErrorMessage(err, 'Could not retry account cleanup.'));
+    } finally {
+      setRetrying(null);
+    }
+  };
 
   const users = useMemo(() => usersData?.data ?? usersData ?? [], [usersData]);
 
@@ -204,6 +220,9 @@ export function UsersPage() {
         ))}
       </div>
 
+      <StaffAccessManagement onUsersChanged={refetch} />
+      <FormError message={closureError} hint={null} />
+
       {visible.length === 0 ? (
         <EmptyState
           title="No users match"
@@ -214,6 +233,7 @@ export function UsersPage() {
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {visible.map((user) => {
               const isSelf = user.id === dbUser?.id;
+              const closed = user.accountStatus && user.accountStatus !== 'ACTIVE';
               return (
                 <li key={user.id} className="flex items-center gap-3 px-5 py-3">
                   <div className="min-w-0 flex-1">
@@ -226,7 +246,30 @@ export function UsersPage() {
                   <Badge tone={ROLE_TONES[roleKey(user.role)] ?? 'neutral'}>
                     {roleLabel(user.role)}
                   </Badge>
-                  {isSelf ? (
+                  {closed ? (
+                    <div className="space-y-2 text-right">
+                      <Badge tone="neutral">
+                        {user.accountStatus === 'CLOSING' ? 'Closed · cleanup pending' : 'Closed'}
+                      </Badge>
+                      {user.accountClosure?.lastErrorCode && (
+                        <p className="text-xs text-amber-600">
+                          {user.accountClosure.lastErrorCode === 'IDENTITY_CLEANUP_FAILED'
+                            ? 'Check Auth0 Management configuration'
+                            : 'Profile cleanup needs retry'}
+                        </p>
+                      )}
+                      {user.accountStatus === 'CLOSING' && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={retrying === user.id}
+                          onClick={() => retryClosure(user)}
+                        >
+                          Retry cleanup
+                        </Button>
+                      )}
+                    </div>
+                  ) : isSelf ? (
                     <span
                       className="text-xs text-slate-400"
                       title="You cannot change your own role"

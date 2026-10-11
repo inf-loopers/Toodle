@@ -5,11 +5,17 @@ import UsersPage from '../src/pages/UsersPage';
 
 const { auth, usersApi } = vi.hoisted(() => ({
   auth: { dbUser: { id: 'admin-1', name: 'Ada Admin', email: 'ada@example.com', role: 'ADMIN' } },
-  usersApi: { getUsers: vi.fn(), updateUser: vi.fn() },
+  usersApi: { getUsers: vi.fn(), updateUser: vi.fn(), retryAccountClosure: vi.fn() },
 }));
 
 vi.mock('../src/hooks/useAuth', () => ({ useAuth: () => auth }));
 vi.mock('../src/api/users', () => ({ usersApi }));
+vi.mock('../src/api/staffAccess', () => ({
+  staffAccessApi: { list: vi.fn(async () => ({ data: { requests: [], invitations: [] } })) },
+}));
+vi.mock('../src/api/courses', () => ({
+  coursesApi: { getCourses: vi.fn(async () => ({ data: [] })) },
+}));
 
 const USERS = [
   { id: 'admin-1', name: 'Ada Admin', email: 'ada@example.com', role: 'ADMIN' },
@@ -28,6 +34,34 @@ function changeRoleButtonFor(name) {
   const row = screen.getByText(name).closest('li');
   return within(row).getByRole('button', { name: 'Change role' });
 }
+
+test('shows closure cleanup status with retry and prevents changing a closed role', async () => {
+  usersApi.getUsers.mockResolvedValue({
+    data: [
+      ...USERS,
+      {
+        id: 'closed-1',
+        name: 'Closed account',
+        email: 'closed+closed-1@accounts.invalid',
+        role: 'TUTOR',
+        accountStatus: 'CLOSING',
+        accountClosure: { lastErrorCode: 'IDENTITY_CLEANUP_FAILED' },
+      },
+    ],
+  });
+  usersApi.retryAccountClosure.mockResolvedValue({ data: { accountStatus: 'CLOSED' } });
+  render(
+    <MemoryRouter>
+      <UsersPage />
+    </MemoryRouter>
+  );
+  const row = (await screen.findByText('Closed account')).closest('li');
+  expect(within(row).getByText('Closed · cleanup pending')).toBeInTheDocument();
+  expect(within(row).queryByRole('button', { name: 'Change role' })).not.toBeInTheDocument();
+  expect(within(row).getByText('Check Auth0 Management configuration')).toBeInTheDocument();
+  fireEvent.click(within(row).getByRole('button', { name: 'Retry cleanup' }));
+  await waitFor(() => expect(usersApi.retryAccountClosure).toHaveBeenCalledWith('closed-1'));
+});
 
 test("lists every user with their role, and hides the action on the admin's own row", async () => {
   render(

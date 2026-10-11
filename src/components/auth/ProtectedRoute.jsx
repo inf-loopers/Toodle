@@ -15,7 +15,7 @@
  * </Route>
  * ```
  */
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Spinner from '../ui/Spinner';
@@ -30,6 +30,7 @@ import LogoutButton from '../auth/LogoutButton';
 export function ProtectedRoute({ allowedRoles }) {
   const { isAuthenticated, isLoading, role, error } = useAuth();
   const location = useLocation();
+  const accountClosed = String(error || '').startsWith('This account is closed.');
 
   if (isLoading) {
     return <Spinner fullPage label="Checking your session…" />;
@@ -46,20 +47,29 @@ export function ProtectedRoute({ allowedRoles }) {
   }
 
   // Authenticated but backend sync failed — show a retry screen
-  if (error && !role) {
+  if (error) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
           <AlertTriangle className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Couldn’t verify your account</h2>
+          <h2 className="text-lg font-bold text-slate-900">
+            {accountClosed ? 'Account closed' : 'Couldn’t verify your account'}
+          </h2>
           <p className="mt-1 text-sm text-slate-500">{error}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={() => window.location.reload()}>
-            Try again
-          </Button>
+          {accountClosed && (
+            <Button as={Link} to="/register-again">
+              Create a new account
+            </Button>
+          )}
+          {!accountClosed && (
+            <Button variant="secondary" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
+          )}
           <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
         </div>
       </div>

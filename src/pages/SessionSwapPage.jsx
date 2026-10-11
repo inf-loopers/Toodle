@@ -400,7 +400,7 @@ export function SessionSwapPage() {
           title={decision.action === 'reject' ? 'Reject swap' : 'Reverse swap'}
           description={
             decision.action === 'reverse'
-              ? 'Restore both original responsibilities. Future dates and eligibility will be checked again.'
+              ? 'Restore both original responsibilities. Allocation locks remain in place. Future dates and eligibility will be checked again.'
               : 'Explain your decision to both tutors.'
           }
           footer={

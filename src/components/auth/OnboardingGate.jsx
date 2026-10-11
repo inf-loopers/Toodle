@@ -5,7 +5,9 @@
  *
  * A STUDENT whose profile is missing onboarding items is redirected to
  * `/onboarding` from every authenticated route. Staff roles (ADMIN,
- * LECTURER, TUTOR) and completed students pass straight through.
+ * LECTURER) receive a separate welcome flow when their role is first granted.
+ * Pending staff requests open the access-status screen. Tutors and completed
+ * students pass straight through.
  *
  * Expected Usage:
  * Nested inside `<ProtectedRoute>` so the gate only ever sees authenticated,
@@ -25,6 +27,17 @@ export function OnboardingGate() {
   // ProtectedRoute above us already handles loading and unauthenticated
   // states; hold the tree until the backend profile has synced.
   if (isLoading) return <Outlet />;
+
+  if (role === ROLES.STUDENT && dbUser?.staffAccessRequest?.status === 'PENDING') {
+    return <Navigate to="/staff-access" replace />;
+  }
+  if (
+    [ROLES.ADMIN, ROLES.LECTURER].includes(role) &&
+    dbUser?.staffWelcomeRequired &&
+    !['/staff-welcome', '/profile', '/help'].includes(location.pathname)
+  ) {
+    return <Navigate to="/staff-welcome" replace />;
+  }
 
   const needsOnboarding = role === ROLES.STUDENT && getOnboardingMissing(dbUser).length > 0;
 

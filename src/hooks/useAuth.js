@@ -48,10 +48,16 @@ export function useAuth() {
   }, [isAuthenticated, user]);
 
   // Prefer the authoritative database role over the JWT claim
-  const role = (dbUser?.role || jwtRole)?.toLowerCase() ?? null;
+  const role = syncError ? null : ((dbUser?.role || jwtRole)?.toLowerCase() ?? null);
   const error = devBypassEnabled ? syncError : syncError || auth0Error?.message || null;
 
-  const login = (options) => (devBypassEnabled ? Promise.resolve() : loginWithRedirect(options));
+  const login = (options) =>
+    devBypassEnabled
+      ? Promise.resolve()
+      : loginWithRedirect({
+          ...options,
+          authorizationParams: { ...options?.authorizationParams, max_age: 0 },
+        });
 
   const logout = () => {
     if (devBypassEnabled) return window.location.assign('/allocations');

@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Check, ChevronRight, Moon, PartyPopper, Sun } from 'lucide-react';
 
 import { useAuth } from '../hooks/useAuth';
@@ -38,6 +38,7 @@ import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
 import AppLogo from '../components/ui/AppLogo';
+import LogoutButton from '../components/auth/LogoutButton';
 
 const STEPS = [
   { key: 'yearOfStudy', label: 'Year of study' },
@@ -45,10 +46,12 @@ const STEPS = [
   { key: 'courseMark', label: 'Course mark' },
 ];
 
-export function OnboardingPage() {
+export function OnboardingPage({ previewSession } = {}) {
   const { isLoading, dbUser, updateDbUser } = useAuth();
   const navigate = useNavigate();
-  const profile = dbUser;
+  const profile = previewSession?.profile ?? dbUser;
+  const previewCourses = previewSession?.courses;
+  const isPreview = Boolean(previewSession);
 
   const missing = getOnboardingMissing(profile);
   const done = missing.length === 0;
@@ -70,18 +73,26 @@ export function OnboardingPage() {
   }, [profile?.yearOfStudy]);
 
   useEffect(() => {
+    if (previewCourses) {
+      setCourses(previewCourses);
+      return;
+    }
     coursesApi
       .getCourses()
       .then((response) => setCourses(response?.data ?? response ?? []))
       .catch(() => {});
-  }, []);
+  }, [previewCourses]);
 
   useEffect(() => {
     applyTheme(theme);
-    persistTheme(theme);
-  }, [theme]);
+    if (!isPreview) persistTheme(theme);
+    return () => {
+      if (isPreview) applyTheme(getInitialTheme());
+    };
+  }, [theme, isPreview]);
 
   const refreshProfile = async () => {
+    if (previewSession) return;
     const me = await usersApi.getCurrentUser();
     const next = me?.data ?? me;
     if (next) updateDbUser(next);
@@ -97,8 +108,12 @@ export function OnboardingPage() {
     setSaving(true);
     setError('');
     try {
-      await usersApi.updateUser(profile.id, { yearOfStudy: value });
-      await refreshProfile();
+      if (previewSession) {
+        previewSession.onProfileChange({ ...profile, yearOfStudy: value });
+      } else {
+        await usersApi.updateUser(profile.id, { yearOfStudy: value });
+        await refreshProfile();
+      }
     } catch (saveError) {
       setError(saveError?.response?.data?.error || 'Could not save your year of study.');
     } finally {
@@ -120,9 +135,25 @@ export function OnboardingPage() {
     setSaving(true);
     setError('');
     try {
-      await tutorsApi.submitMark({ courseId, mark: value });
-      await refreshProfile();
       const savedCourse = courses.find((course) => course.id === courseId);
+      if (previewSession) {
+        previewSession.onProfileChange({
+          ...profile,
+          tutorMarks: [
+            ...profile.tutorMarks,
+            {
+              id: `preview-${courseId}`,
+              courseId,
+              mark: value,
+              status: 'PENDING',
+              course: savedCourse,
+            },
+          ],
+        });
+      } else {
+        await tutorsApi.submitMark({ courseId, mark: value });
+        await refreshProfile();
+      }
       setSavedMarkMessage(
         `Mark submitted for ${savedCourse?.code ?? 'the course'} — pending coordinator verification.`
       );
@@ -153,6 +184,9 @@ export function OnboardingPage() {
 
   if (isLoading || !profile) {
     return <Spinner fullPage label="Loading your onboarding…" />;
+  }
+  if (['ADMIN', 'LECTURER'].includes(profile.role?.toUpperCase())) {
+    return <Navigate to={profile.staffWelcomeRequired ? '/staff-welcome' : '/dashboard'} replace />;
   }
 
   const currentStep = missing.length
@@ -193,6 +227,32 @@ export function OnboardingPage() {
             can match you to the right courses.
           </p>
         </div>
+
+        {!done && (
+          <Card className="mb-6">
+            <CardBody>
+              <p className="text-sm">Joining as a lecturer or administrator?</p>
+              {previewSession ? (
+                <p className="mt-2 text-sm font-semibold">I’m a staff member — request access</p>
+              ) : (
+                <Link
+                  to="/staff-access"
+                  className="mt-2 inline-block text-sm font-semibold text-primary underline"
+                >
+                  I’m a staff member — request access
+                </Link>
+              )}
+              <p className="mt-2 text-xs text-slate-500">
+                Staff can request access or check an invitation without entering student marks.
+              </p>
+              {!previewSession && (
+                <div className="mt-3">
+                  <LogoutButton />
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
 
         {/* What is still missing */}
         {!done && (
@@ -298,8 +358,12 @@ export function OnboardingPage() {
             }
             onSave={async (slots) => {
               if (profile?.id) {
-                await tutorsApi.setAvailability(profile.id, slots);
-                await refreshProfile();
+                if (previewSession) {
+                  previewSession.onProfileChange({ ...profile, availability: slots });
+                } else {
+                  await tutorsApi.setAvailability(profile.id, slots);
+                  await refreshProfile();
+                }
               }
             }}
           />
@@ -429,7 +493,13 @@ export function OnboardingPage() {
                 courses and apply to tutor.
               </p>
               <div className="mt-6">
-                <Button onClick={() => navigate('/dashboard', { replace: true })}>
+                <Button
+                  onClick={() =>
+                    previewSession
+                      ? previewSession.onFinish('/dashboard')
+                      : navigate('/dashboard', { replace: true })
+                  }
+                >
                   Go to dashboard
                 </Button>
               </div>
