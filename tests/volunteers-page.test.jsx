@@ -27,6 +27,7 @@ const post = (overrides = {}) => ({
   description: 'Cover needed for a lab session',
   course: { id: 'c1', code: 'COMS3011A', name: 'SDP' },
   claims: [],
+  eligibility: { status: 'eligible', reasons: [], missing: [] },
   ...overrides,
 });
 
@@ -45,6 +46,32 @@ beforeEach(() => {
 });
 
 describe('Volunteer overflow workflow', () => {
+  it('shows the exact session occurrence an excusal cover post replaces', async () => {
+    overflowApi.getPosts.mockResolvedValue({
+      data: [
+        post({
+          sessionDate: '2026-10-06T00:00:00.000Z',
+          durationMinutes: 90,
+          hoursNeeded: 2,
+          session: {
+            dayOfWeek: 'TUESDAY',
+            startTime: '14:00',
+            endTime: '15:30',
+            venue: 'MSL 004',
+            sessionType: 'LAB',
+          },
+        }),
+      ],
+    });
+    show();
+
+    expect(
+      await screen.findByText(/Covers Lab · Tuesday 14:00–15:30 · MSL 004 · .*6 Oct 2026/)
+    ).toBeInTheDocument();
+    expect(screen.getByText('1h 30m · one session')).toBeInTheDocument();
+    expect(screen.queryByText(/\/ week/)).not.toBeInTheDocument();
+  });
+
   it('lets a student claim an open post', async () => {
     overflowApi.getPosts.mockResolvedValue({ data: [post()] });
     overflowApi.claimPost.mockResolvedValue({ data: {} });
@@ -197,5 +224,88 @@ describe('Volunteer overflow workflow', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     await waitFor(() => expect(overflowApi.getPosts).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('B05 volunteer discovery', () => {
+  it.each([
+    ['ineligible', ['Insufficient weekly hours'], [], 'Ineligible'],
+    ['profile_incomplete', [], ['availability'], 'Profile incomplete'],
+  ])('blocks %s claims with guidance', async (status, reasons, missing, label) => {
+    overflowApi.getPosts.mockResolvedValue({
+      data: [
+        post({
+          eligibility: { status, reasons, missing },
+          approvalEligibility: { status: 'profile_incomplete', reasons: [], missing: [] },
+        }),
+      ],
+    });
+    show();
+    expect((await screen.findAllByText(label))[0]).toBeInTheDocument();
+    expect(screen.queryByText(/You may submit a claim for review/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Claim' })).toBeDisabled();
+    if (missing.length)
+      expect(screen.getByRole('link', { name: 'Complete profile' })).toHaveAttribute(
+        'href',
+        '/profile'
+      );
+    else expect(screen.getByText('Insufficient weekly hours')).toBeInTheDocument();
+  });
+  it('shows claim eligibility separately from missing marks for approval', async () => {
+    overflowApi.getPosts.mockResolvedValue({
+      data: [
+        post({
+          approvalEligibility: {
+            status: 'profile_incomplete',
+            missing: ['courseMark'],
+            reasons: [],
+          },
+        }),
+      ],
+    });
+    show();
+    expect(await screen.findByText('Approval readiness')).toBeInTheDocument();
+    expect(screen.getByText('Profile incomplete')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Add marks' })).toHaveAttribute('href', '/courses/c1');
+    expect(screen.getByRole('button', { name: 'Claim' })).toBeEnabled();
+  });
+  it('shows stale claim errors and reconciles the card', async () => {
+    overflowApi.getPosts.mockResolvedValue({ data: [post()] });
+    overflowApi.claimPost.mockImplementation(async () => {
+      overflowApi.getPosts.mockResolvedValue({
+        data: [
+          post({
+            eligibility: { status: 'ineligible', reasons: ['Hours exhausted'], missing: [] },
+          }),
+        ],
+      });
+      throw { response: { data: { error: 'Insufficient weekly hours' } } };
+    });
+    show();
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Claim' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Insufficient weekly hours');
+    expect(await screen.findByText('Hours exhausted')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Claim' })).toBeDisabled();
+  });
+});
+
+describe('B05 conflict resolution preserves load and action errors', () => {
+  it('keeps the rejected claim error visible when reconciliation fails and the list is retried', async () => {
+    overflowApi.getPosts.mockResolvedValueOnce({ data: [post()] });
+    overflowApi.getPosts.mockRejectedValueOnce(new Error('Refresh connection failed'));
+    overflowApi.getPosts.mockResolvedValueOnce({ data: [post()] });
+    overflowApi.claimPost.mockRejectedValue({
+      response: { data: { error: 'Weekly hours changed' } },
+    });
+    const user = userEvent.setup();
+    show();
+    await user.click(await screen.findByRole('button', { name: 'Claim' }));
+    expect(await screen.findByText("Couldn't load overflow work")).toBeInTheDocument();
+    expect(screen.getByText('Refresh connection failed')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Weekly hours changed');
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('button', { name: 'Claim' })).toBeEnabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Weekly hours changed');
+    expect(screen.queryByText('Refresh connection failed')).not.toBeInTheDocument();
   });
 });

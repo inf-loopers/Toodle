@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file TimesheetsPage.jsx
  * @description Weekly timesheet and hours tracking page for tutors.
@@ -21,6 +22,9 @@ import { useAuth } from '../hooks/useAuth';
 
 import { timesheetsApi } from '../api/timesheets';
 import { allocationsApi } from '../api/allocations';
+import { ratesApi } from '../api/rates';
+import { swapsApi } from '../api/swaps';
+import { coursesApi } from '../api/courses';
 
 import { TIMESHEET_STATUS_TONE } from '../utils/constants';
 import { formatShortDate } from '../utils/helpers';
@@ -37,6 +41,30 @@ import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
 import { ReviewTimesheetModal } from '../components/ReviewTimesheetModal';
 import { SubmitConfirmationModal } from '../components/SubmitConfirmationModal';
 import { ApproveConfirmationModal } from '../components/ApproveConfirmationModal';
+
+// B08: timesheets are due on the 27th that closes their monthly cycle. The API
+// derives dueDate/deadlineStatus; NOT_DUE and finished sheets get no badge.
+const DEADLINE_BADGES = {
+  DUE_SOON: { tone: 'warning', label: 'Due soon' },
+  OVERDUE: { tone: 'danger', label: 'Overdue' },
+};
+
+// Decimal API values may arrive as strings. Missing/blank values are unknown,
+// rather than zero. Minute-based allocations may contain repeating fractions.
+function validAmount(value, max) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0.01 && amount <= max ? amount : null;
+}
+
+function validPayRate(value) {
+  const amount = validAmount(value, 100000);
+  return amount !== null && Math.round(amount * 100) / 100 === amount ? amount : null;
+}
+
+const formatHours = (hours) =>
+  hours.toLocaleString('en-GB', { useGrouping: false, maximumFractionDigits: 2 });
 
 function getCurrentMonday() {
   const today = new Date();
@@ -179,7 +207,7 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
       open={open}
       onClose={onClose}
       title="Start a timesheet"
-      description="Choose one of your actively allocated courses."
+      description="Choose a course you are assigned to or covering a session for."
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -235,7 +263,29 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
   );
 }
 
-function LogHoursModal({ timesheet, open, onClose, onLogged }) {
+function LogHoursModal({ timesheet, open, onClose, onLogged, coverage = [] }) {
+  const [sessionChoice, setSessionChoice] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [sessionError, setSessionError] = useState('');
+  const courseId = timesheet?.courseId;
+  useEffect(() => {
+    let stale = false;
+    setSessionChoice('');
+    setSessions([]);
+    setSessionError('');
+    if (open && courseId)
+      coursesApi
+        .getCourseSessions(courseId)
+        .then((result) => {
+          if (!stale) setSessions(result.data ?? result);
+        })
+        .catch((err) => {
+          if (!stale) setSessionError(getErrorMessage(err, 'Could not load sessions.'));
+        });
+    return () => {
+      stale = true;
+    };
+  }, [open, courseId]);
   const [form, setForm] = useState({
     date: '',
     hours: 1,
@@ -271,6 +321,15 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
 
     try {
       await timesheetsApi.addEntry(timesheet.id, {
+        ...(sessionChoice
+          ? (() => {
+              const covered = coverage.find((r) => `cover-${r.id}` === sessionChoice);
+              return {
+                sessionId: covered?.sessionId || sessionChoice,
+                ...(covered ? { allocationId: covered.allocationId } : {}),
+              };
+            })()
+          : {}),
         date: form.date,
         hoursWorked: Number(form.hours),
         description: form.description,
@@ -304,6 +363,40 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
       }
     >
       <div className="space-y-4">
+        <Select
+          label="Session or other work"
+          value={sessionChoice}
+          onChange={(e) => {
+            setSessionChoice(e.target.value);
+            const covered = coverage.find((r) => `cover-${r.id}` === e.target.value);
+            if (covered)
+              setForm((previous) => ({
+                ...previous,
+                date: String(covered.sessionDate).slice(0, 10),
+                hours:
+                  (Number(covered.endTime.slice(0, 2)) * 60 +
+                    Number(covered.endTime.slice(3)) -
+                    Number(covered.startTime.slice(0, 2)) * 60 -
+                    Number(covered.startTime.slice(3))) /
+                  60,
+              }));
+          }}
+        >
+          <option value="">Other work (preparation or marking)</option>
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.dayOfWeek} {s.startTime}–{s.endTime} · {s.sessionType}
+            </option>
+          ))}
+          {coverage
+            .filter((r) => r.courseId === courseId)
+            .map((r) => (
+              <option key={r.id} value={`cover-${r.id}`}>
+                Cover: {String(r.sessionDate).slice(0, 10)} {r.startTime}–{r.endTime}
+              </option>
+            ))}
+        </Select>
+        {sessionError && <p role="alert">{sessionError}</p>}
         <Input
           label="Date"
           type="date"
@@ -568,10 +661,21 @@ export function TimesheetsPage() {
    * - compare each Tutor's logged hours with their allocation
    */
   const { data: allocationsData, error: allocationsError } = useApi(allocationsApi.getAllocations);
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
+    immediate: !isStaff,
+  });
+  const coverage = coverageData?.data ?? coverageData ?? [];
 
   const [newOpen, setNewOpen] = useState(false);
 
   const [logTarget, setLogTarget] = useState(null);
+
+  // The tutor's own currently effective rate — only loaded for a tutor
+  // viewing their own timesheets, so staff never see a stray "your rate"
+  // figure that doesn't apply to the tutor whose card they are looking at.
+  const [currentRate, setCurrentRate] = useState(null);
+  const [rateStatus, setRateStatus] = useState('loading');
+  const currentRateAmount = validPayRate(currentRate?.rate);
 
   const [manageTarget, setManageTarget] = useState(null);
 
@@ -607,8 +711,10 @@ export function TimesheetsPage() {
     (allocation) => allocation.userId === user?.id
   );
 
-  const courses = tutorActiveAllocations
-    .map((allocation) => allocation.course)
+  const courses = [
+    ...tutorActiveAllocations.map((allocation) => allocation.course),
+    ...coverage.map((r) => r.course),
+  ]
     .filter(Boolean)
     .filter((course, index, array) => array.findIndex((item) => item.id === course.id) === index);
 
@@ -666,6 +772,36 @@ export function TimesheetsPage() {
     }
   };
 
+  useEffect(() => {
+    if (isStaff || !user?.id) {
+      setCurrentRate(null);
+      return;
+    }
+    let cancelled = false;
+    setCurrentRate(null);
+    setRateStatus('loading');
+    ratesApi
+      .getCurrentRate(user.id)
+      .then((result) => {
+        if (cancelled) return;
+        // A successful envelope with data: null means no effective rate.
+        const rate = result && Object.hasOwn(result, 'data') ? result.data : result;
+        setCurrentRate(rate ?? null);
+        setRateStatus(
+          rate == null ? 'missing' : validPayRate(rate.rate) === null ? 'invalid' : 'ready'
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCurrentRate(null);
+          setRateStatus('error');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isStaff, user?.id]);
+
   const confirmApprove = async () => {
     if (!approveTarget) return;
 
@@ -716,7 +852,9 @@ export function TimesheetsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Timesheets</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Timesheets
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
@@ -726,12 +864,29 @@ export function TimesheetsPage() {
         </div>
 
         {!isStaff && (
-          <Button onClick={() => setNewOpen(true)} disabled={tutorActiveAllocations.length === 0}>
+          <Button onClick={() => setNewOpen(true)} disabled={courses.length === 0}>
             <Plus className="h-4 w-4" />
             New timesheet
           </Button>
         )}
       </div>
+
+      {!isStaff && (
+        <p
+          role={rateStatus === 'error' || rateStatus === 'invalid' ? 'alert' : undefined}
+          className="mb-4 text-sm font-medium text-slate-600"
+        >
+          {rateStatus === 'ready'
+            ? `Your current rate: R${currentRateAmount.toFixed(2)}/hr`
+            : rateStatus === 'missing'
+              ? 'Pay rate not configured. Ask your organiser to set it before approval.'
+              : rateStatus === 'invalid'
+                ? 'Your pay rate is invalid. Ask your organiser to correct it before approval.'
+                : rateStatus === 'error'
+                  ? 'Could not load your pay rate. Reload the page to try again.'
+                  : 'Loading your pay rate…'}
+        </p>
+      )}
 
       {(actionError || allocationErrorMessage) && (
         <p role="alert" className="mb-4 text-sm text-rose-600">
@@ -739,7 +894,8 @@ export function TimesheetsPage() {
         </p>
       )}
 
-      {!isStaff && tutorActiveAllocations.length === 0 && !allocationErrorMessage && (
+      {coverageError && <p role="alert">{coverageError}</p>}
+      {!isStaff && courses.length === 0 && !allocationErrorMessage && (
         <p className="mb-4 text-sm text-slate-500">
           You need an active allocation before you can create a timesheet.
         </p>
@@ -766,10 +922,9 @@ export function TimesheetsPage() {
               const rawAllocatedHours =
                 allocation?.hoursPerWeek ?? allocation?.allocatedHours ?? allocation?.weeklyHours;
 
-              const allocatedHours =
-                rawAllocatedHours !== undefined && rawAllocatedHours !== null
-                  ? Number(rawAllocatedHours)
-                  : null;
+              const allocatedHours = validAmount(rawAllocatedHours, 40);
+              const invalidAllocation = allocation && allocatedHours === null;
+              const appliedRate = validPayRate(timesheet.appliedRate);
 
               return (
                 <div key={timesheet.id} className="px-5 py-5">
@@ -783,6 +938,12 @@ export function TimesheetsPage() {
                         <Badge tone={TIMESHEET_STATUS_TONE[timesheet.status] || 'neutral'}>
                           {timesheet.status}
                         </Badge>
+
+                        {DEADLINE_BADGES[timesheet.deadlineStatus] && (
+                          <Badge tone={DEADLINE_BADGES[timesheet.deadlineStatus].tone}>
+                            {DEADLINE_BADGES[timesheet.deadlineStatus].label}
+                          </Badge>
+                        )}
                       </div>
 
                       {timesheet.course?.name && (
@@ -792,13 +953,22 @@ export function TimesheetsPage() {
                       <p className="mt-2 text-xs text-slate-400">
                         Week of {formatShortDate(timesheet.weekStartDate)}
                         {isStaff && timesheet.user?.name ? ` · ${timesheet.user.name}` : ''}
+                        {timesheet.dueDate && timesheet.deadlineStatus
+                          ? ` · Due ${formatShortDate(timesheet.dueDate)}`
+                          : ''}
                       </p>
 
                       <p className="mt-2 text-sm font-medium text-slate-700">
                         {allocatedHours !== null
-                          ? `${loggedHours}h / ${allocatedHours}h allocated`
-                          : `${loggedHours}h logged`}
+                          ? `${formatHours(loggedHours)}h / ${formatHours(allocatedHours)}h allocated`
+                          : `${formatHours(loggedHours)}h logged`}
                       </p>
+
+                      {invalidAllocation && (
+                        <p className="mt-1 text-xs text-amber-700">
+                          Allocated hours are invalid. Ask the organiser to correct the allocation.
+                        </p>
+                      )}
 
                       {allocatedHours !== null && allocatedHours > 0 && (
                         <div className="mt-2 h-2 max-w-sm overflow-hidden rounded-full bg-slate-100">
@@ -911,6 +1081,25 @@ export function TimesheetsPage() {
                               </ol>
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {['APPROVED', 'PAID'].includes(timesheet.status) && appliedRate !== null && (
+                        <div className="mt-3 text-sm text-slate-500">
+                          <p>
+                            {timesheet.status === 'PAID' ? 'Paid' : 'Approved'} at R
+                            {appliedRate.toFixed(2)}/hr · R{(loggedHours * appliedRate).toFixed(2)}{' '}
+                            total
+                          </p>
+
+                          {!isStaff &&
+                            currentRateAmount !== null &&
+                            currentRateAmount !== appliedRate && (
+                              <p className="mt-1 text-xs text-amber-600">
+                                Your rate has since changed to R{currentRateAmount.toFixed(2)}
+                                /hr (from {formatShortDate(currentRate.effectiveFrom)})
+                              </p>
+                            )}
                         </div>
                       )}
                     </div>
@@ -1029,6 +1218,7 @@ export function TimesheetsPage() {
           />
 
           <LogHoursModal
+            coverage={coverage}
             timesheet={logTarget}
             open={Boolean(logTarget)}
             onClose={() => setLogTarget(null)}

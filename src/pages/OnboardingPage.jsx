@@ -37,7 +37,7 @@ import Card, { CardBody, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { Input, Select } from '../components/ui/Input';
-import toodleLogo from '../assets/toodle_tutor_management_logo.png';
+import AppLogo from '../components/ui/AppLogo';
 
 const STEPS = [
   { key: 'yearOfStudy', label: 'Year of study' },
@@ -169,7 +169,7 @@ export function OnboardingPage() {
   const showMarkStep = markStepHeld || (!done && currentStep === 2);
 
   return (
-    <div className="toodle-app min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
+    <div className="toodle-app min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
       <div className="relative mx-auto max-w-2xl px-4 py-10">
         <button
           type="button"
@@ -183,13 +183,9 @@ export function OnboardingPage() {
 
         {/* Heading */}
         <div className="mb-8 text-center">
-          <img
-            src={toodleLogo}
-            alt="Toodle logo"
-            className="mx-auto mb-4 h-16 w-16 object-contain"
-          />
+          <AppLogo className="mx-auto mb-4 h-16 w-16 object-contain" />
 
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-slate-100">
             Welcome to Toodle
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">

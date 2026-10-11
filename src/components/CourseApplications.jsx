@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi';
 import { coursesApi } from '../api/courses';
 import { tutorsApi } from '../api/tutors';
 import { usersApi } from '../api/users';
+import OpportunityEligibility from './OpportunityEligibility';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { Input, Textarea } from './ui/Input';
@@ -107,7 +108,8 @@ function ApplicationReview({ application, course, run, busy }) {
 }
 
 export default function CourseApplications({ course, onUpdated }) {
-  const { dbUser, isAdmin } = useAuth();
+  const { dbUser, isAdmin, role } = useAuth();
+  const applicant = ['student', 'tutor'].includes(role);
   const navigate = useNavigate();
   // Admins review every course; lecturers only the ones they coordinate.
   const canReview =
@@ -119,6 +121,13 @@ export default function CourseApplications({ course, onUpdated }) {
     immediate: !canReview,
   });
   const [hours, setHours] = useState(2);
+  const {
+    data: eligibilityData,
+    loading: checking,
+    error: eligibilityError,
+    refetch: refreshEligibility,
+  } = useApi(coursesApi.getEligibility, { params: [course.id, hours], immediate: applicant });
+  const eligibility = eligibilityData?.data ?? eligibilityData;
   const [mark, setMark] = useState('');
   const [motivation, setMotivation] = useState('');
   const [busy, setBusy] = useState(false);
@@ -136,10 +145,20 @@ export default function CourseApplications({ course, onUpdated }) {
     setNotice('');
     try {
       await action();
-      await Promise.all([refetch(), onUpdated(), ...(!canReview ? [refetchProfile()] : [])]);
+      await Promise.all([
+        refetch(),
+        onUpdated(),
+        ...(!canReview ? [refetchProfile()] : []),
+        ...(applicant ? [refreshEligibility()] : []),
+      ]);
       setNotice('Saved. The latest application checks are shown below.');
     } catch (err) {
       setActionError(message(err));
+      // Keep this form mounted so a parent loading screen cannot erase the rejection.
+      await Promise.allSettled([
+        refetch(),
+        ...(applicant ? [refreshEligibility(), refetchProfile()] : []),
+      ]);
     } finally {
       setBusy(false);
     }
@@ -199,8 +218,10 @@ export default function CourseApplications({ course, onUpdated }) {
             </div>
           )}
         </>
-      ) : (
+      ) : applicant ? (
         <>
+          <OpportunityEligibility eligibility={eligibility} courseId={course.id} />
+          {eligibilityError && <p role="alert">{eligibilityError}</p>}
           <p>
             <Link className="text-primary underline" to="/profile">
               Set your free time and weekly hours in your profile
@@ -213,28 +234,37 @@ export default function CourseApplications({ course, onUpdated }) {
               Your recorded mark: {ownMark.mark}% — {ownMark.status}. {ownMark.rejectionReason}
             </p>
           )}
-          <Input
-            label="Your course mark (%)"
-            type="number"
-            min={0}
-            max={100}
-            value={mark}
-            onChange={(e) => setMark(e.target.value)}
-          />
-          <Button
-            disabled={
-              busy ||
-              mark === '' ||
-              !Number.isInteger(Number(mark)) ||
-              Number(mark) < 0 ||
-              Number(mark) > 100
-            }
-            onClick={() =>
-              run(() => tutorsApi.submitMark({ courseId: course.id, mark: Number(mark) }))
-            }
-          >
-            Submit mark for verification
-          </Button>
+          {ownMark?.status === 'VERIFIED' ? (
+            <p>
+              Verified marks cannot be edited here. Contact your course coordinator with supporting
+              records to request a correction.
+            </p>
+          ) : (
+            <>
+              <Input
+                label="Your course mark (%)"
+                type="number"
+                min={0}
+                max={100}
+                value={mark}
+                onChange={(e) => setMark(e.target.value)}
+              />
+              <Button
+                disabled={
+                  busy ||
+                  mark === '' ||
+                  !Number.isInteger(Number(mark)) ||
+                  Number(mark) < 0 ||
+                  Number(mark) > 100
+                }
+                onClick={() =>
+                  run(() => tutorsApi.submitMark({ courseId: course.id, mark: Number(mark) }))
+                }
+              >
+                Submit mark for verification
+              </Button>
+            </>
+          )}
           {applications.length === 0 && course.applicationsOpen && !loading && !error && (
             <>
               <Input
@@ -254,6 +284,9 @@ export default function CourseApplications({ course, onUpdated }) {
               <Button
                 disabled={
                   busy ||
+                  checking ||
+                  eligibilityError ||
+                  eligibility?.status !== 'eligible' ||
                   !motivation.trim() ||
                   !Number.isInteger(Number(hours)) ||
                   Number(hours) < 1 ||
@@ -273,6 +306,8 @@ export default function CourseApplications({ course, onUpdated }) {
             </>
           )}
         </>
+      ) : (
+        <p>Only students and tutors can apply.</p>
       )}
       {loading && <p>Loading applications...</p>}
       {error && <p role="alert">{error}</p>}

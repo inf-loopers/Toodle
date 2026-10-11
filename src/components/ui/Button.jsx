@@ -40,6 +40,7 @@ const SIZES = {
 
 export const Button = forwardRef(function Button(
   {
+    as: Component = 'button',
     variant = 'primary',
     size = 'md',
     loading = false,
@@ -52,10 +53,9 @@ export const Button = forwardRef(function Button(
   ref
 ) {
   return (
-    <button
+    <Component
       ref={ref}
-      type={type}
-      disabled={disabled || loading}
+      {...(Component === 'button' ? { type, disabled: disabled || loading } : {})}
       className={cn(
         'inline-flex items-center justify-center rounded-xl font-semibold transition-colors',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
@@ -68,7 +68,7 @@ export const Button = forwardRef(function Button(
     >
       {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
       {children}
-    </button>
+    </Component>
   );
 });
 

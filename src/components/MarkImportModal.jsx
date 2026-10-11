@@ -143,7 +143,7 @@ export function MarkImportModal({ open, onClose, course, onImported }) {
 
         {step === 'select' && (
           <div className="space-y-4">
-            <label className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-200 px-4 py-8 text-center hover:border-primary/50">
+            <label className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-200 px-4 py-8 text-center hover:border-primary/50 focus-within:ring-2 focus-within:ring-primary">
               <FileUp className="mx-auto h-6 w-6 text-slate-400" />
               <span className="mt-2 block text-sm font-medium text-slate-700">
                 {file ? file.name : 'Choose a CSV file'}
