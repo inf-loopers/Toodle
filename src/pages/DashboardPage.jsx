@@ -121,7 +121,10 @@ function StaffDashboard({ user }) {
             <Button variant="secondary" onClick={() => window.location.reload()}>
               Try again
             </Button>
-            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+            <LogoutButton
+              confirm={false}
+              className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100"
+            />
           </div>
         }
       />
@@ -302,7 +305,10 @@ function TutorDashboard({ user }) {
             <Button variant="secondary" onClick={() => window.location.reload()}>
               Try again
             </Button>
-            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+            <LogoutButton
+              confirm={false}
+              className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100"
+            />
           </div>
         }
       />
@@ -504,7 +510,10 @@ function StudentDashboard({ user }) {
             <Button variant="secondary" onClick={() => window.location.reload()}>
               Try again
             </Button>
-            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+            <LogoutButton
+              confirm={false}
+              className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100"
+            />
           </div>
         }
       />

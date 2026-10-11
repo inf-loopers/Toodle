@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
 
 const FEATURE_PATHS = new Set([
+  '/help',
   '/courses',
   '/volunteers',
   '/calendar',
