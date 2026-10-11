@@ -31,6 +31,7 @@ import { coursesApi } from '../api/courses';
 import { getOnboardingMissing, ONBOARDING_MISSING_LABELS } from '../utils/onboarding';
 import { formatStatus } from '../utils/helpers';
 import { applyTheme, getInitialTheme, persistTheme } from '../utils/theme';
+import { MAX_YEAR_OF_STUDY, YEARS_OF_STUDY } from '../utils/constants';
 
 import { AvailabilityEditor } from '../components/availability/AvailabilityEditor';
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
@@ -90,8 +91,8 @@ export function OnboardingPage() {
   const handleSaveYear = async () => {
     if (!profile?.id) return;
     const value = Number(yearOfStudy);
-    if (!Number.isInteger(value) || value < 1 || value > 10) {
-      setError('Enter a year of study between 1 and 10.');
+    if (!Number.isInteger(value) || value < 1 || value > MAX_YEAR_OF_STUDY) {
+      setError('Select your year of study from the list.');
       return;
     }
     setSaving(true);
@@ -268,9 +269,9 @@ export function OnboardingPage() {
                 onChange={(event) => setYearOfStudy(event.target.value)}
               >
                 <option value="">Select your year…</option>
-                {Array.from({ length: 10 }, (_, index) => index + 1).map((year) => (
-                  <option key={year} value={year}>
-                    Year {year}
+                {YEARS_OF_STUDY.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
                   </option>
                 ))}
               </Select>

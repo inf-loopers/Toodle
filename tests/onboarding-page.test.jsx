@@ -55,6 +55,51 @@ describe('Onboarding page', () => {
     expect(missingChips.getByText('Course mark')).toBeTruthy();
   });
 
+  it('limits the year-of-study dropdown to the four undergrad years plus postgrad levels', async () => {
+    show({ dbUser: profile(), updateDbUser: vi.fn() });
+
+    const select = await screen.findByLabelText('Year of study');
+    const labels = within(select)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+
+    expect(labels).toEqual([
+      'Select your year…',
+      'Year 1',
+      'Year 2',
+      'Year 3',
+      'Year 4',
+      'Honours',
+      'Masters',
+      'PhD',
+    ]);
+    // The old numeric Year 5–10 tail is gone.
+    expect(labels).not.toContain('Year 5');
+    expect(labels).not.toContain('Year 10');
+  });
+
+  it('saves a postgraduate level (Honours maps to 5)', async () => {
+    const user = userEvent.setup();
+    const auth = { dbUser: profile(), updateDbUser: vi.fn() };
+    auth.updateDbUser.mockImplementation((next) => {
+      auth.dbUser = next;
+    });
+    usersApi.updateUser.mockResolvedValue({});
+    usersApi.getCurrentUser.mockResolvedValue({
+      data: profile({
+        yearOfStudy: 5,
+        onboarding: { complete: false, missing: ['availability', 'courseMark'] },
+      }),
+    });
+
+    show(auth);
+
+    await user.selectOptions(await screen.findByLabelText('Year of study'), '5');
+    await user.click(screen.getByRole('button', { name: /Save and continue/i }));
+
+    expect(usersApi.updateUser).toHaveBeenCalledWith('u1', { yearOfStudy: 5 });
+  });
+
   it('moves to the free-time step once a year of study is saved', async () => {
     const user = userEvent.setup();
     const auth = { dbUser: profile(), updateDbUser: vi.fn() };
