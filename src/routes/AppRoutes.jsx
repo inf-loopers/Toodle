@@ -47,6 +47,12 @@ import NotFoundPage from '../pages/NotFoundPage';
 // only when the user navigates there. Heavy per-page dependencies (FullCalendar,
 // dnd-kit, etc.) are therefore kept out of the main bundle.
 const OnboardingPage = lazy(() => import('../pages/OnboardingPage'));
+const RegisterAgainPage = lazy(() => import('../pages/RegisterAgainPage'));
+const StaffAccessPage = lazy(() => import('../pages/StaffAccessPage'));
+const StaffWelcomePage = lazy(() => import('../pages/StaffWelcomePage'));
+const OnboardingPreviewPage = import.meta.env.DEV
+  ? lazy(() => import('../pages/OnboardingPreviewPage'))
+  : null;
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
 const AllocationBoardPage = lazy(() => import('../pages/AllocationBoardPage'));
 const CoursesPage = lazy(() => import('../pages/CoursesPage'));
@@ -71,10 +77,44 @@ export default function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/callback" element={<CallbackPage />} />
+      <Route
+        path="/register-again"
+        element={
+          <Suspense fallback={<Spinner fullPage />}>
+            <RegisterAgainPage />
+          </Suspense>
+        }
+      />
 
       {/* Authenticated shell */}
       <Route element={<ProtectedRoute />}>
+        {import.meta.env.DEV && (
+          <Route
+            path="/onboarding-preview"
+            element={
+              <Suspense fallback={<Spinner fullPage />}>
+                <OnboardingPreviewPage />
+              </Suspense>
+            }
+          />
+        )}
+        <Route
+          path="/staff-access"
+          element={
+            <Suspense fallback={<Spinner fullPage />}>
+              <StaffAccessPage />
+            </Suspense>
+          }
+        />
         <Route element={<OnboardingGate />}>
+          <Route
+            path="/staff-welcome"
+            element={
+              <Suspense fallback={<Spinner fullPage />}>
+                <StaffWelcomePage />
+              </Suspense>
+            }
+          />
           {/* First-time onboarding (outside the page layout, no sidebar) */}
           <Route
             path="/onboarding"
@@ -103,7 +143,9 @@ export default function AppRoutes() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route
               element={
-                <ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.STUDENT, ROLES.LECTURER]} />
+                <ProtectedRoute
+                  allowedRoles={[ROLES.TUTOR, ROLES.STUDENT, ROLES.LECTURER, ROLES.ADMIN]}
+                />
               }
             >
               <Route path="/help" element={<HelpPage />} />
