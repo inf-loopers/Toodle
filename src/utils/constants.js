@@ -11,6 +11,8 @@
  * - `SESSION_TYPES`: Course contact session types (`LECTURE`, `TUTORIAL`, `LAB`).
  * - `DAYS_OF_WEEK`: Weekday identifiers array.
  * - `ROLE_LABELS`: Human-readable display titles for roles.
+ * - `YEARS_OF_STUDY`: Selectable year-of-study levels (undergrad 1–4, then
+ *                     Honours, Masters, PhD) as `{ value, label }` pairs.
  */
 
 export const ROLES = {
@@ -56,6 +58,23 @@ export const ROLE_LABELS = {
   [ROLES.TUTOR]: 'Tutor',
   [ROLES.STUDENT]: 'Student',
 };
+
+// ── Year of study ─────────────────────────────────────────────────────────
+
+// The four undergraduate years followed by the postgraduate qualifications a
+// tutor may hold. `value` is the integer persisted on User.yearOfStudy
+// (nullable); `label` is what the onboarding and profile dropdowns show.
+export const YEARS_OF_STUDY = [
+  { value: 1, label: 'Year 1' },
+  { value: 2, label: 'Year 2' },
+  { value: 3, label: 'Year 3' },
+  { value: 4, label: 'Year 4' },
+  { value: 5, label: 'Honours' },
+  { value: 6, label: 'Masters' },
+  { value: 7, label: 'PhD' },
+];
+
+export const MAX_YEAR_OF_STUDY = YEARS_OF_STUDY[YEARS_OF_STUDY.length - 1].value;
 
 // ── Timesheets ────────────────────────────────────────────────────────────
 

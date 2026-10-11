@@ -51,6 +51,15 @@ const organiser = { id: 'org-1', name: 'Ada Organiser' };
 const coCoordinator = { id: 'org-2', name: 'Bongani Coordinator' };
 const course = { id: 'c1', code: 'COMS3011A', name: 'SDP' };
 
+const session = {
+  id: 'sess-1',
+  dayOfWeek: 'TUESDAY',
+  startTime: '10:00:00',
+  endTime: '11:00:00',
+  venue: 'MATHS 104',
+  sessionType: 'TUTORIAL',
+};
+
 const entry = (overrides = {}) => ({
   id: 'e1',
   date: '2026-08-18',
@@ -92,7 +101,7 @@ describe('ReviewTimesheetModal', () => {
       user: tutor,
       totalHours: 5,
       submittedAt: '2026-08-21T10:00:00.000Z',
-      submittedSnapshot: [submission()],
+      submittedSnapshot: [submission({ entries: [entry({ hoursWorked: 5, session })] })],
     };
     render(<ReviewTimesheetModal timesheet={timesheet} open onClose={vi.fn()} />);
 
@@ -101,6 +110,45 @@ describe('ReviewTimesheetModal', () => {
     expect(screen.getByRole('button', { name: 'Audit trail' })).toBeInTheDocument();
     expect(screen.getByText('Read-only')).toBeInTheDocument();
     expect(screen.getByText('Total (submitted): 5h')).toBeInTheDocument();
+  });
+
+  it('shows the frozen session context for each snapshot entry', () => {
+    const timesheet = {
+      id: 'ts-1',
+      status: 'SUBMITTED',
+      course,
+      user: tutor,
+      totalHours: 5,
+      submittedAt: '2026-08-21T10:00:00.000Z',
+      submittedSnapshot: [submission({ entries: [entry({ hoursWorked: 5, session })] })],
+    };
+    render(<ReviewTimesheetModal timesheet={timesheet} open onClose={vi.fn()} />);
+
+    expect(screen.getByText('Tutorial')).toBeInTheDocument();
+    expect(screen.getByText('Tuesday · 18 Aug')).toBeInTheDocument();
+    expect(screen.getByText(/10:00 AM–11:00 AM/)).toBeInTheDocument();
+    expect(screen.getByText('MATHS 104')).toBeInTheDocument();
+    expect(screen.getByText('What was done')).toBeInTheDocument();
+    expect(screen.getByText('Tutorial session')).toBeInTheDocument();
+  });
+
+  it('explains legacy snapshot entries whose session details were not frozen', () => {
+    const timesheet = {
+      id: 'ts-1',
+      status: 'SUBMITTED',
+      course,
+      user: tutor,
+      totalHours: 5,
+      submittedAt: '2026-08-21T10:00:00.000Z',
+      submittedSnapshot: [
+        submission({ entries: [entry({ hoursWorked: 5, session: null, sessionId: 'sess-1' })] }),
+      ],
+    };
+    render(<ReviewTimesheetModal timesheet={timesheet} open onClose={vi.fn()} />);
+
+    expect(
+      screen.getByText('Session details were not recorded in this submission.')
+    ).toBeInTheDocument();
   });
 
   it('compares the disputed snapshot with the current draft', async () => {
@@ -127,6 +175,8 @@ describe('ReviewTimesheetModal', () => {
 
     await user.click(screen.getByRole('button', { name: 'Current draft' }));
     expect(screen.getByText('Total (current): 3h')).toBeInTheDocument();
+    // The live draft entries carry their session context too.
+    expect(screen.getByText('Not linked to a scheduled session.')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Dispute info' }));
     expect(screen.getByText('Current dispute')).toBeInTheDocument();
@@ -548,5 +598,45 @@ describe('TimesheetsPage — review / submit / approve wiring', () => {
 
     await waitFor(() => expect(timesheetsApi.approveTimesheet).toHaveBeenCalledWith('ts-1'));
     await waitFor(() => expect(timesheetsApi.getTimesheets).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows session details in the manage-entries dialog and removes an entry', async () => {
+    useAuth.mockReturnValue({ dbUser: tutor, isStaff: false });
+    const draft = {
+      id: 'ts-1',
+      userId: 'tutor-1',
+      courseId: 'c1',
+      weekStartDate: '2026-08-17',
+      status: 'DRAFT',
+      totalHours: 2,
+      course,
+      user: tutor,
+      entries: [entry({ session })],
+    };
+    timesheetsApi.getTimesheets.mockResolvedValue({ data: [draft] });
+    timesheetsApi.getTimesheet.mockResolvedValue({
+      data: { ...draft, entries: [entry({ session })] },
+    });
+    timesheetsApi.deleteEntry.mockResolvedValue({ data: { id: 'e1' } });
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <TimesheetsPage />
+      </MemoryRouter>
+    );
+
+    await user.click(await screen.findByRole('button', { name: /Manage entries/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Manage timesheet entries' });
+
+    // The dialog now logs when/where each entry happened, not just hours + date.
+    expect(within(dialog).getByText('Tutorial')).toBeInTheDocument();
+    expect(within(dialog).getByText('Tuesday · 18 Aug')).toBeInTheDocument();
+    expect(within(dialog).getByText(/10:00 AM–11:00 AM/)).toBeInTheDocument();
+    expect(within(dialog).getByText('MATHS 104')).toBeInTheDocument();
+    expect(within(dialog).getByText('What was done')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: /Remove/ }));
+    await waitFor(() => expect(timesheetsApi.deleteEntry).toHaveBeenCalledWith('ts-1', 'e1'));
   });
 });
