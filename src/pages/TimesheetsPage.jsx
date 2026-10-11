@@ -15,7 +15,7 @@ import FeatureHeading from '../components/layout/FeatureHeading';
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Clock, Send, CheckCircle2, XCircle, Trash2, ListChecks } from 'lucide-react';
+import { Plus, Clock, Send, CheckCircle2, XCircle, Trash2, ListChecks, Eye } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -38,6 +38,9 @@ import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
+import { ReviewTimesheetModal } from '../components/ReviewTimesheetModal';
+import { SubmitConfirmationModal } from '../components/SubmitConfirmationModal';
+import { ApproveConfirmationModal } from '../components/ApproveConfirmationModal';
 
 // B08: timesheets are due on the 27th that closes their monthly cycle. The API
 // derives dueDate/deadlineStatus; NOT_DUE and finished sheets get no badge.
@@ -681,6 +684,12 @@ export function TimesheetsPage() {
 
   const [disputeTarget, setDisputeTarget] = useState(null);
 
+  const [reviewTarget, setReviewTarget] = useState(null);
+
+  const [submitTarget, setSubmitTarget] = useState(null);
+
+  const [approveTarget, setApproveTarget] = useState(null);
+
   const [busyId, setBusyId] = useState(null);
 
   const [actionError, setActionError] = useState('');
@@ -724,14 +733,41 @@ export function TimesheetsPage() {
         allocation.courseId === timesheet.courseId && allocation.userId === timesheet.userId
     );
 
-  const handleSubmitTimesheet = async (id) => {
-    setBusyId(id);
+  const handleSubmitTimesheet = async (timesheet) => {
+    // Load full timesheet details for the confirmation modal
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheet.id);
+      const fullTimesheet = response?.data ?? response ?? null;
+      setSubmitTarget(fullTimesheet);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not load timesheet details.'));
+    }
+  };
+
+  const handleApprove = async (timesheet) => {
+    // Load full timesheet details for the confirmation modal
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheet.id);
+      const fullTimesheet = response?.data ?? response ?? null;
+      // Add approver info (will be filled by backend, but show current user for now)
+      fullTimesheet.approverName = user?.name || 'Organiser';
+      fullTimesheet.approverRole = isStaff ? 'Administrator' : 'Course Coordinator';
+      setApproveTarget(fullTimesheet);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not load timesheet details.'));
+    }
+  };
+
+  const confirmSubmit = async () => {
+    if (!submitTarget) return;
+
+    setBusyId(submitTarget.id);
     setActionError('');
 
     try {
-      await timesheetsApi.submitTimesheet(id);
-
+      await timesheetsApi.submitTimesheet(submitTarget.id);
       await refetch();
+      setSubmitTarget(null);
     } catch (err) {
       setActionError(getErrorMessage(err, 'Could not submit the timesheet.'));
     } finally {
@@ -769,18 +805,31 @@ export function TimesheetsPage() {
     };
   }, [isStaff, user?.id]);
 
-  const handleApprove = async (id) => {
-    setBusyId(id);
+  const confirmApprove = async () => {
+    if (!approveTarget) return;
+
+    setBusyId(approveTarget.id);
     setActionError('');
 
     try {
-      await timesheetsApi.approveTimesheet(id);
-
+      await timesheetsApi.approveTimesheet(approveTarget.id);
       await refetch();
+      setApproveTarget(null);
     } catch (err) {
       setActionError(getErrorMessage(err, 'Could not approve the timesheet.'));
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleReview = async (timesheet) => {
+    // Load full timesheet details including submittedSnapshot
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheet.id);
+      const fullTimesheet = response?.data ?? response ?? null;
+      setReviewTarget(fullTimesheet);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not load timesheet details.'));
     }
   };
 
@@ -937,13 +986,104 @@ export function TimesheetsPage() {
 
                       <StatusStepper status={timesheet.status} />
 
+                      {/* Submission metadata */}
+                      {timesheet.status === 'SUBMITTED' && timesheet.submittedAt && (
+                        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                          <p className="text-xs text-slate-600">
+                            <span className="font-medium">Submitted by</span>{' '}
+                            {timesheet.user?.name || 'Tutor'} on{' '}
+                            {formatShortDate(timesheet.submittedAt)} at{' '}
+                            {new Date(timesheet.submittedAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Approval metadata */}
+                      {timesheet.status === 'APPROVED' && timesheet.approvedAt && (
+                        <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                          <p className="text-xs text-green-700">
+                            <span className="font-medium">Approved by</span>{' '}
+                            {timesheet.approver?.name || 'Organiser'} on{' '}
+                            {formatShortDate(timesheet.approvedAt)} at{' '}
+                            {new Date(timesheet.approvedAt).toLocaleTimeString()}
+                          </p>
+                          {timesheet.submittedAt && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Originally submitted on {formatShortDate(timesheet.submittedAt)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {timesheet.status === 'DISPUTED' && timesheet.disputeReason && (
                         <div className="mt-4 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                            Changes requested
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                                Changes requested
+                              </p>
+                              <p className="mt-1 text-sm text-amber-800">
+                                {timesheet.disputeReason}
+                              </p>
+                              {timesheet.disputedAt && (
+                                <p className="mt-2 text-xs text-amber-700">
+                                  Disputed on {formatShortDate(timesheet.disputedAt)}
+                                  {timesheet.disputedBy?.name
+                                    ? ` by ${timesheet.disputedBy.name}`
+                                    : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                          <p className="mt-1 text-sm text-amber-800">{timesheet.disputeReason}</p>
+                      {/* Guidance banner for DISPUTED timesheets */}
+                      {!isStaff && timesheet.status === 'DISPUTED' && (
+                        <div className="mt-4 max-w-xl rounded-lg border border-blue-200 bg-blue-50 p-3">
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                How to correct and re-submit
+                              </p>
+                              <ol className="mt-2 space-y-1 text-sm text-blue-800">
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    1
+                                  </span>
+                                  <span>
+                                    Review the dispute reason above and use <strong>Review</strong>{' '}
+                                    to compare versions
+                                  </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    2
+                                  </span>
+                                  <span>
+                                    Use <strong>Manage entries</strong> to remove incorrect entries
+                                  </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    3
+                                  </span>
+                                  <span>
+                                    Use <strong>Log hours</strong> to add corrected entries
+                                  </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    4
+                                  </span>
+                                  <span>
+                                    Click <strong>Resubmit</strong> when ready
+                                  </span>
+                                </li>
+                              </ol>
+                            </div>
+                          </div>
                         </div>
                       )}
 
@@ -968,6 +1108,31 @@ export function TimesheetsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                      {/* Review button for submitted/approved timesheets (tutors and staff) */}
+                      {(timesheet.status === 'SUBMITTED' || timesheet.status === 'APPROVED') && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleReview(timesheet)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Review
+                        </Button>
+                      )}
+
+                      {/* Review button for disputed timesheets (show both snapshot and current) */}
+                      {timesheet.status === 'DISPUTED' && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleReview(timesheet)}
+                          title="Compare the disputed version with your current corrections"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Review
+                        </Button>
+                      )}
+
                       {!isStaff &&
                         (timesheet.status === 'DRAFT' || timesheet.status === 'DISPUTED') && (
                           <>
@@ -975,6 +1140,11 @@ export function TimesheetsPage() {
                               size="sm"
                               variant="secondary"
                               onClick={() => setManageTarget(timesheet)}
+                              title={
+                                timesheet.status === 'DISPUTED'
+                                  ? 'Remove incorrect entries before re-submitting'
+                                  : 'Review or remove your logged entries'
+                              }
                             >
                               <ListChecks className="h-3.5 w-3.5" />
                               Manage entries
@@ -984,6 +1154,11 @@ export function TimesheetsPage() {
                               size="sm"
                               variant="secondary"
                               onClick={() => setLogTarget(timesheet)}
+                              title={
+                                timesheet.status === 'DISPUTED'
+                                  ? 'Add corrected hours to replace the disputed entries'
+                                  : 'Log additional hours'
+                              }
                             >
                               <Plus className="h-3.5 w-3.5" />
                               Log hours
@@ -991,8 +1166,13 @@ export function TimesheetsPage() {
 
                             <Button
                               size="sm"
-                              onClick={() => handleSubmitTimesheet(timesheet.id)}
+                              onClick={() => handleSubmitTimesheet(timesheet)}
                               loading={busyId === timesheet.id}
+                              title={
+                                timesheet.status === 'DISPUTED'
+                                  ? 'Re-submit with your corrections for review'
+                                  : 'Submit for approval'
+                              }
                             >
                               <Send className="h-3.5 w-3.5" />
 
@@ -1014,7 +1194,7 @@ export function TimesheetsPage() {
 
                           <Button
                             size="sm"
-                            onClick={() => handleApprove(timesheet.id)}
+                            onClick={() => handleApprove(timesheet)}
                             loading={busyId === timesheet.id}
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1065,6 +1245,30 @@ export function TimesheetsPage() {
           onDisputed={refetch}
         />
       )}
+
+      {/* Review modal for both tutors and staff */}
+      <ReviewTimesheetModal
+        timesheet={reviewTarget}
+        open={Boolean(reviewTarget)}
+        onClose={() => setReviewTarget(null)}
+      />
+
+      {/* Submit confirmation modal for tutors */}
+      <SubmitConfirmationModal
+        timesheet={submitTarget}
+        open={Boolean(submitTarget)}
+        onClose={() => setSubmitTarget(null)}
+        onConfirm={confirmSubmit}
+        isResubmission={submitTarget?.status === 'DISPUTED'}
+      />
+
+      {/* Approve confirmation modal for staff */}
+      <ApproveConfirmationModal
+        timesheet={approveTarget}
+        open={Boolean(approveTarget)}
+        onClose={() => setApproveTarget(null)}
+        onConfirm={confirmApprove}
+      />
     </>
   );
 }

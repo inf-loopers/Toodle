@@ -191,6 +191,22 @@ describe('Tutor pay rate', () => {
     );
   });
 
+  it('labels the pay rate in Rand, not dollars', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
+
+    const dialog = await openTutor(user);
+    // The currency glyph beside the rate is a Rand, matching the ZAR amounts.
+    expect(dialog.querySelector('svg.lucide-dollar-sign')).toBeNull();
+    expect(
+      within(dialog).getByText('R', { selector: 'span[aria-hidden="true"]' })
+    ).toBeInTheDocument();
+  });
+
   it('hides the pay rate section from a lecturer who does not manage the tutor', async () => {
     useAuth.mockReturnValue({ isAdmin: false, isLecturer: true });
     tutorsApi.getTutors.mockResolvedValue({ data: [{ ...tutor, allocations: [] }] });
