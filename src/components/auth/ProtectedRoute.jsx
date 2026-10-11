@@ -16,7 +16,7 @@
  * ```
  */
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { ShieldAlert, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Spinner from '../ui/Spinner';
 import Button from '../ui/Button';
