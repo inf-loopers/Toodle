@@ -62,6 +62,7 @@ const ExcusalsPage = lazy(() => import('../pages/ExcusalsPage'));
 // Lazy-loaded so FullCalendar is split into its own chunk and kept out of the
 // main bundle; it is only needed on /calendar.
 const CalendarPage = lazy(() => import('../pages/CalendarPage'));
+const HelpPage = lazy(() => import('../pages/HelpPage'));
 
 export default function AppRoutes() {
   return (
@@ -100,6 +101,13 @@ export default function AppRoutes() {
             <Route path="/swaps" element={<SessionSwapPage />} />
             <Route path="/volunteers" element={<VolunteersPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TUTOR, ROLES.STUDENT, ROLES.LECTURER]} />
+              }
+            >
+              <Route path="/help" element={<HelpPage />} />
+            </Route>
 
             {/* Tutor + staff */}
             <Route
