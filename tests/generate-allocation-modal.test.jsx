@@ -327,17 +327,16 @@ describe('GenerateAllocationModal commit', () => {
     expect(onCommitted).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps a named plan instead of the Auto-commit label when one is typed', async () => {
+  it('uses the Auto-commit label when no draft name is set', async () => {
     const user = userEvent.setup();
     show();
     await generate(user);
 
-    await user.type(screen.getByLabelText('Draft name'), 'Semester 2 plan');
     await user.click(screen.getByRole('button', { name: /Commit Selected/ }));
 
     await screen.findByText('Allocations committed');
     expect(allocationEngineApi.saveDraft).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Semester 2 plan' })
+      expect.objectContaining({ name: expect.stringMatching(/^Auto-commit/) })
     );
   });
 
@@ -372,11 +371,11 @@ describe('GenerateAllocationModal commit', () => {
 
   it('saves a draft without committing and points at the Drafts tab', async () => {
     const user = userEvent.setup();
+    vi.spyOn(window, 'prompt').mockReturnValue('Sprint plan');
     show();
     await generate(user);
 
-    expect(screen.getByRole('button', { name: /Save Draft/ })).toBeDisabled();
-    await user.type(screen.getByLabelText('Draft name'), 'Sprint plan');
+    // Save Draft is enabled when there are proposed entries (no draft name input needed)
     expect(screen.getByRole('button', { name: /Save Draft/ })).toBeEnabled();
 
     await user.click(screen.getByRole('button', { name: /Save Draft/ }));
@@ -388,6 +387,7 @@ describe('GenerateAllocationModal commit', () => {
       proposed: expect.arrayContaining([expect.objectContaining({ tutorId: 't1' })]),
     });
     expect(allocationEngineApi.commitDraft).not.toHaveBeenCalled();
+    window.prompt.mockRestore();
   });
 
   it('only commits the checked rows', async () => {
