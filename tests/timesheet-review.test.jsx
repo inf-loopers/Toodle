@@ -48,6 +48,7 @@ vi.mock('../src/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 
 const tutor = { id: 'tutor-1', name: 'Tebogo Tutor' };
 const organiser = { id: 'org-1', name: 'Ada Organiser' };
+const coCoordinator = { id: 'org-2', name: 'Bongani Coordinator' };
 const course = { id: 'c1', code: 'COMS3011A', name: 'SDP' };
 
 const entry = (overrides = {}) => ({
@@ -231,11 +232,18 @@ describe('TimesheetAuditTrail', () => {
           submittedAt: '2026-08-14T10:00:00.000Z',
           totalHours: 6,
           entries: [entry({ hoursWorked: 6 })],
+          // Each dispute is stamped onto the version it sent back.
+          disputedAt: '2026-08-15T09:00:00.000Z',
+          disputedBy: coCoordinator,
+          disputeReason: 'Missing Friday lab',
         }),
         submission({
           submittedAt: '2026-08-21T10:00:00.000Z',
           totalHours: 4,
           entries: [entry({ hoursWorked: 4 })],
+          disputedAt: '2026-08-22T09:00:00.000Z',
+          disputedBy: organiser,
+          disputeReason: 'Mismatched hours',
         }),
       ],
     };
@@ -245,9 +253,51 @@ describe('TimesheetAuditTrail', () => {
     expect(screen.getByText('Submitted (v2)')).toBeInTheDocument();
     expect(screen.getByText('Disputed (v1)')).toBeInTheDocument();
     expect(screen.getByText('Disputed (v2)')).toBeInTheDocument();
-    // Both the historical and the current dispute quote the same reason.
-    expect(screen.getAllByText('Mismatched hours')).toHaveLength(2);
+    // Each dispute keeps its own reason and the lecturer who raised it.
+    expect(screen.getByText('Missing Friday lab')).toBeInTheDocument();
+    expect(screen.getByText('Mismatched hours')).toBeInTheDocument();
+    expect(screen.getByText('Bongani Coordinator')).toBeInTheDocument();
+    expect(screen.getByText('Ada Organiser')).toBeInTheDocument();
     expect(screen.getByText('Disputes:')).toBeInTheDocument();
+  });
+
+  it('does not borrow the current dispute details for an unrecorded earlier dispute', () => {
+    const timesheet = {
+      id: 'ts-1',
+      status: 'DISPUTED',
+      user: tutor,
+      disputeReason: 'Mismatched hours',
+      disputedBy: organiser,
+      createdAt: '2026-08-10T08:00:00.000Z',
+      disputedAt: '2026-08-22T09:00:00.000Z',
+      submittedSnapshot: [
+        submission({ submittedAt: '2026-08-14T10:00:00.000Z' }),
+        submission({ submittedAt: '2026-08-21T10:00:00.000Z' }),
+      ],
+    };
+    render(<TimesheetAuditTrail timesheet={timesheet} />);
+
+    expect(screen.getAllByText('Mismatched hours')).toHaveLength(1);
+    expect(screen.getAllByText('Ada Organiser')).toHaveLength(1);
+    expect(screen.getByText('Timesheet disputed')).toBeInTheDocument();
+    expect(screen.getByText('Course coordinator (not recorded)')).toBeInTheDocument();
+  });
+
+  it('names the lecturer who approved the timesheet', () => {
+    const timesheet = {
+      id: 'ts-1',
+      status: 'APPROVED',
+      user: tutor,
+      createdAt: '2026-08-10T08:00:00.000Z',
+      approvedAt: '2026-08-23T09:00:00.000Z',
+      approvedBy: { ...coCoordinator, role: 'LECTURER' },
+      submittedSnapshot: [submission()],
+    };
+    render(<TimesheetAuditTrail timesheet={timesheet} />);
+
+    expect(screen.getByText('Approved')).toBeInTheDocument();
+    expect(screen.getByText('Bongani Coordinator')).toBeInTheDocument();
+    expect(screen.queryByText(/Organiser/)).not.toBeInTheDocument();
   });
 });
 
