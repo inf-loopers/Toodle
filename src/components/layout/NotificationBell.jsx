@@ -121,6 +121,7 @@ export default function NotificationBell() {
         onClick={handleToggle}
         className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+        title="Notifications"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
       >

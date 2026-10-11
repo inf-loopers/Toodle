@@ -1,0 +1,150 @@
+export const tutorGuide = [
+  {
+    id: 'navigation',
+    title: 'Find your way around Toodle',
+    description: 'Use the menu to move between your work pages.',
+    steps: [
+      'On mobile, press the menu icon in the top-left corner to open navigation.',
+      'Select "Dashboard", "Calendar", "My Courses" or "Timesheets". Scroll the menu to find more pages.',
+      'Press "X" to close the menu. Press the question-mark "Help" icon whenever you need this guide.',
+    ],
+  },
+  {
+    id: 'dashboard',
+    title: 'Understand your dashboard',
+    description: 'Your dashboard summarises your assignments and work for the week.',
+    steps: [
+      'Check "Courses" for your active assignments and "Weekly Hours" for planned work compared with your weekly cap.',
+      'Check "Timesheets" for work needing your attention and "Swap Requests" for requests awaiting a response.',
+      'Use "My courses" to review assignments, "Log hours" to open "Timesheets", and "Edit availability" to open your profile.',
+    ],
+    note: 'No assigned courses yet? Your course coordinator must assign you before you can record tutoring hours.',
+  },
+  {
+    id: 'availability',
+    title: 'Set your availability and weekly hours',
+    description: 'Tell Toodle when you can tutor and how many hours you can work each week.',
+    steps: [
+      'Open your profile using "Edit availability" on the dashboard.',
+      'Under "Weekly hours cap", enter "Hours per week" and press "Save".',
+      'Under "Availability", press "Add slot". Choose the "Day", "From" time and "To" time.',
+      'Add more slots for other available times, then press "Save availability". You can also use "Import timetable" to review imported availability.',
+    ],
+    note: 'Your weekly hours cap and availability have separate "Save" buttons. Save both when you change both.',
+  },
+  {
+    id: 'calendar',
+    title: 'Check your calendar',
+    description: 'Review the scheduled sessions for your assigned work.',
+    steps: [
+      'Open "Calendar" from the menu. It starts in "Month" view.',
+      'Use the arrows to move between months, or "Today" to return to the current date.',
+      'Select "List" for a list of sessions. Press "Refresh" to reload your schedule.',
+    ],
+    note: 'Nothing scheduled in this range means there are no sessions to display for that period. Check your assigned courses or try another month.',
+  },
+  {
+    id: 'timesheets',
+    title: 'Get ready to record your hours',
+    description: 'Use "Timesheets" to record tutoring work and submit it for approval.',
+    steps: [
+      'Open "Timesheets" from the menu, or press "Log hours" on the dashboard.',
+      'Check that you have an active course allocation. Without one, "New timesheet" is disabled; contact your course coordinator if you are expecting an assignment.',
+      'Check your pay rate. If it is not configured, ask your organiser to set it before approval.',
+      'Once you have an active allocation, use "New timesheet" to record your work. Review the details before submitting for approval.',
+    ],
+    note: 'No timesheets yet means you have not created any. Creating a timesheet and receiving approval are separate steps.',
+  },
+  {
+    id: 'courses',
+    title: 'Browse courses and requirements',
+    description: 'Find courses you would like to tutor and review their requirements.',
+    steps: [
+      'Open "Courses" from the menu. Search using a course code or course name.',
+      'Open a course to read its details and check the requirements and eligibility information.',
+      'Follow the application controls available on the course page. Check any eligibility messages before applying.',
+    ],
+    note: 'Applying does not immediately assign you to a course. "My Courses" shows your allocations.',
+  },
+  {
+    id: 'my-courses',
+    title: 'Review your assigned courses',
+    description: '"My Courses" lists the courses you are allocated to tutor.',
+    steps: [
+      'Open "My Courses" from the menu.',
+      'Search by course code or name, then open a course to review its details.',
+      'Use "Calendar" to check your scheduled sessions and "Timesheets" to record your work.',
+    ],
+    note: 'No courses yet? Browse "Courses" to apply, or contact your course coordinator if you are expecting an allocation.',
+  },
+  {
+    id: 'excusals',
+    title: 'Request an excusal',
+    description: 'Tell your coordinator when you cannot attend a scheduled session.',
+    steps: [
+      'Open "Excusals" and press "Request excusal".',
+      'Choose your "Course", "Session" and the "Date" of the session you will miss.',
+      'Enter a "Reason", review your details and press "Send request".',
+      'Return to "Excusals" to check whether your request is pending, approved or declined.',
+    ],
+    note: 'You need an active allocation to request an excusal. Sending a request does not mean it has been approved.',
+  },
+  {
+    id: 'swaps',
+    title: 'Exchange sessions with another tutor',
+    description: 'Swap two dated sessions while keeping your course assignments.',
+    steps: [
+      'Open "Swaps" and press "Request swap".',
+      'Choose "Your session" and the other tutor’s session. Review the eligibility checks and any warnings.',
+      'Add an optional reason and press "Send request".',
+      'The other tutor must accept the swap before an organiser can approve it. Check the request status on "Swaps".',
+      'If someone sends you a request, review both sessions before choosing "Accept swap" or "Decline".',
+    ],
+    note: 'Available sessions cover the next eight weeks. Times are shown in Africa/Johannesburg. Acceptance alone is not final approval.',
+  },
+  {
+    id: 'volunteers',
+    title: 'Claim volunteer work',
+    description: 'Browse overflow work and track your claims for review.',
+    steps: [
+      'Open "Volunteer" from the menu. Use "Filter by course" to narrow the open work.',
+      'Read the work description and hours, then check "Eligible to claim" and any approval requirements.',
+      'Press "Claim" for work you want to take. Review its status under "My claims".',
+      'Once your claim is approved, use "Record hours" to open "Timesheets".',
+    ],
+    note: 'A claim still needs review. Resolve any approval checks shown on the post; claiming work does not automatically approve it.',
+  },
+  {
+    id: 'search',
+    title: 'Find something using search',
+    description: 'Use the magnifying-glass icon in the header to search Toodle.',
+    steps: [
+      'Press the "Search" icon in the header.',
+      'Enter a course code, name, tutor or timesheet search term.',
+      'Choose a result to open it. If nothing matches, try a shorter or different search term.',
+    ],
+    note: 'Search results depend on what your account is allowed to access.',
+  },
+  {
+    id: 'notifications',
+    title: 'Check your notifications',
+    description: 'The bell icon keeps updates together in the header.',
+    steps: [
+      'Press the bell icon to open "Notifications". Its badge shows your unread count.',
+      'Select a notification to read it and open its related page when a link is available.',
+      'Use "Mark all read" when you have reviewed your updates.',
+    ],
+  },
+];
+
+export const tutorPageTopics = {
+  '/dashboard': 'dashboard',
+  '/profile': 'availability',
+  '/calendar': 'calendar',
+  '/timesheets': 'timesheets',
+  '/courses': 'courses',
+  '/my-courses': 'my-courses',
+  '/excusals': 'excusals',
+  '/swaps': 'swaps',
+  '/volunteers': 'volunteers',
+};

@@ -91,6 +91,24 @@ describe('Profile dropdown sign out', () => {
 });
 
 describe('Navbar branding and global search', () => {
+  it('opens Help by keyboard and restores focus after Escape', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <Navbar title="Dashboard" />
+      </MemoryRouter>
+    );
+    const help = screen.getByRole('button', { name: 'Help', exact: true });
+    help.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('dialog', { name: 'Help' })).toBeInTheDocument();
+    const support = screen.getByRole('link', { name: 'Contact support' });
+    expect(support).toHaveAttribute('href', 'mailto:toodle.issues@gmail.com');
+    expect(support).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(help).toHaveFocus();
+  });
   it('renders exactly one dashboard logo link and the global search entry', () => {
     render(
       <MemoryRouter>
