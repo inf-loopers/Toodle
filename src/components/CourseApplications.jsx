@@ -9,8 +9,19 @@ import OpportunityEligibility from './OpportunityEligibility';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { Input, Textarea } from './ui/Input';
+import { decisionLine } from '../utils/decisions';
 
 const message = (err) => err?.response?.data?.error || err?.response?.data?.message || err.message;
+
+function ApplicationDecision({ application }) {
+  if (application.status !== 'APPROVED' && application.status !== 'REJECTED') return null;
+  const line = decisionLine(
+    application.status === 'APPROVED' ? 'Approved' : 'Rejected',
+    application.reviewedBy,
+    application.reviewedAt,
+  );
+  return line ? <p className="text-sm text-slate-500">{line}</p> : null;
+}
 
 function ApplicationReview({ application, course, run, busy }) {
   const [reason, setReason] = useState('');
@@ -38,6 +49,7 @@ function ApplicationReview({ application, course, run, busy }) {
           {warning.message}
         </p>
       ))}
+      <ApplicationDecision application={application} />
       {application.reason && <p>Decision: {application.reason}</p>}
       {application.status === 'PENDING' && (
         <>
@@ -335,6 +347,7 @@ export default function CourseApplications({ course, onUpdated }) {
             <p>
               Your application: {application.status} — {application.hoursPerWeek}h / week
             </p>
+            <ApplicationDecision application={application} />
             {application.reason && <p>Coordinator's reason: {application.reason}</p>}
             {application.eligibility && (
               <p>{application.eligibility.remainingHours}h remaining before this assignment.</p>

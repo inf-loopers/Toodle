@@ -10,6 +10,7 @@ import Modal from '../components/ui/Modal';
 import { Select, Textarea } from '../components/ui/Input';
 import Spinner from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/EmptyState';
+import { formatDecisionTime } from '../utils/decisions';
 
 const unwrap = (value) => value?.data ?? value ?? [];
 function message(error) {
@@ -312,7 +313,20 @@ export function SessionSwapPage() {
                       : 'Awaiting other tutor’s acceptance'}
                   </p>
                 )}
+                {swap.reviewedBy && (
+                  <p className="text-xs text-slate-500">
+                    {swap.status === 'REJECTED' ? 'Rejected' : 'Approved'} by{' '}
+                    {swap.reviewedBy.name}
+                    {swap.reviewedAt ? ` · ${formatDecisionTime(swap.reviewedAt)}` : ''}
+                  </p>
+                )}
                 {swap.rejectionReason && <p>Rejection reason: {swap.rejectionReason}</p>}
+                {swap.reversedBy && (
+                  <p className="text-xs text-slate-500">
+                    Reversed by {swap.reversedBy.name}
+                    {swap.reversedAt ? ` · ${formatDecisionTime(swap.reversedAt)}` : ''}
+                  </p>
+                )}
                 {swap.reversalReason && <p>Reversal reason: {swap.reversalReason}</p>}
                 <div className="flex flex-wrap gap-2">
                   {isTutor && swap.status === 'PENDING' && swap.requesteeId === user?.id && (
