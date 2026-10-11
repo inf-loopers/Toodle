@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router-dom';
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TimesheetsPage from '../src/pages/TimesheetsPage';
 import { timesheetsApi } from '../src/api/timesheets';
@@ -356,9 +356,9 @@ describe('Timesheets numeric integrity', () => {
 
   it('keeps a submitted timesheet reviewable after approval fails for a missing rate', async () => {
     useAuth.mockReturnValue({ dbUser: { id: 'admin-1' }, isStaff: true });
-    timesheetsApi.getTimesheets.mockResolvedValue({
-      data: [approvedTimesheet({ status: 'SUBMITTED', appliedRate: null })],
-    });
+    const submitted = approvedTimesheet({ status: 'SUBMITTED', appliedRate: null });
+    timesheetsApi.getTimesheets.mockResolvedValue({ data: [submitted] });
+    timesheetsApi.getTimesheet.mockResolvedValue({ data: submitted });
     const message =
       'This tutor has no pay rate configured yet — set one before approving their timesheet';
     timesheetsApi.approveTimesheet.mockRejectedValue({ response: { data: { error: message } } });
@@ -368,7 +368,11 @@ describe('Timesheets numeric integrity', () => {
         <TimesheetsPage />
       </MemoryRouter>
     );
+    // Approve now routes through a confirmation dialog before it commits.
     await user.click(await screen.findByRole('button', { name: 'Approve' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('checkbox'));
+    await user.click(within(dialog).getByRole('button', { name: 'Approve timesheet' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(message);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Approve' })).toBeEnabled());
     expect(screen.getAllByText('SUBMITTED')).toHaveLength(2);

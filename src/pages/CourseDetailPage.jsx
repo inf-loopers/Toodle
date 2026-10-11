@@ -383,21 +383,21 @@ export function CourseDetailPage() {
         )}
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <Card>
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <Card className="max-sm:p-4">
           <p className="text-sm font-medium text-slate-500">Tutors needed</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {canManageCourse ? `${allocationList.length} / ` : ''}
             {courseData?.requiredTutors ?? 1}
           </p>
         </Card>
-        <Card>
+        <Card className="max-sm:p-4">
           <p className="text-sm font-medium text-slate-500">Min. mark required</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {courseData?.minMarkRequired ?? 50}%
           </p>
         </Card>
-        <Card>
+        <Card className="col-span-2 max-sm:p-4 sm:col-span-1">
           <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
             <Wallet className="h-3.5 w-3.5" /> Budget
           </p>
@@ -415,8 +415,8 @@ export function CourseDetailPage() {
       </div>
 
       {courseData?.coordinators && (
-        <Card className="mb-6">
-          <div className="flex items-center justify-between gap-4">
+        <Card className="mb-6 max-sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
                 <Users className="h-3.5 w-3.5" /> Course coordinators

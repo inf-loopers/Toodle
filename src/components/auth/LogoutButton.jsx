@@ -4,7 +4,8 @@
  *
  * Responsibilities:
  * - Invokes `logout()` from the `useAuth()` hook.
- * - Shows a confirmation prompt before logging out.
+ * - Shows a confirmation prompt before logging out, unless `confirm={false}`
+ *   (e.g. on error screens where signing out is the expected next step).
  * - Displays loading state while logout is in progress.
  * - Cleans up cached session data and redirects to landing page.
  *
@@ -24,6 +25,7 @@ export function LogoutButton({
   children,
   showIcon = true,
   showLabel = true,
+  confirm = true,
   onClick: externalOnClick,
   ...rest
 }) {
@@ -34,7 +36,7 @@ export function LogoutButton({
   const handleClick = () => {
     if (externalOnClick) externalOnClick();
 
-    if (!confirming) {
+    if (confirm && !confirming) {
       setConfirming(true);
       // Auto-dismiss the confirmation after 3 seconds
       setTimeout(() => setConfirming(false), 3000);
