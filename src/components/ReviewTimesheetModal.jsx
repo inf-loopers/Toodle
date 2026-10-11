@@ -16,6 +16,7 @@ import Modal from './ui/Modal';
 import Badge from './ui/Badge';
 import { formatShortDate } from '../utils/helpers';
 import { TimesheetAuditTrail } from './TimesheetAuditTrail';
+import { TimesheetEntryLog } from './TimesheetEntryLog';
 
 /**
  * ReviewTimesheetModal
@@ -154,9 +155,13 @@ export function ReviewTimesheetModal({ timesheet, open, onClose }) {
             </div>
 
             {activeTab === 'snapshot' ? (
-              <SnapshotEntries snapshot={latestSnapshot} />
+              <SnapshotEntries snapshot={latestSnapshot} courseCode={timesheet.course?.code} />
             ) : activeTab === 'current' ? (
-              <CurrentEntries entries={currentEntries} totalHours={timesheet.totalHours} />
+              <CurrentEntries
+                entries={currentEntries}
+                totalHours={timesheet.totalHours}
+                courseCode={timesheet.course?.code}
+              />
             ) : activeTab === 'audit' ? (
               <TimesheetAuditTrail timesheet={timesheet} />
             ) : (
@@ -203,7 +208,7 @@ export function ReviewTimesheetModal({ timesheet, open, onClose }) {
             </div>
 
             {activeTab === 'snapshot' ? (
-              <SnapshotEntries snapshot={latestSnapshot} />
+              <SnapshotEntries snapshot={latestSnapshot} courseCode={timesheet.course?.code} />
             ) : activeTab === 'audit' ? (
               <TimesheetAuditTrail timesheet={timesheet} />
             ) : (
@@ -239,7 +244,7 @@ export function ReviewTimesheetModal({ timesheet, open, onClose }) {
             </div>
 
             {activeTab === 'snapshot' ? (
-              <SnapshotEntries snapshot={latestSnapshot} />
+              <SnapshotEntries snapshot={latestSnapshot} courseCode={timesheet.course?.code} />
             ) : (
               <TimesheetAuditTrail timesheet={timesheet} />
             )}
@@ -266,39 +271,16 @@ export function ReviewTimesheetModal({ timesheet, open, onClose }) {
 /**
  * SnapshotEntries - Read-only display of submitted snapshot entries
  */
-function SnapshotEntries({ snapshot }) {
-  const entries = snapshot.entries || [];
-
+function SnapshotEntries({ snapshot, courseCode }) {
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-slate-200 bg-white">
-        {entries.length === 0 ? (
-          <p className="p-4 text-sm text-slate-500">No entries in this submission.</p>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {entries.map((entry, index) => (
-              <div key={index} className="bg-slate-50 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-800">
-                        {Number(entry.hoursWorked || 0)}h
-                      </p>
-                      {entry.course?.code && <Badge tone="neutral">{entry.course.code}</Badge>}
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">{formatShortDate(entry.date)}</p>
-                    {entry.description && (
-                      <p className="mt-2 text-sm text-slate-600">{entry.description}</p>
-                    )}
-                  </div>
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200">
-                    <Lock className="h-3 w-3 text-slate-500" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <TimesheetEntryLog
+          entries={snapshot.entries || []}
+          courseCode={courseCode}
+          locked
+          emptyMessage="No entries in this submission."
+        />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -313,34 +295,15 @@ function SnapshotEntries({ snapshot }) {
 /**
  * CurrentEntries - Display of current live entries (for disputed timesheets)
  */
-function CurrentEntries({ entries, totalHours }) {
+function CurrentEntries({ entries, totalHours, courseCode }) {
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-slate-200 bg-white">
-        {entries.length === 0 ? (
-          <p className="p-4 text-sm text-slate-500">No entries in current draft.</p>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {entries.map((entry) => (
-              <div key={entry.id} className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-800">
-                        {Number(entry.hoursWorked || 0)}h
-                      </p>
-                      {entry.course?.code && <Badge tone="neutral">{entry.course.code}</Badge>}
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">{formatShortDate(entry.date)}</p>
-                    {entry.description && (
-                      <p className="mt-2 text-sm text-slate-600">{entry.description}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <TimesheetEntryLog
+          entries={entries}
+          courseCode={courseCode}
+          emptyMessage="No entries in current draft."
+        />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
