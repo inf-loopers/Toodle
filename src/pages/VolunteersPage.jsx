@@ -268,7 +268,9 @@ export function VolunteersPage() {
           </div>
           <Badge tone={STATUS_TONE[post.status] || 'neutral'}>{post.status}</Badge>
         </div>
-        <h3 className="mt-3 font-bold text-slate-900 sm:mt-4">{post.course?.code || post.courseId}</h3>
+        <h3 className="mt-3 font-bold text-slate-900 sm:mt-4">
+          {post.course?.code || post.courseId}
+        </h3>
         <p className="text-sm text-slate-500">{post.course?.name}</p>
         <p className="mt-2 text-xs text-slate-400">
           {post.description || 'No description provided.'}
