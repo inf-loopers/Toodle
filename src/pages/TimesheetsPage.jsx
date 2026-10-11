@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file TimesheetsPage.jsx
  * @description Weekly timesheet and hours tracking page for tutors.
@@ -14,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Clock, Send, CheckCircle2, XCircle, Trash2, ListChecks } from 'lucide-react';
+import { Plus, Clock, Send, CheckCircle2, XCircle, Trash2, ListChecks, Eye } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -22,6 +23,8 @@ import { useAuth } from '../hooks/useAuth';
 import { timesheetsApi } from '../api/timesheets';
 import { allocationsApi } from '../api/allocations';
 import { ratesApi } from '../api/rates';
+import { swapsApi } from '../api/swaps';
+import { coursesApi } from '../api/courses';
 
 import { TIMESHEET_STATUS_TONE } from '../utils/constants';
 import { formatShortDate } from '../utils/helpers';
@@ -35,6 +38,34 @@ import { Select, Input, Textarea } from '../components/ui/Input';
 import { EmptyState, ErrorState } from '../components/ui/EmptyState';
 import FormError from '../components/ui/FormError';
 import { getApiErrorMessage as getErrorMessage } from '../utils/apiError';
+import { ReviewTimesheetModal } from '../components/ReviewTimesheetModal';
+import { TimesheetEntryLog } from '../components/TimesheetEntryLog';
+import { SubmitConfirmationModal } from '../components/SubmitConfirmationModal';
+import { ApproveConfirmationModal } from '../components/ApproveConfirmationModal';
+
+// B08: timesheets are due on the 27th that closes their monthly cycle. The API
+// derives dueDate/deadlineStatus; NOT_DUE and finished sheets get no badge.
+const DEADLINE_BADGES = {
+  DUE_SOON: { tone: 'warning', label: 'Due soon' },
+  OVERDUE: { tone: 'danger', label: 'Overdue' },
+};
+
+// Decimal API values may arrive as strings. Missing/blank values are unknown,
+// rather than zero. Minute-based allocations may contain repeating fractions.
+function validAmount(value, max) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0.01 && amount <= max ? amount : null;
+}
+
+function validPayRate(value) {
+  const amount = validAmount(value, 100000);
+  return amount !== null && Math.round(amount * 100) / 100 === amount ? amount : null;
+}
+
+const formatHours = (hours) =>
+  hours.toLocaleString('en-GB', { useGrouping: false, maximumFractionDigits: 2 });
 
 function getCurrentMonday() {
   const today = new Date();
@@ -88,7 +119,10 @@ function StatusStepper({ status }) {
         const current = index === currentIndex;
 
         return (
-          <div key={`${step}-${index}`} className="flex flex-1 items-center">
+          <div
+            key={`${step}-${index}`}
+            className={`flex items-center ${index < steps.length - 1 ? 'flex-1' : ''}`}
+          >
             <div className="flex flex-col items-center">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
@@ -177,7 +211,7 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
       open={open}
       onClose={onClose}
       title="Start a timesheet"
-      description="Choose one of your actively allocated courses."
+      description="Choose a course you are assigned to or covering a session for."
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -233,7 +267,29 @@ function NewTimesheetModal({ open, onClose, courses, onCreated }) {
   );
 }
 
-function LogHoursModal({ timesheet, open, onClose, onLogged }) {
+function LogHoursModal({ timesheet, open, onClose, onLogged, coverage = [] }) {
+  const [sessionChoice, setSessionChoice] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [sessionError, setSessionError] = useState('');
+  const courseId = timesheet?.courseId;
+  useEffect(() => {
+    let stale = false;
+    setSessionChoice('');
+    setSessions([]);
+    setSessionError('');
+    if (open && courseId)
+      coursesApi
+        .getCourseSessions(courseId)
+        .then((result) => {
+          if (!stale) setSessions(result.data ?? result);
+        })
+        .catch((err) => {
+          if (!stale) setSessionError(getErrorMessage(err, 'Could not load sessions.'));
+        });
+    return () => {
+      stale = true;
+    };
+  }, [open, courseId]);
   const [form, setForm] = useState({
     date: '',
     hours: 1,
@@ -269,6 +325,15 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
 
     try {
       await timesheetsApi.addEntry(timesheet.id, {
+        ...(sessionChoice
+          ? (() => {
+              const covered = coverage.find((r) => `cover-${r.id}` === sessionChoice);
+              return {
+                sessionId: covered?.sessionId || sessionChoice,
+                ...(covered ? { allocationId: covered.allocationId } : {}),
+              };
+            })()
+          : {}),
         date: form.date,
         hoursWorked: Number(form.hours),
         description: form.description,
@@ -302,6 +367,40 @@ function LogHoursModal({ timesheet, open, onClose, onLogged }) {
       }
     >
       <div className="space-y-4">
+        <Select
+          label="Session or other work"
+          value={sessionChoice}
+          onChange={(e) => {
+            setSessionChoice(e.target.value);
+            const covered = coverage.find((r) => `cover-${r.id}` === e.target.value);
+            if (covered)
+              setForm((previous) => ({
+                ...previous,
+                date: String(covered.sessionDate).slice(0, 10),
+                hours:
+                  (Number(covered.endTime.slice(0, 2)) * 60 +
+                    Number(covered.endTime.slice(3)) -
+                    Number(covered.startTime.slice(0, 2)) * 60 -
+                    Number(covered.startTime.slice(3))) /
+                  60,
+              }));
+          }}
+        >
+          <option value="">Other work (preparation or marking)</option>
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.dayOfWeek} {s.startTime}–{s.endTime} · {s.sessionType}
+            </option>
+          ))}
+          {coverage
+            .filter((r) => r.courseId === courseId)
+            .map((r) => (
+              <option key={r.id} value={`cover-${r.id}`}>
+                Cover: {String(r.sessionDate).slice(0, 10)} {r.startTime}–{r.endTime}
+              </option>
+            ))}
+        </Select>
+        {sessionError && <p role="alert">{sessionError}</p>}
         <Input
           label="Date"
           type="date"
@@ -428,25 +527,11 @@ function ManageEntriesModal({ timesheet, open, onClose, onChanged }) {
         ) : entries.length === 0 ? (
           <p className="text-sm text-slate-500">No entries have been logged yet.</p>
         ) : (
-          <div className="divide-y divide-slate-100 rounded-lg border border-slate-200">
-            {entries.map((entry) => (
-              <div key={entry.id} className="flex items-start justify-between gap-4 p-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {Number(entry.hoursWorked || 0)}h
-                    </p>
-
-                    {entry.course?.code && <Badge tone="neutral">{entry.course.code}</Badge>}
-                  </div>
-
-                  <p className="mt-1 text-xs text-slate-400">{formatShortDate(entry.date)}</p>
-
-                  {entry.description && (
-                    <p className="mt-2 text-sm text-slate-600">{entry.description}</p>
-                  )}
-                </div>
-
+          <div className="rounded-lg border border-slate-200">
+            <TimesheetEntryLog
+              entries={entries}
+              courseCode={timesheet.course?.code}
+              renderActions={(entry) => (
                 <Button
                   size="sm"
                   variant="danger"
@@ -456,8 +541,8 @@ function ManageEntriesModal({ timesheet, open, onClose, onChanged }) {
                   <Trash2 className="h-3.5 w-3.5" />
                   Remove
                 </Button>
-              </div>
-            ))}
+              )}
+            />
           </div>
         )}
 
@@ -566,6 +651,10 @@ export function TimesheetsPage() {
    * - compare each Tutor's logged hours with their allocation
    */
   const { data: allocationsData, error: allocationsError } = useApi(allocationsApi.getAllocations);
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage, {
+    immediate: !isStaff,
+  });
+  const coverage = coverageData?.data ?? coverageData ?? [];
 
   const [newOpen, setNewOpen] = useState(false);
 
@@ -575,10 +664,18 @@ export function TimesheetsPage() {
   // viewing their own timesheets, so staff never see a stray "your rate"
   // figure that doesn't apply to the tutor whose card they are looking at.
   const [currentRate, setCurrentRate] = useState(null);
+  const [rateStatus, setRateStatus] = useState('loading');
+  const currentRateAmount = validPayRate(currentRate?.rate);
 
   const [manageTarget, setManageTarget] = useState(null);
 
   const [disputeTarget, setDisputeTarget] = useState(null);
+
+  const [reviewTarget, setReviewTarget] = useState(null);
+
+  const [submitTarget, setSubmitTarget] = useState(null);
+
+  const [approveTarget, setApproveTarget] = useState(null);
 
   const [busyId, setBusyId] = useState(null);
 
@@ -604,8 +701,10 @@ export function TimesheetsPage() {
     (allocation) => allocation.userId === user?.id
   );
 
-  const courses = tutorActiveAllocations
-    .map((allocation) => allocation.course)
+  const courses = [
+    ...tutorActiveAllocations.map((allocation) => allocation.course),
+    ...coverage.map((r) => r.course),
+  ]
     .filter(Boolean)
     .filter((course, index, array) => array.findIndex((item) => item.id === course.id) === index);
 
@@ -621,14 +720,41 @@ export function TimesheetsPage() {
         allocation.courseId === timesheet.courseId && allocation.userId === timesheet.userId
     );
 
-  const handleSubmitTimesheet = async (id) => {
-    setBusyId(id);
+  const handleSubmitTimesheet = async (timesheet) => {
+    // Load full timesheet details for the confirmation modal
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheet.id);
+      const fullTimesheet = response?.data ?? response ?? null;
+      setSubmitTarget(fullTimesheet);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not load timesheet details.'));
+    }
+  };
+
+  const handleApprove = async (timesheet) => {
+    // Load full timesheet details for the confirmation modal
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheet.id);
+      const fullTimesheet = response?.data ?? response ?? null;
+      // Add approver info (will be filled by backend, but show current user for now)
+      fullTimesheet.approverName = user?.name || 'Organiser';
+      fullTimesheet.approverRole = isStaff ? 'Administrator' : 'Course Coordinator';
+      setApproveTarget(fullTimesheet);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not load timesheet details.'));
+    }
+  };
+
+  const confirmSubmit = async () => {
+    if (!submitTarget) return;
+
+    setBusyId(submitTarget.id);
     setActionError('');
 
     try {
-      await timesheetsApi.submitTimesheet(id);
-
+      await timesheetsApi.submitTimesheet(submitTarget.id);
       await refetch();
+      setSubmitTarget(null);
     } catch (err) {
       setActionError(getErrorMessage(err, 'Could not submit the timesheet.'));
     } finally {
@@ -642,31 +768,55 @@ export function TimesheetsPage() {
       return;
     }
     let cancelled = false;
+    setCurrentRate(null);
+    setRateStatus('loading');
     ratesApi
       .getCurrentRate(user.id)
       .then((result) => {
-        if (!cancelled) setCurrentRate(result?.data ?? result ?? null);
+        if (cancelled) return;
+        // A successful envelope with data: null means no effective rate.
+        const rate = result && Object.hasOwn(result, 'data') ? result.data : result;
+        setCurrentRate(rate ?? null);
+        setRateStatus(
+          rate == null ? 'missing' : validPayRate(rate.rate) === null ? 'invalid' : 'ready'
+        );
       })
       .catch(() => {
-        if (!cancelled) setCurrentRate(null);
+        if (!cancelled) {
+          setCurrentRate(null);
+          setRateStatus('error');
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [isStaff, user?.id]);
 
-  const handleApprove = async (id) => {
-    setBusyId(id);
+  const confirmApprove = async () => {
+    if (!approveTarget) return;
+
+    setBusyId(approveTarget.id);
     setActionError('');
 
     try {
-      await timesheetsApi.approveTimesheet(id);
-
+      await timesheetsApi.approveTimesheet(approveTarget.id);
       await refetch();
+      setApproveTarget(null);
     } catch (err) {
       setActionError(getErrorMessage(err, 'Could not approve the timesheet.'));
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleReview = async (timesheet) => {
+    // Load full timesheet details including submittedSnapshot
+    try {
+      const response = await timesheetsApi.getTimesheet(timesheet.id);
+      const fullTimesheet = response?.data ?? response ?? null;
+      setReviewTarget(fullTimesheet);
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Could not load timesheet details.'));
     }
   };
 
@@ -692,7 +842,9 @@ export function TimesheetsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Timesheets</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Timesheets
+          </FeatureHeading>
 
           <p className="mt-2 text-sm text-slate-500">
             {isStaff
@@ -702,16 +854,27 @@ export function TimesheetsPage() {
         </div>
 
         {!isStaff && (
-          <Button onClick={() => setNewOpen(true)} disabled={tutorActiveAllocations.length === 0}>
+          <Button onClick={() => setNewOpen(true)} disabled={courses.length === 0}>
             <Plus className="h-4 w-4" />
             New timesheet
           </Button>
         )}
       </div>
 
-      {!isStaff && currentRate && (
-        <p className="mb-4 text-sm font-medium text-slate-600">
-          Your current rate: R{Number(currentRate.rate).toFixed(2)}/hr
+      {!isStaff && (
+        <p
+          role={rateStatus === 'error' || rateStatus === 'invalid' ? 'alert' : undefined}
+          className="mb-4 text-sm font-medium text-slate-600"
+        >
+          {rateStatus === 'ready'
+            ? `Your current rate: R${currentRateAmount.toFixed(2)}/hr`
+            : rateStatus === 'missing'
+              ? 'Pay rate not configured. Ask your organiser to set it before approval.'
+              : rateStatus === 'invalid'
+                ? 'Your pay rate is invalid. Ask your organiser to correct it before approval.'
+                : rateStatus === 'error'
+                  ? 'Could not load your pay rate. Reload the page to try again.'
+                  : 'Loading your pay rate…'}
         </p>
       )}
 
@@ -721,7 +884,8 @@ export function TimesheetsPage() {
         </p>
       )}
 
-      {!isStaff && tutorActiveAllocations.length === 0 && !allocationErrorMessage && (
+      {coverageError && <p role="alert">{coverageError}</p>}
+      {!isStaff && courses.length === 0 && !allocationErrorMessage && (
         <p className="mb-4 text-sm text-slate-500">
           You need an active allocation before you can create a timesheet.
         </p>
@@ -748,10 +912,9 @@ export function TimesheetsPage() {
               const rawAllocatedHours =
                 allocation?.hoursPerWeek ?? allocation?.allocatedHours ?? allocation?.weeklyHours;
 
-              const allocatedHours =
-                rawAllocatedHours !== undefined && rawAllocatedHours !== null
-                  ? Number(rawAllocatedHours)
-                  : null;
+              const allocatedHours = validAmount(rawAllocatedHours, 40);
+              const invalidAllocation = allocation && allocatedHours === null;
+              const appliedRate = validPayRate(timesheet.appliedRate);
 
               return (
                 <div key={timesheet.id} className="px-5 py-5">
@@ -765,6 +928,12 @@ export function TimesheetsPage() {
                         <Badge tone={TIMESHEET_STATUS_TONE[timesheet.status] || 'neutral'}>
                           {timesheet.status}
                         </Badge>
+
+                        {DEADLINE_BADGES[timesheet.deadlineStatus] && (
+                          <Badge tone={DEADLINE_BADGES[timesheet.deadlineStatus].tone}>
+                            {DEADLINE_BADGES[timesheet.deadlineStatus].label}
+                          </Badge>
+                        )}
                       </div>
 
                       {timesheet.course?.name && (
@@ -774,13 +943,22 @@ export function TimesheetsPage() {
                       <p className="mt-2 text-xs text-slate-400">
                         Week of {formatShortDate(timesheet.weekStartDate)}
                         {isStaff && timesheet.user?.name ? ` · ${timesheet.user.name}` : ''}
+                        {timesheet.dueDate && timesheet.deadlineStatus
+                          ? ` · Due ${formatShortDate(timesheet.dueDate)}`
+                          : ''}
                       </p>
 
                       <p className="mt-2 text-sm font-medium text-slate-700">
                         {allocatedHours !== null
-                          ? `${loggedHours}h / ${allocatedHours}h allocated`
-                          : `${loggedHours}h logged`}
+                          ? `${formatHours(loggedHours)}h / ${formatHours(allocatedHours)}h allocated`
+                          : `${formatHours(loggedHours)}h logged`}
                       </p>
+
+                      {invalidAllocation && (
+                        <p className="mt-1 text-xs text-amber-700">
+                          Allocated hours are invalid. Ask the organiser to correct the allocation.
+                        </p>
+                      )}
 
                       {allocatedHours !== null && allocatedHours > 0 && (
                         <div className="mt-2 h-2 max-w-sm overflow-hidden rounded-full bg-slate-100">
@@ -795,28 +973,120 @@ export function TimesheetsPage() {
 
                       <StatusStepper status={timesheet.status} />
 
-                      {timesheet.status === 'DISPUTED' && timesheet.disputeReason && (
-                        <div className="mt-4 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                            Changes requested
+                      {/* Submission metadata */}
+                      {timesheet.status === 'SUBMITTED' && timesheet.submittedAt && (
+                        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                          <p className="text-xs text-slate-600">
+                            <span className="font-medium">Submitted by</span>{' '}
+                            {timesheet.user?.name || 'Tutor'} on{' '}
+                            {formatShortDate(timesheet.submittedAt)} at{' '}
+                            {new Date(timesheet.submittedAt).toLocaleTimeString()}
                           </p>
-
-                          <p className="mt-1 text-sm text-amber-800">{timesheet.disputeReason}</p>
                         </div>
                       )}
 
-                      {timesheet.status === 'APPROVED' && timesheet.appliedRate != null && (
+                      {/* Approval metadata */}
+                      {timesheet.status === 'APPROVED' && timesheet.approvedAt && (
+                        <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                          <p className="text-xs text-green-700">
+                            <span className="font-medium">Approved by</span>{' '}
+                            {timesheet.approver?.name || 'Organiser'} on{' '}
+                            {formatShortDate(timesheet.approvedAt)} at{' '}
+                            {new Date(timesheet.approvedAt).toLocaleTimeString()}
+                          </p>
+                          {timesheet.submittedAt && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Originally submitted on {formatShortDate(timesheet.submittedAt)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {timesheet.status === 'DISPUTED' && timesheet.disputeReason && (
+                        <div className="mt-4 max-w-xl rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <div className="flex items-start gap-2">
+                            <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                                Changes requested
+                              </p>
+                              <p className="mt-1 text-sm text-amber-800">
+                                {timesheet.disputeReason}
+                              </p>
+                              {timesheet.disputedAt && (
+                                <p className="mt-2 text-xs text-amber-700">
+                                  Disputed on {formatShortDate(timesheet.disputedAt)}
+                                  {timesheet.disputedBy?.name
+                                    ? ` by ${timesheet.disputedBy.name}`
+                                    : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Guidance banner for DISPUTED timesheets */}
+                      {!isStaff && timesheet.status === 'DISPUTED' && (
+                        <div className="mt-4 max-w-xl rounded-lg border border-blue-200 bg-blue-50 p-3">
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                How to correct and re-submit
+                              </p>
+                              <ol className="mt-2 space-y-1 text-sm text-blue-800">
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    1
+                                  </span>
+                                  <span>
+                                    Review the dispute reason above and use <strong>Review</strong>{' '}
+                                    to compare versions
+                                  </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    2
+                                  </span>
+                                  <span>
+                                    Use <strong>Manage entries</strong> to remove incorrect entries
+                                  </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    3
+                                  </span>
+                                  <span>
+                                    Use <strong>Log hours</strong> to add corrected entries
+                                  </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-semibold">
+                                    4
+                                  </span>
+                                  <span>
+                                    Click <strong>Resubmit</strong> when ready
+                                  </span>
+                                </li>
+                              </ol>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {['APPROVED', 'PAID'].includes(timesheet.status) && appliedRate !== null && (
                         <div className="mt-3 text-sm text-slate-500">
                           <p>
-                            Paid at R{Number(timesheet.appliedRate).toFixed(2)}/hr · R
-                            {(loggedHours * Number(timesheet.appliedRate)).toFixed(2)} total
+                            {timesheet.status === 'PAID' ? 'Paid' : 'Approved'} at R
+                            {appliedRate.toFixed(2)}/hr · R{(loggedHours * appliedRate).toFixed(2)}{' '}
+                            total
                           </p>
 
                           {!isStaff &&
-                            currentRate &&
-                            Number(currentRate.rate) !== Number(timesheet.appliedRate) && (
+                            currentRateAmount !== null &&
+                            currentRateAmount !== appliedRate && (
                               <p className="mt-1 text-xs text-amber-600">
-                                Your rate has since changed to R{Number(currentRate.rate).toFixed(2)}
+                                Your rate has since changed to R{currentRateAmount.toFixed(2)}
                                 /hr (from {formatShortDate(currentRate.effectiveFrom)})
                               </p>
                             )}
@@ -825,6 +1095,31 @@ export function TimesheetsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                      {/* Review button for submitted/approved timesheets (tutors and staff) */}
+                      {(timesheet.status === 'SUBMITTED' || timesheet.status === 'APPROVED') && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleReview(timesheet)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Review
+                        </Button>
+                      )}
+
+                      {/* Review button for disputed timesheets (show both snapshot and current) */}
+                      {timesheet.status === 'DISPUTED' && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleReview(timesheet)}
+                          title="Compare the disputed version with your current corrections"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Review
+                        </Button>
+                      )}
+
                       {!isStaff &&
                         (timesheet.status === 'DRAFT' || timesheet.status === 'DISPUTED') && (
                           <>
@@ -832,6 +1127,11 @@ export function TimesheetsPage() {
                               size="sm"
                               variant="secondary"
                               onClick={() => setManageTarget(timesheet)}
+                              title={
+                                timesheet.status === 'DISPUTED'
+                                  ? 'Remove incorrect entries before re-submitting'
+                                  : 'Review or remove your logged entries'
+                              }
                             >
                               <ListChecks className="h-3.5 w-3.5" />
                               Manage entries
@@ -841,6 +1141,11 @@ export function TimesheetsPage() {
                               size="sm"
                               variant="secondary"
                               onClick={() => setLogTarget(timesheet)}
+                              title={
+                                timesheet.status === 'DISPUTED'
+                                  ? 'Add corrected hours to replace the disputed entries'
+                                  : 'Log additional hours'
+                              }
                             >
                               <Plus className="h-3.5 w-3.5" />
                               Log hours
@@ -848,8 +1153,13 @@ export function TimesheetsPage() {
 
                             <Button
                               size="sm"
-                              onClick={() => handleSubmitTimesheet(timesheet.id)}
+                              onClick={() => handleSubmitTimesheet(timesheet)}
                               loading={busyId === timesheet.id}
+                              title={
+                                timesheet.status === 'DISPUTED'
+                                  ? 'Re-submit with your corrections for review'
+                                  : 'Submit for approval'
+                              }
                             >
                               <Send className="h-3.5 w-3.5" />
 
@@ -871,7 +1181,7 @@ export function TimesheetsPage() {
 
                           <Button
                             size="sm"
-                            onClick={() => handleApprove(timesheet.id)}
+                            onClick={() => handleApprove(timesheet)}
                             loading={busyId === timesheet.id}
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -898,6 +1208,7 @@ export function TimesheetsPage() {
           />
 
           <LogHoursModal
+            coverage={coverage}
             timesheet={logTarget}
             open={Boolean(logTarget)}
             onClose={() => setLogTarget(null)}
@@ -921,6 +1232,30 @@ export function TimesheetsPage() {
           onDisputed={refetch}
         />
       )}
+
+      {/* Review modal for both tutors and staff */}
+      <ReviewTimesheetModal
+        timesheet={reviewTarget}
+        open={Boolean(reviewTarget)}
+        onClose={() => setReviewTarget(null)}
+      />
+
+      {/* Submit confirmation modal for tutors */}
+      <SubmitConfirmationModal
+        timesheet={submitTarget}
+        open={Boolean(submitTarget)}
+        onClose={() => setSubmitTarget(null)}
+        onConfirm={confirmSubmit}
+        isResubmission={submitTarget?.status === 'DISPUTED'}
+      />
+
+      {/* Approve confirmation modal for staff */}
+      <ApproveConfirmationModal
+        timesheet={approveTarget}
+        open={Boolean(approveTarget)}
+        onClose={() => setApproveTarget(null)}
+        onConfirm={confirmApprove}
+      />
     </>
   );
 }

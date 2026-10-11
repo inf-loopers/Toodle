@@ -29,6 +29,7 @@ const NEW_SLOT = { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '11:00' };
  * @param {string} [props.title]
  * @param {string} [props.description]
  * @param {string} [props.saveLabel]
+ * @param {import('react').ReactNode} [props.headerActions] - Extra buttons shown beside "Add slot".
  */
 export function AvailabilityEditor({
   initialSlots = [],
@@ -36,6 +37,7 @@ export function AvailabilityEditor({
   title = 'Availability',
   description = "When you're free to tutor. Add and save time slots covering all sessions you can attend.",
   saveLabel = 'Save availability',
+  headerActions = null,
 }) {
   const [slots, setSlots] = useState(initialSlots.length ? initialSlots : []);
   const [saving, setSaving] = useState(false);
@@ -95,10 +97,13 @@ export function AvailabilityEditor({
         title={title}
         description={description}
         action={
-          <Button variant="secondary" size="sm" onClick={addSlot}>
-            <Plus className="h-3.5 w-3.5" />
-            Add slot
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {headerActions}
+            <Button variant="secondary" size="sm" onClick={addSlot}>
+              <Plus className="h-3.5 w-3.5" />
+              Add slot
+            </Button>
+          </div>
         }
       />
 
@@ -112,38 +117,46 @@ export function AvailabilityEditor({
         {slots.map((slot, index) => (
           <div
             key={`${slot.dayOfWeek}-${index}`}
-            className="flex flex-col gap-2 sm:flex-row sm:items-end"
+            // Phones: day on its own row, then From / To / remove side by side,
+            // grouped in a light panel. sm+: everything on one row.
+            className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 rounded-xl border border-slate-100 p-3 sm:flex sm:border-0 sm:p-0"
           >
-            <Select
-              label="Day"
-              value={slot.dayOfWeek}
-              onChange={(event) => updateSlot(index, 'dayOfWeek', event.target.value)}
-            >
-              {DAYS_OF_WEEK.map((day) => (
-                <option key={day} value={day}>
-                  {formatDay(day)}
-                </option>
-              ))}
-            </Select>
+            <div className="col-span-3 sm:flex-1">
+              <Select
+                label="Day"
+                value={slot.dayOfWeek}
+                onChange={(event) => updateSlot(index, 'dayOfWeek', event.target.value)}
+              >
+                {DAYS_OF_WEEK.map((day) => (
+                  <option key={day} value={day}>
+                    {formatDay(day)}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
-            <Input
-              label="From"
-              type="time"
-              value={slot.startTime}
-              onChange={(event) => updateSlot(index, 'startTime', event.target.value)}
-            />
+            <div className="min-w-0 sm:flex-1">
+              <Input
+                label="From"
+                type="time"
+                value={slot.startTime}
+                onChange={(event) => updateSlot(index, 'startTime', event.target.value)}
+              />
+            </div>
 
-            <Input
-              label="To"
-              type="time"
-              value={slot.endTime}
-              onChange={(event) => updateSlot(index, 'endTime', event.target.value)}
-            />
+            <div className="min-w-0 sm:flex-1">
+              <Input
+                label="To"
+                type="time"
+                value={slot.endTime}
+                onChange={(event) => updateSlot(index, 'endTime', event.target.value)}
+              />
+            </div>
 
             <button
               type="button"
               onClick={() => removeSlot(index)}
-              className="mb-0.5 rounded-lg p-2.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
+              className="mb-0.5 shrink-0 rounded-lg p-2.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
               aria-label="Remove availability slot"
             >
               <Trash2 className="h-4 w-4" />

@@ -1,332 +1,235 @@
-﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionSwapPage } from '../src/pages/SessionSwapPage';
 import { useAuth } from '../src/hooks/useAuth';
 import { swapsApi } from '../src/api/swaps';
-
 vi.mock('../src/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('../src/api/swaps', () => ({
-  swapsApi: {
-    getSwaps: vi.fn(),
-    getOptions: vi.fn(),
-    requestSwap: vi.fn(),
-    approveSwap: vi.fn(),
-    rejectSwap: vi.fn(),
-    cancelSwap: vi.fn(),
-    acceptSwap: vi.fn(),
-    declineSwap: vi.fn(),
-  },
+  swapsApi: Object.fromEntries(
+    [
+      'getSwaps',
+      'getOptions',
+      'previewSwap',
+      'requestSwap',
+      'approveSwap',
+      'rejectSwap',
+      'cancelSwap',
+      'acceptSwap',
+      'declineSwap',
+      'reverseSwap',
+      'getHistory',
+    ].map((k) => [k, vi.fn()])
+  ),
 }));
-
+const origin = {
+  id: 'origin',
+  allocationId: 'a1',
+  sessionId: 's1',
+  sessionDate: '2030-01-07',
+  userId: 'tutor',
+  user: { name: 'Alice' },
+  course: { code: 'CSC101' },
+  startTime: '09:00',
+  endTime: '10:00',
+  hours: 1,
+  sessionType: 'LAB',
+};
+const target = {
+  ...origin,
+  id: 'target',
+  allocationId: 'a2',
+  sessionId: 's2',
+  userId: 'target',
+  user: { name: 'Bob' },
+  sessionDate: '2030-01-08',
+  startTime: '11:00',
+  endTime: '12:00',
+};
 const pending = {
   id: 'swap',
   status: 'PENDING',
-  requesteeAcceptedAt: '2026-09-15T09:00:00Z',
   requesterId: 'tutor',
   requesteeId: 'target',
   requester: { name: 'Alice' },
   requestee: { name: 'Bob' },
-  requesterAllocation: { course: { code: 'CSC101' } },
-  targetAllocation: { course: { code: 'MAT101' } },
-  validationWarnings: {
-    requester: [{ type: 'HOURS_EXCEEDED', message: 'Weekly hours exceeded' }],
-    requestee: [],
-  },
+  requesterOccurrence: origin,
+  targetOccurrence: target,
+  requesteeAcceptedAt: null,
 };
-
+const suitable = {
+  isValid: true,
+  requester: { warnings: [], weeklyHours: [{ week: '2030-01-07', hours: 5, remainingHours: 1 }] },
+  requestee: { warnings: [], weeklyHours: [] },
+};
 beforeEach(() => {
   vi.resetAllMocks();
-  // Match the actual auth hook shape: Auth0 user plus the DB profile and derived role flags.
-  useAuth.mockReturnValue({
-    user: { sub: 'auth0|tutor' },
-    dbUser: { id: 'tutor' },
-    role: 'TUTOR',
-    isTutor: true,
-    isStaff: false,
-  });
+  useAuth.mockReturnValue({ dbUser: { id: 'tutor' }, isTutor: true, isStaff: false });
   swapsApi.getSwaps.mockResolvedValue({ data: [pending] });
-  swapsApi.getOptions.mockResolvedValue({
-    data: [
-      {
-        id: 'origin',
-        userId: 'tutor',
-        courseId: 'csc',
-        status: 'ACTIVE',
-        course: { code: 'CSC101' },
-      },
-      {
-        id: 'destination',
-        userId: 'target',
-        courseId: 'mat',
-        status: 'ACTIVE',
-        course: { code: 'MAT101' },
-        user: { name: 'Bob' },
-      },
-      {
-        id: 'inactive',
-        userId: 'tutor',
-        courseId: 'old',
-        status: 'REMOVED',
-        course: { code: 'OLD101' },
-      },
-    ],
-  });
+  swapsApi.getOptions.mockResolvedValue({ data: [origin, target] });
+  swapsApi.previewSwap.mockResolvedValue({ data: suitable });
+  swapsApi.requestSwap.mockResolvedValue({});
+  swapsApi.getHistory.mockResolvedValue({ data: [] });
 });
-
-describe('Session swap page integration', () => {
-  it('shows the accepted state after the recipient accepts and refreshes', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'target' },
-      role: 'TUTOR',
-      isTutor: true,
-      isStaff: false,
-    });
-    swapsApi.getSwaps
-      .mockResolvedValueOnce({ data: [{ ...pending, requesteeAcceptedAt: null }] })
-      .mockResolvedValue({ data: [pending] });
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Accept swap' }));
-    expect(await screen.findByText('Tutor accepted · awaiting coordinator')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Accept swap' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
-  });
-  it.each(['Accept swap', 'Decline'])(
-    'keeps a failed %s decision actionable and displays its error',
-    async (action) => {
-      useAuth.mockReturnValue({
-        dbUser: { id: 'target' },
-        role: 'TUTOR',
-        isTutor: true,
-        isStaff: false,
-      });
-      swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: null }] });
-      (action === 'Decline' ? swapsApi.declineSwap : swapsApi.acceptSwap).mockRejectedValue(
-        new Error('Decision failed')
-      );
-      const user = userEvent.setup();
-      render(<SessionSwapPage />);
-      await user.click(await screen.findByRole('button', { name: action }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('Decision failed');
-      expect(screen.getByRole('button', { name: action })).toBeEnabled();
-      expect(swapsApi.getSwaps).toHaveBeenCalledTimes(1);
-    }
+async function choose() {
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter initialEntries={['/swaps']}>
+      <SessionSwapPage />
+    </MemoryRouter>
   );
-  it('removes recipient actions when decline resolves the request', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'target' },
-      role: 'TUTOR',
-      isTutor: true,
-      isStaff: false,
+  await user.click(await screen.findByRole('button', { name: 'Request swap' }));
+  await user.selectOptions(screen.getByLabelText('Your session'), 'origin');
+  await user.selectOptions(screen.getByLabelText('Other tutor’s session'), 'target');
+  return user;
+}
+describe('Dated session swap interface', () => {
+  it('previews both sides and submits dated session IDs within the same course', async () => {
+    const user = await choose();
+    await screen.findByText('Both tutors can take these sessions.');
+    expect(screen.getByText('Week of 2030-01-07: 5h planned · 1h remaining')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(swapsApi.requestSwap).toHaveBeenCalledWith({
+      requesterAllocationId: 'a1',
+      targetAllocationId: 'a2',
+      requesterSessionId: 's1',
+      targetSessionId: 's2',
+      requesterSessionDate: '2030-01-07',
+      targetSessionDate: '2030-01-08',
+      reason: '',
     });
-    swapsApi.getSwaps.mockResolvedValueOnce({ data: [pending] }).mockResolvedValue({
+  });
+  it('shows eligibility problems before submission and blocks sending', async () => {
+    swapsApi.previewSwap.mockResolvedValue({
+      data: {
+        ...suitable,
+        isValid: false,
+        requestee: { warnings: [{ message: 'Bob has a timetable clash' }], weeklyHours: [] },
+      },
+    });
+    await choose();
+    await screen.findByText('Bob has a timetable clash');
+    expect(screen.getByRole('button', { name: 'Send request' })).toBeDisabled();
+    expect(swapsApi.requestSwap).not.toHaveBeenCalled();
+  });
+  it('does not enable submission while preview is still pending', async () => {
+    let resolve;
+    swapsApi.previewSwap.mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        })
+    );
+    await choose();
+    expect(screen.getByRole('button', { name: 'Send request' })).toBeDisabled();
+    resolve({ data: suitable });
+    await screen.findByText('Both tutors can take these sessions.');
+    expect(screen.getByRole('button', { name: 'Send request' })).toBeEnabled();
+  });
+  it('refreshes stale choices after a conflicting submission', async () => {
+    swapsApi.requestSwap.mockRejectedValue({
+      response: { status: 409, data: { error: 'Session already covered' } },
+    });
+    const user = await choose();
+    await screen.findByText('Both tutors can take these sessions.');
+    await user.click(screen.getByRole('button', { name: 'Send request' }));
+    await screen.findByText('Session already covered');
+    await waitFor(() => expect(screen.getByLabelText('Your session')).toHaveValue(''));
+    expect(swapsApi.getOptions.mock.calls.length).toBeGreaterThan(2);
+  });
+  it('accepts without applying assignments and refreshes the waiting state', async () => {
+    useAuth.mockReturnValue({ dbUser: { id: 'target' }, isTutor: true, isStaff: false });
+    swapsApi.getSwaps
+      .mockResolvedValueOnce({ data: [pending] })
+      .mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: '2030-01-01' }] });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
+    await user.click(await screen.findByRole('button', { name: 'Accept swap' }));
+    expect(swapsApi.acceptSwap).toHaveBeenCalledWith('swap');
+    await screen.findByText('Tutor accepted · awaiting organiser');
+    expect(swapsApi.approveSwap).not.toHaveBeenCalled();
+  });
+  it('requires consent before staff approval', async () => {
+    useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
+    expect(await screen.findByRole('button', { name: 'Approve' })).toBeDisabled();
+    expect(swapsApi.getOptions).not.toHaveBeenCalled();
+  });
+  it('collects staff rejection reasons', async () => {
+    useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
+    await user.click(await screen.findByRole('button', { name: 'Reject' }));
+    await user.type(screen.getByLabelText('Reason'), 'Course needs continuity');
+    await user.click(screen.getByRole('button', { name: 'Confirm rejection' }));
+    expect(swapsApi.rejectSwap).toHaveBeenCalledWith('swap', 'Course needs continuity');
+  });
+  it('requires and sends a reason for reversal', async () => {
+    useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
+    swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, status: 'APPROVED' }] });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
+    await user.click(await screen.findByRole('button', { name: 'Reverse swap' }));
+    expect(screen.getByRole('button', { name: 'Confirm reversal' })).toBeDisabled();
+    await user.type(screen.getByLabelText('Reason'), 'Plans restored');
+    await user.click(screen.getByRole('button', { name: 'Confirm reversal' }));
+    expect(swapsApi.reverseSwap).toHaveBeenCalledWith('swap', 'Plans restored');
+  });
+  it('shows who reviewed each historical transition', async () => {
+    swapsApi.getHistory.mockResolvedValue({
       data: [
-        { ...pending, status: 'REJECTED', rejectionReason: 'Declined by the requested tutor' },
+        {
+          id: 'audit',
+          action: 'APPROVE',
+          user: { name: 'Coordinator' },
+          createdAt: '2030-01-01T07:00:00Z',
+          after: { status: 'APPROVED' },
+        },
       ],
     });
     const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Decline' }));
-    expect(await screen.findByText('REJECTED')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Decline' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Accept swap' })).not.toBeInTheDocument();
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
+    await user.click(await screen.findByRole('button', { name: 'View history' }));
+    await screen.findByText('Swap approved · Coordinator');
   });
-  it('lets only the recipient accept or decline a new request', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'target' },
-      role: 'TUTOR',
-      isTutor: true,
-      isStaff: false,
+  it('keeps legacy course requests visible but prevents session approval', async () => {
+    useAuth.mockReturnValue({ dbUser: { id: 'staff' }, isStaff: true, isTutor: false });
+    swapsApi.getSwaps.mockResolvedValue({
+      data: [{ ...pending, requesterOccurrence: null, requesteeAcceptedAt: '2030-01-01' }],
     });
-    swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: null }] });
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Accept swap' }));
-    expect(swapsApi.acceptSwap).toHaveBeenCalledWith('swap');
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Decline' })).toBeEnabled());
-    await user.click(screen.getByRole('button', { name: 'Decline' }));
-    expect(swapsApi.declineSwap).toHaveBeenCalledWith('swap');
-    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
-  });
-  it('blocks staff approval until the partner accepts', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'admin' },
-      role: 'ADMIN',
-      isTutor: false,
-      isStaff: true,
-    });
-    swapsApi.getSwaps.mockResolvedValue({ data: [{ ...pending, requesteeAcceptedAt: null }] });
-    render(<SessionSwapPage />);
+    render(
+      <MemoryRouter initialEntries={['/swaps']}>
+        <SessionSwapPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByRole('button', { name: 'Approve' })).toBeDisabled();
-    expect(screen.getByText('Awaiting other tutor’s acceptance')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Accept swap' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Historical course swap/)).toBeInTheDocument();
   });
-  it('reloads allocation choices before opening a request', async () => {
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await screen.findByRole('button', { name: 'Request swap' });
-    swapsApi.getOptions.mockResolvedValue({ data: [] });
-    await user.click(screen.getByRole('button', { name: 'Request swap' }));
-    expect(
-      await screen.findByText('You need an active course allocation to request a swap.')
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'CSC101' })).not.toBeInTheDocument();
-    expect(swapsApi.getOptions).toHaveBeenCalledTimes(2);
-  });
-
-  it('refreshes and clears stale selections after a missing allocation response', async () => {
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Request swap' }));
-    await user.selectOptions(screen.getByLabelText('Your course allocation'), 'origin');
-    await user.selectOptions(screen.getByLabelText('Swap with'), 'destination');
-    swapsApi.requestSwap.mockRejectedValue({
-      response: { status: 404, data: { error: 'Allocation not found' } },
-    });
-    swapsApi.getOptions.mockResolvedValue({ data: [] });
-    await user.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Choices refreshed');
-    expect(screen.getByLabelText('Your course allocation')).toHaveValue('');
+  it('keeps a failed preview unsendable and shows the API error', async () => {
+    swapsApi.previewSwap.mockRejectedValue({ response: { data: { error: 'Session changed' } } });
+    await choose();
+    await screen.findByText('Session changed');
     expect(screen.getByRole('button', { name: 'Send request' })).toBeDisabled();
-    expect(swapsApi.getOptions).toHaveBeenCalledTimes(3);
-    expect(swapsApi.requestSwap).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps the form closed when fresh choices cannot be loaded', async () => {
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await screen.findByRole('button', { name: 'Request swap' });
-    swapsApi.getOptions.mockRejectedValue(new Error('Options unavailable'));
-    await user.click(screen.getByRole('button', { name: 'Request swap' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Options unavailable');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
-
-  it('uses the DB identity and partner options to submit a tutor request', async () => {
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Request swap' }));
-    await user.selectOptions(screen.getByLabelText('Your course allocation'), 'origin');
-    await user.selectOptions(screen.getByLabelText('Swap with'), 'destination');
-    expect(screen.queryByRole('option', { name: 'OLD101' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Send request' }));
-    await waitFor(() =>
-      expect(swapsApi.requestSwap).toHaveBeenCalledWith({
-        originAllocationId: 'origin',
-        targetAllocationId: 'destination',
-        requesteeId: 'target',
-        reason: '',
-      })
-    );
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
-
-  it('shows staff controls, warnings and approval failures', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'admin' },
-      role: 'ADMIN',
-      isTutor: false,
-      isStaff: true,
-    });
-    swapsApi.approveSwap.mockRejectedValue({
-      response: {
-        data: {
-          error: 'Swap does not satisfy allocation constraints',
-          details: { requester: [{ message: 'Outside recorded availability' }], requestee: [] },
-        },
-      },
-    });
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    expect(await screen.findByText('Alice: Weekly hours exceeded')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Approve' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Requesting tutor: Outside recorded availability'
-    );
-    expect(swapsApi.getOptions).not.toHaveBeenCalled();
-  });
-
-  it('allows staff rejection and refreshes the result', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'admin' },
-      role: 'ADMIN',
-      isTutor: false,
-      isStaff: true,
-    });
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Reject' }));
-    expect(swapsApi.rejectSwap).toHaveBeenCalledWith('swap');
-    await waitFor(() => expect(swapsApi.getSwaps).toHaveBeenCalledTimes(2));
-  });
-
-  it('shows the cancel action for the requesting DB user', async () => {
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Cancel' }));
-    expect(swapsApi.cancelSwap).toHaveBeenCalledWith('swap');
-    await waitFor(() => expect(swapsApi.getOptions).toHaveBeenCalledTimes(2));
-  });
-
-  it('does not show cancellation for the target or requests for a student', async () => {
-    useAuth.mockReturnValue({
-      dbUser: { id: 'target' },
-      role: 'STUDENT',
-      isTutor: false,
-      isStaff: false,
-    });
-    render(<SessionSwapPage />);
-    await screen.findByText('PENDING');
-    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Request swap' })).not.toBeInTheDocument();
-  });
-  it('resets a dismissed request form', async () => {
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Request swap' }));
-    await user.selectOptions(screen.getByLabelText('Your course allocation'), 'origin');
-    await user.selectOptions(screen.getByLabelText('Swap with'), 'destination');
-    await user.type(screen.getByLabelText('Reason (optional)'), 'Old reason');
-    await user.click(screen.getByRole('button', { name: 'Close' }));
-    await user.click(screen.getByRole('button', { name: 'Request swap' }));
-    expect(screen.getByLabelText('Your course allocation')).toHaveValue('');
-    expect(screen.getByLabelText('Reason (optional)')).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Send request' })).toBeDisabled();
-  });
-
-  it('closes a saved request even when refreshing the list fails', async () => {
-    swapsApi.getSwaps
-      .mockResolvedValueOnce({ data: [pending] })
-      .mockRejectedValue(new Error('Refresh failed'));
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Request swap' }));
-    await user.selectOptions(screen.getByLabelText('Your course allocation'), 'origin');
-    await user.selectOptions(screen.getByLabelText('Swap with'), 'destination');
-    await user.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Refresh failed');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(swapsApi.requestSwap).toHaveBeenCalledTimes(1);
-  });
-
-  it('shows field validation errors and keeps a failed request editable', async () => {
-    swapsApi.requestSwap.mockRejectedValue({
-      response: {
-        data: {
-          error: 'Validation failed',
-          details: [{ field: 'reason', message: 'Reason is too long' }],
-        },
-      },
-    });
-    const user = userEvent.setup();
-    render(<SessionSwapPage />);
-    await user.click(await screen.findByRole('button', { name: 'Request swap' }));
-    await user.selectOptions(screen.getByLabelText('Your course allocation'), 'origin');
-    await user.selectOptions(screen.getByLabelText('Swap with'), 'destination');
-    await user.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Reason is too long');
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Send request' })).toBeEnabled();
   });
 });

@@ -21,6 +21,32 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      rollupOptions: {
+        output: {
+          // Split third-party code into stable, cacheable vendor chunks so the
+          // app bundle stays small and heavy per-page libraries (dnd-kit,
+          // FullCalendar) are only downloaded when the relevant route loads.
+          // Order matters: more specific packages are matched before the
+          // generic 'react' catch-all (e.g. react-router, @auth0/*-react).
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('@fullcalendar')) return 'vendor-calendar';
+            if (id.includes('@dnd-kit')) return 'vendor-dnd';
+            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('@auth0')) return 'vendor-auth0';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            if (id.includes('react-router')) return 'vendor-router';
+            if (id.includes('axios')) return 'vendor-axios';
+            if (id.includes('react')) return 'vendor-react';
+            // Everything else: let Rollup decide. Returning a single catch-all
+            // chunk would merge route-only deps into one eagerly-loaded chunk;
+            // auto-splitting keeps lazy-route vendor code with its route chunk.
+            return undefined;
+          },
+        },
+      },
+    },
     server: {
       port: 5173,
       open: false,

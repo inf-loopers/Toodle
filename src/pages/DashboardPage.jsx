@@ -30,7 +30,6 @@ import { allocationsApi } from '../api/allocations';
 import { overflowApi } from '../api/overflow';
 import { timesheetsApi } from '../api/timesheets';
 import { swapsApi } from '../api/swaps';
-import { usersApi } from '../api/users';
 import { ROLES } from '../utils/constants';
 import { formatDay, formatHours, formatTime } from '../utils/helpers';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
@@ -40,7 +39,17 @@ import Spinner from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/EmptyState';
 import LogoutButton from '../components/auth/LogoutButton';
 
-function StatCard({ icon: Icon, label, value, description, tone = 'primary' }) {
+const COMPACT_MOBILE_CARD_HEADER =
+  'max-sm:grid max-sm:grid-cols-[1fr_auto] max-sm:gap-2 max-sm:[&>div:first-child]:contents max-sm:[&_h2]:col-start-1 max-sm:[&_p]:col-span-2 max-sm:[&_p]:row-start-2 max-sm:[&>div:last-child]:col-start-2 max-sm:[&>div:last-child]:row-start-1';
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  description,
+  tone = 'primary',
+  compactMobile = false,
+}) {
   const tones = {
     primary: 'bg-primary-subtle text-primary',
     amber: 'bg-amber-50 text-amber-600',
@@ -48,17 +57,31 @@ function StatCard({ icon: Icon, label, value, description, tone = 'primary' }) {
     rose: 'bg-rose-50 text-rose-600',
   };
   return (
-    <Card>
+    <Card className={compactMobile ? 'relative min-w-0 max-sm:p-3' : undefined}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+          <p
+            className={`text-sm font-medium text-slate-500 ${compactMobile ? 'max-sm:pr-6 max-sm:text-xs' : ''}`}
+          >
+            {label}
+          </p>
+          <p
+            className={`mt-2 text-3xl font-bold text-slate-900 ${compactMobile ? 'max-sm:mt-1 max-sm:text-2xl' : ''}`}
+          >
+            {value}
+          </p>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]} ${compactMobile ? 'max-sm:absolute max-sm:right-3 max-sm:top-3 max-sm:h-6 max-sm:w-6 max-sm:[&_svg]:h-4 max-sm:[&_svg]:w-4' : ''}`}
+        >
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      {description && <p className="mt-3 text-xs text-slate-400">{description}</p>}
+      {description && (
+        <p className={`mt-3 text-xs text-slate-400 ${compactMobile ? 'max-sm:mt-1' : ''}`}>
+          {description}
+        </p>
+      )}
     </Card>
   );
 }
@@ -67,8 +90,8 @@ function Welcome({ name, tagline }) {
   return (
     <div className="mb-8">
       <p className="text-sm font-medium text-primary">2026 Academic Year</p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
-        Welcome back{name ? `, ${name.split(' ')[0]}` : ''}
+      <h1 className="mt-1 break-words text-xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        Welcome{name ? `, ${name.split(' ')[0]}` : ''}
       </h1>
       <p className="mt-2 text-sm text-slate-500">{tagline}</p>
     </div>
@@ -98,7 +121,10 @@ function StaffDashboard({ user }) {
             <Button variant="secondary" onClick={() => window.location.reload()}>
               Try again
             </Button>
-            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+            <LogoutButton
+              confirm={false}
+              className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100"
+            />
           </div>
         }
       />
@@ -126,14 +152,16 @@ function StaffDashboard({ user }) {
         tagline="Here's how allocations are shaping up across the school this week."
       />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2 xl:grid-cols-4">
         <StatCard
+          compactMobile
           icon={BookOpen}
           label="Courses"
           value={courseList.length}
           description="Courses this semester"
         />
         <StatCard
+          compactMobile
           icon={Users}
           label="Tutors"
           value={tutorList.length}
@@ -141,6 +169,7 @@ function StaffDashboard({ user }) {
           description="Registered tutors"
         />
         <StatCard
+          compactMobile
           icon={CheckCircle2}
           label="Allocations"
           value={activeAllocations.length}
@@ -150,6 +179,7 @@ function StaffDashboard({ user }) {
           }
         />
         <StatCard
+          compactMobile
           icon={AlertTriangle}
           label="Unfilled Courses"
           value={unfilled.length}
@@ -164,11 +194,9 @@ function StaffDashboard({ user }) {
             title="Courses needing tutors"
             description="Prioritise these on the allocation board."
             action={
-              <Link to="/allocations">
-                <Button size="sm" variant="secondary">
-                  Open board <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+              <Button as={Link} to="/allocations" size="sm" variant="secondary">
+                Open board <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             }
           />
           <CardBody>
@@ -177,17 +205,19 @@ function StaffDashboard({ user }) {
                 Every course has at least one tutor. Nice work.
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="grid auto-rows-fr gap-3">
                 {unfilled.slice(0, 5).map((course) => (
                   <div
                     key={course.id}
-                    className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/50 p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 dark:border-[#404040] dark:bg-[#1f1f1f]"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1 break-words">
                       <p className="text-sm font-semibold text-slate-800">{course.code}</p>
                       <p className="text-xs text-slate-500">{course.name}</p>
                     </div>
-                    <Badge tone="warning">Needs tutor</Badge>
+                    <Badge tone="warning" className="shrink-0 whitespace-nowrap">
+                      Needs tutor
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -251,15 +281,20 @@ function TutorDashboard({ user }) {
     error: tsError,
   } = useApi(timesheetsApi.getTimesheets);
   const { data: swaps, loading: swapsLoading, error: swapsError } = useApi(swapsApi.getSwaps);
-  const {
-    data: profileData,
-    loading: profileLoading,
-    error: profileError,
-  } = useApi(usersApi.getCurrentUser);
+  const { data: coverageData, error: coverageError } = useApi(swapsApi.getCoverage);
+  const { data: workloadData, error: workloadError } = useApi(swapsApi.getWorkload);
+  const workload = workloadData?.data ?? workloadData;
+  const upcomingCover = (coverageData?.data ?? coverageData ?? []).filter(
+    (r) => new Date(`${String(r.sessionDate).slice(0, 10)}T${r.endTime}:00+02:00`) > new Date()
+  );
+  // The DB profile (availability, maxHoursPerWeek) is fetched once at login by
+  // AuthProvider and exposed through useAuth(); reusing it here avoids a
+  // redundant GET /users/me round-trip on every tutor dashboard load (B07).
+  const { dbUser } = useAuth();
 
-  if (allocLoading || tsLoading || swapsLoading || profileLoading)
+  if (allocLoading || tsLoading || swapsLoading)
     return <Spinner fullPage label="Loading your dashboard…" />;
-  const dashError = allocError || tsError || swapsError || profileError;
+  const dashError = allocError || tsError || swapsError;
   if (dashError) {
     return (
       <ErrorState
@@ -270,7 +305,10 @@ function TutorDashboard({ user }) {
             <Button variant="secondary" onClick={() => window.location.reload()}>
               Try again
             </Button>
-            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+            <LogoutButton
+              confirm={false}
+              className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100"
+            />
           </div>
         }
       />
@@ -280,10 +318,14 @@ function TutorDashboard({ user }) {
   const allocationList = allocations?.data ?? allocations ?? [];
   const timesheetList = timesheets?.data ?? timesheets ?? [];
   const swapList = swaps?.data ?? swaps ?? [];
-  const profile = profileData?.data ?? profileData ?? {};
+  const profile = dbUser ?? {};
   const availability = profile.availability ?? [];
 
-  const totalHours = allocationList.reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
+  const totalHours =
+    workload?.hours ??
+    allocationList
+      .filter((a) => a.status === 'ACTIVE')
+      .reduce((sum, a) => sum + Number(a.hoursPerWeek || 0), 0);
   const maxHours = profile.maxHoursPerWeek ?? user?.maxHoursPerWeek ?? 10;
   const pendingSwaps = swapList.filter((s) => s.status === 'PENDING').length;
   const draftTimesheets = timesheetList.filter(
@@ -293,22 +335,59 @@ function TutorDashboard({ user }) {
   return (
     <>
       <Welcome name={user?.name} tagline="Here's what's on your plate this week." />
+      {coverageError && (
+        <p role="alert" className="mb-3 break-words text-sm text-rose-700 dark:text-rose-300">
+          Could not load session cover: {coverageError}
+        </p>
+      )}
+      {workloadError && (
+        <p role="alert" className="mb-3 break-words text-sm text-rose-700 dark:text-rose-300">
+          Could not load this week’s adjusted hours: {workloadError}
+        </p>
+      )}
+      {upcomingCover.length > 0 && (
+        <Card className="mb-6 max-sm:mb-4 max-sm:p-3">
+          <CardHeader
+            title="Sessions you are covering"
+            description="Approved swaps and volunteer cover, in Africa/Johannesburg."
+          />
+          <CardBody className="max-sm:mt-3">
+            <div className="space-y-2">
+              {upcomingCover.map((r) => (
+                <p key={r.id} className="break-words max-sm:text-sm">
+                  {r.course?.code} · {String(r.sessionDate).slice(0, 10)} · {r.startTime}–
+                  {r.endTime}
+                </p>
+              ))}
+            </div>
+            <Link
+              to="/calendar"
+              className="inline-flex items-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-sm:min-h-11"
+            >
+              View your full schedule
+            </Link>
+          </CardBody>
+        </Card>
+      )}
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2 xl:grid-cols-4">
         <StatCard
+          compactMobile
           icon={BookOpen}
           label="Courses"
           value={allocationList.length}
           description="Active assignments"
         />
         <StatCard
+          compactMobile
           icon={Clock}
           label="Weekly Hours"
           value={`${formatHours(totalHours)} / ${maxHours}h`}
           tone="emerald"
-          description="Allocated vs. your cap"
+          description="This week’s planned work vs. your cap"
         />
         <StatCard
+          compactMobile
           icon={AlertTriangle}
           label="Timesheets"
           value={draftTimesheets}
@@ -316,6 +395,7 @@ function TutorDashboard({ user }) {
           description="Need your attention"
         />
         <StatCard
+          compactMobile
           icon={ArrowLeftRight}
           label="Swap Requests"
           value={pendingSwaps}
@@ -324,20 +404,25 @@ function TutorDashboard({ user }) {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 max-sm:gap-4 lg:grid-cols-2">
+        <Card className="max-sm:p-3">
           <CardHeader
             title="My courses"
+            className={COMPACT_MOBILE_CARD_HEADER}
             description="Sessions you're currently tutoring."
             action={
-              <Link to="/timesheets">
-                <Button size="sm" variant="secondary">
-                  Log hours <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+              <Button
+                as={Link}
+                to="/timesheets"
+                size="sm"
+                variant="secondary"
+                className="max-sm:min-h-11"
+              >
+                Log hours <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             }
           />
-          <CardBody>
+          <CardBody className="max-sm:mt-3">
             {allocationList.length === 0 ? (
               <p className="text-sm text-slate-400">You haven't been assigned to a course yet.</p>
             ) : (
@@ -345,15 +430,17 @@ function TutorDashboard({ user }) {
                 {allocationList.map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 max-sm:p-2"
                   >
-                    <div>
+                    <div className="min-w-0 break-words">
                       <p className="text-sm font-semibold text-slate-800">
                         {a.course?.code || a.courseId}
                       </p>
                       <p className="text-xs text-slate-400">{a.course?.name}</p>
                     </div>
-                    <Badge tone="primary">{formatHours(a.hoursPerWeek)} / week</Badge>
+                    <Badge tone="primary" className="shrink-0 whitespace-nowrap">
+                      {formatHours(a.hoursPerWeek)} / week
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -361,19 +448,24 @@ function TutorDashboard({ user }) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="max-sm:p-3">
           <CardHeader
             title="My availability"
+            className={COMPACT_MOBILE_CARD_HEADER}
             description="Your available times for timetable planning."
             action={
-              <Link to="/profile">
-                <Button size="sm" variant="secondary">
-                  Edit availability
-                </Button>
-              </Link>
+              <Button
+                as={Link}
+                to="/profile"
+                size="sm"
+                variant="secondary"
+                className="max-sm:min-h-11"
+              >
+                Edit availability
+              </Button>
             }
           />
-          <CardBody>
+          <CardBody className="max-sm:mt-3">
             {availability.length === 0 ? (
               <p className="text-sm text-slate-400">
                 No availability submitted yet. Add your available times on your profile.
@@ -418,7 +510,10 @@ function StudentDashboard({ user }) {
             <Button variant="secondary" onClick={() => window.location.reload()}>
               Try again
             </Button>
-            <LogoutButton className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100" />
+            <LogoutButton
+              confirm={false}
+              className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-100"
+            />
           </div>
         }
       />
@@ -430,14 +525,16 @@ function StudentDashboard({ user }) {
     <>
       <Welcome name={user?.name} tagline="Overflow work nobody has claimed yet is listed below." />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+      <div className="mb-8 grid grid-cols-2 gap-4 max-sm:mb-4 max-sm:gap-2">
         <StatCard
+          compactMobile
           icon={HandHeart}
           label="Open Opportunities"
           value={postList.length}
           description="Ready to claim"
         />
         <StatCard
+          compactMobile
           icon={Clock}
           label="Weekly Cap"
           value={`${user?.maxHoursPerWeek ?? 10}h`}
@@ -446,19 +543,24 @@ function StudentDashboard({ user }) {
         />
       </div>
 
-      <Card>
+      <Card className="max-sm:p-3">
         <CardHeader
           title="Overflow work"
+          className={COMPACT_MOBILE_CARD_HEADER}
           description="First come, first served — a course coordinator approves each claim."
           action={
-            <Link to="/volunteers">
-              <Button size="sm" variant="secondary">
-                Browse all <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+            <Button
+              as={Link}
+              to="/volunteers"
+              size="sm"
+              variant="secondary"
+              className="max-sm:min-h-11"
+            >
+              Browse all <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
           }
         />
-        <CardBody>
+        <CardBody className="max-sm:mt-3">
           {postList.length === 0 ? (
             <p className="text-sm text-slate-400">
               No overflow work is open right now — check back soon.
@@ -468,9 +570,9 @@ function StudentDashboard({ user }) {
               {postList.slice(0, 5).map((post) => (
                 <div
                   key={post.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 p-3"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 p-3 max-sm:p-2"
                 >
-                  <div>
+                  <div className="min-w-0 break-words">
                     <p className="text-sm font-semibold text-slate-800">
                       {post.course?.code || post.courseId}
                     </p>

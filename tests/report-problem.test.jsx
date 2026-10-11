@@ -66,4 +66,44 @@ describe('Report problem modal', () => {
 
     expect(submit).toBeEnabled();
   });
+
+  it('says the report was not sent and offers an email fallback on a 503 (B03)', async () => {
+    reportsApi.submitProblemReport.mockRejectedValue({
+      response: {
+        status: 503,
+        data: { error: 'Your report could not be sent right now. Please try again.' },
+      },
+    });
+    const user = userEvent.setup();
+    render(<ReportProblemModal open onClose={vi.fn()} pageName="Courses" pathname="/courses" />);
+
+    await user.type(screen.getByLabelText(/What happened\?/), 'Course list is empty');
+    await user.click(screen.getByRole('button', { name: 'Submit report' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('could not be sent');
+    expect(screen.getByText(/not sent/)).toBeInTheDocument();
+    expect(screen.queryByText('Report sent')).not.toBeInTheDocument();
+
+    // The typed report is kept for a retry ...
+    expect(screen.getByLabelText(/What happened\?/)).toHaveValue('Course list is empty');
+    // ... and can be sent from the user's own mail app instead.
+    const mailto = screen.getByRole('link', { name: /email it to/ }).getAttribute('href');
+    expect(mailto).toMatch(/^mailto:toodle\.issues@gmail\.com\?subject=/);
+    expect(decodeURIComponent(mailto)).toContain('Course list is empty');
+    expect(screen.getByRole('button', { name: 'Submit report' })).toBeEnabled();
+  });
+
+  it('does not offer the email fallback for a validation error', async () => {
+    reportsApi.submitProblemReport.mockRejectedValue({
+      response: { status: 400, data: { error: 'Description is required' } },
+    });
+    const user = userEvent.setup();
+    render(<ReportProblemModal open onClose={vi.fn()} pageName="Courses" pathname="/courses" />);
+
+    await user.type(screen.getByLabelText(/What happened\?/), 'x');
+    await user.click(screen.getByRole('button', { name: 'Submit report' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Description is required');
+    expect(screen.queryByRole('link', { name: /email it to/ })).not.toBeInTheDocument();
+  });
 });

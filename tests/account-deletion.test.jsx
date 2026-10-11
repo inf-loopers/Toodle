@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import ProfilePage from '../src/pages/ProfilePage';
@@ -41,7 +42,11 @@ async function openDeleteDialog() {
 }
 
 test('shows a danger zone that opens the deletion confirmation dialog', async () => {
-  render(<ProfilePage />);
+  render(
+    <MemoryRouter initialEntries={['/profile']}>
+      <ProfilePage />
+    </MemoryRouter>
+  );
 
   expect(await screen.findByRole('button', { name: /Delete account/i })).toBeInTheDocument();
 
@@ -54,7 +59,11 @@ test('shows a danger zone that opens the deletion confirmation dialog', async ()
 });
 
 test('deletes the account then signs out once the email is confirmed', async () => {
-  render(<ProfilePage />);
+  render(
+    <MemoryRouter initialEntries={['/profile']}>
+      <ProfilePage />
+    </MemoryRouter>
+  );
   const dialog = await openDeleteDialog();
 
   fireEvent.change(within(dialog).getByLabelText(/Type your email/i), {
@@ -74,7 +83,11 @@ test('surfaces the failure and keeps the dialog open without signing out', async
     response: { data: { error: 'Account closure is temporarily unavailable.' } },
   });
 
-  render(<ProfilePage />);
+  render(
+    <MemoryRouter initialEntries={['/profile']}>
+      <ProfilePage />
+    </MemoryRouter>
+  );
   const dialog = await openDeleteDialog();
 
   fireEvent.change(within(dialog).getByLabelText(/Type your email/i), {

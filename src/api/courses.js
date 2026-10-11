@@ -4,6 +4,7 @@
  *
  * Endpoints Managed:
  * - `GET    /courses`               - List all registered courses with staffing metadata.
+ * - `GET    /courses/mine`          - Courses the caller tutors or coordinates.
  * - `GET    /courses/:id`           - Retrieve single course details, allocations, and sessions.
  * - `POST   /courses`               - Create a new course offering (Admin only).
  * - `PATCH  /courses/:id`           - Update course quotas or prerequisite thresholds.
@@ -19,6 +20,9 @@
 import apiClient from './client';
 
 export const coursesApi = {
+  getOpportunities: async () => (await apiClient.get('/courses/opportunities')).data,
+  getEligibility: async (id, hoursPerWeek) =>
+    (await apiClient.get(`/courses/${id}/eligibility`, { params: { hoursPerWeek } })).data,
   getApplications: async (id) => (await apiClient.get(`/courses/${id}/applications`)).data,
   apply: async (id, data) => (await apiClient.post(`/courses/${id}/applications`, data)).data,
   reviewApplication: async (id, applicationId, data) =>
@@ -28,6 +32,12 @@ export const coursesApi = {
   // GET /courses
   getCourses: async (params) => {
     const response = await apiClient.get('/courses', { params });
+    return response.data;
+  },
+
+  // GET /courses/mine — a tutor's allocated courses, or a lecturer's coordinated ones
+  getMyCourses: async () => {
+    const response = await apiClient.get('/courses/mine');
     return response.data;
   },
 

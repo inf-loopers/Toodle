@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
+import heroIllustrationWebp from '../../assets/toodle_hero_part1.webp';
 import heroIllustration from '../../assets/toodle_hero_part1.png';
 
 export default function Hero() {
@@ -130,11 +131,18 @@ export default function Hero() {
             transition={{ duration: 0.7, delay: 0.15 }}
             className="absolute bottom-[-108px] left-1/2 z-10 w-[585px] -translate-x-1/2"
           >
-            <img
-              src={heroIllustration}
-              alt="Tutor and students learning around an open book"
-              className="w-full object-contain"
-            />
+            <picture>
+              <source srcSet={heroIllustrationWebp} type="image/webp" />
+              <img
+                src={heroIllustration}
+                alt="Tutor and students learning around an open book"
+                className="w-full object-contain"
+                width={1254}
+                height={1254}
+                fetchPriority="high"
+                decoding="async"
+              />
+            </picture>
           </Motion.div>
 
           {/* TOP LEFT CARD */}
@@ -248,7 +256,7 @@ function DottedPath({ d, color }) {
 function FloatingCard({ children, className = '', delay = 0, duration = 4, baseRotate = 0 }) {
   return (
     <Motion.aside
-      className={`absolute z-30 min-w-[180px] rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-lg shadow-slate-200/60 transition-colors dark:border-slate-700/70 dark:bg-[#111f33] dark:shadow-black/30 ${className}`}
+      className={`absolute z-30 min-w-[180px] rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-lg shadow-slate-200/60 transition-colors dark:border-slate-700/70 dark:bg-[#121212] dark:shadow-black/30 ${className}`}
       animate={{
         y: [0, -7, 0],
         rotate: [baseRotate, baseRotate + 1, baseRotate],

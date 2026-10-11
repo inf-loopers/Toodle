@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file TutorsPage.jsx
  * @description Staff tutor directory, marks, and capacity inspection view.
@@ -14,7 +15,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Search, Users, Clock, Award, Plus, DollarSign } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, Users, Clock, Award, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { tutorsApi } from '../api/tutors';
@@ -223,7 +225,13 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
               Pay rate
             </p>
             <div className="mb-3 flex items-center gap-2 text-sm text-slate-600">
-              <DollarSign className="h-4 w-4 text-slate-400" />
+              {/* Rand glyph: the platform bills in ZAR, not USD. */}
+              <span
+                aria-hidden="true"
+                className="flex h-4 w-4 items-center justify-center text-sm font-bold leading-none text-slate-400"
+              >
+                R
+              </span>
               {tutor.currentRate ? (
                 <span>
                   Current rate: R{Number(tutor.currentRate.rate).toFixed(2)}/hr since{' '}
@@ -340,7 +348,10 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
 export function TutorsPage() {
   const { data, loading, error, refetch } = useApi(tutorsApi.getTutors);
   const { data: coursesData } = useApi(coursesApi.getCourses);
-  const [search, setSearch] = useState('');
+  // Seed the directory filter from `?q=` so a global-search person result
+  // deep-links into a pre-filtered tutor list.
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [selected, setSelected] = useState(null);
 
   const tutors = data?.data ?? data ?? [];
@@ -365,17 +376,20 @@ export function TutorsPage() {
     <>
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tutors</h1>
+          <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900">
+            Tutors
+          </FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             Marks, availability and weekly hours for every tutor.
           </p>
         </div>
-        <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+        <div className="flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 focus-within:ring-2 focus-within:ring-primary">
           <Search className="mr-2 h-4 w-4 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tutors…"
+            aria-label="Search tutors"
             className="w-48 bg-transparent text-sm outline-none placeholder:text-slate-400"
           />
         </div>
@@ -389,21 +403,23 @@ export function TutorsPage() {
         />
       ) : (
         <Card padded={false}>
-          <div className="divide-y divide-slate-100">
+          <div>
             {filtered.map((tutor) => (
               <button
                 key={tutor.id}
                 onClick={() => setSelected(tutor)}
-                className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-slate-50"
+                className="flex w-full items-center gap-4 border-t border-slate-100 px-5 py-4 text-left first:border-t-0 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary max-sm:grid max-sm:grid-cols-[2rem_minmax(0,1fr)] max-sm:gap-x-2 max-sm:gap-y-1.5 max-sm:px-3 max-sm:py-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-subtle text-sm font-semibold text-primary">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-sm font-semibold text-primary max-sm:h-8 max-sm:w-8 max-sm:text-xs">
                   {getInitials(tutor.name)}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-800">{tutor.name}</p>
+                <div className="min-w-0 flex-1 break-words">
+                  <p className="text-sm font-semibold text-slate-800 max-sm:text-[13px]">
+                    {tutor.name}
+                  </p>
                   <p className="text-xs text-slate-400">{tutor.email}</p>
                 </div>
-                <div className="hidden items-center gap-2 sm:flex">
+                <div className="flex flex-wrap items-center gap-2 max-sm:col-start-2">
                   <Badge tone="neutral">
                     <Award className="h-3 w-3" /> {(tutor.tutorMarks ?? []).length} marks
                   </Badge>

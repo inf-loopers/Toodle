@@ -132,4 +132,28 @@ describe('Modal accessibility', () => {
     fireEvent.keyDown(close, { key: 'Tab' });
     expect(dialog).toContainElement(document.activeElement);
   });
+
+  it('pins the header and footer outside the scrolling body', () => {
+    render(
+      <Modal
+        open
+        onClose={() => {}}
+        title="Pinned header"
+        footer={<button type="button">Done</button>}
+      >
+        <p>Scrollable body content</p>
+      </Modal>
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Pinned header' });
+    const body = within(dialog).getByTestId('modal-body');
+
+    // Only the body scrolls, so a tall dialog on a short viewport keeps its
+    // title and close control visible instead of scrolling them out of view.
+    expect(body).toHaveClass('overflow-y-auto');
+    expect(body).toContainElement(screen.getByText('Scrollable body content'));
+    expect(body).not.toContainElement(screen.getByText('Pinned header'));
+    expect(body).not.toContainElement(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(body).not.toContainElement(screen.getByRole('button', { name: 'Done' }));
+  });
 });

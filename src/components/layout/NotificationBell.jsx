@@ -9,6 +9,15 @@ import { Bell, CheckCheck, X } from 'lucide-react';
 import { notificationsApi } from '../../api/notifications';
 import { formatShortDate } from '../../utils/helpers';
 
+/**
+ * Truthful label for a notification's email copy. Delivered (or never
+ * attempted) emails need no label; anything else must not look delivered.
+ */
+const EMAIL_STATUS_LABELS = {
+  FAILED: 'Email copy could not be delivered',
+  SKIPPED: 'Not emailed — in-app only',
+};
+
 export default function NotificationBell() {
   const navigate = useNavigate();
   const panelId = 'notification-panel';
@@ -17,6 +26,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const panelRef = useRef(null);
+  const triggerRef = useRef(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -58,6 +68,7 @@ export default function NotificationBell() {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         setOpen(false);
+        triggerRef.current?.focus();
       }
     };
 
@@ -105,10 +116,12 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={panelRef}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={handleToggle}
         className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+        title="Notifications"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
       >
@@ -153,7 +166,10 @@ export default function NotificationBell() {
 
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    setOpen(false);
+                    triggerRef.current?.focus();
+                  }}
                   className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white sm:hidden"
                   aria-label="Close notification panel"
                 >
@@ -207,6 +223,18 @@ export default function NotificationBell() {
 
                         <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
                           {formatShortDate(notification.createdAt)}
+                          {EMAIL_STATUS_LABELS[notification.emailStatus] && (
+                            <span
+                              className={
+                                notification.emailStatus === 'FAILED'
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : undefined
+                              }
+                            >
+                              {' · '}
+                              {EMAIL_STATUS_LABELS[notification.emailStatus]}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>

@@ -27,6 +27,22 @@ const PAGE_OPTIONS = [
  */
 const ISSUES_EMAIL = 'toodle.issues@gmail.com';
 
+/**
+ * A mailto link carrying the report, so the user can still send it from their
+ * own email app when the server could not deliver it.
+ */
+function buildMailto({ page, description, blocking, url }) {
+  const subject = `[Toodle] Problem report: ${page}${blocking ? ' (blocking)' : ''}`;
+  const body = [
+    `Page: ${page}`,
+    `URL: ${url || 'Not provided'}`,
+    `Blocking: ${blocking ? 'Yes' : 'No'}`,
+    '',
+    description,
+  ].join('\n');
+  return `mailto:${ISSUES_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 export default function ReportProblemModal({ open, onClose, pageName, pathname }) {
   const [selectedPage, setSelectedPage] = useState('');
   const [description, setDescription] = useState('');
@@ -34,6 +50,7 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [deliveryFailed, setDeliveryFailed] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -44,6 +61,7 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
       setSubmitting(false);
       setSubmitted(false);
       setError('');
+      setDeliveryFailed(false);
     }
   }, [open, pageName]);
 
@@ -54,6 +72,7 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
 
     setSubmitting(true);
     setError('');
+    setDeliveryFailed(false);
 
     try {
       await reportsApi.submitProblemReport({
@@ -64,6 +83,9 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
       });
       setSubmitted(true);
     } catch (err) {
+      // 503 means the server is up but the report email was not accepted:
+      // nothing was sent, so offer the user another way to get it to the team.
+      setDeliveryFailed(err?.response?.status === 503);
       setError(getApiErrorMessage(err, 'Could not send your report. Please try again.'));
     } finally {
       setSubmitting(false);
@@ -154,6 +176,25 @@ export default function ReportProblemModal({ open, onClose, pageName, pathname }
           </label>
 
           <FormError message={error} />
+
+          {deliveryFailed && (
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Your report was <strong>not sent</strong>. Your text is kept above so you can retry,
+              or{' '}
+              <a
+                className="font-medium text-primary underline"
+                href={buildMailto({
+                  page: selectedPage,
+                  description: description.trim(),
+                  blocking,
+                  url: pathname,
+                })}
+              >
+                email it to {ISSUES_EMAIL}
+              </a>{' '}
+              from your own mail app.
+            </p>
+          )}
         </div>
       )}
     </Modal>

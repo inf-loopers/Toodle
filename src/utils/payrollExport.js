@@ -99,7 +99,5 @@ export function buildPayrollRows(timesheets) {
 
 /** Serialises the header plus row tuples into a CSV string. */
 export function buildPayrollCsv(rows) {
-  return [PAYROLL_CSV_HEADER, ...rows]
-    .map((row) => row.map(escapeCsvCell).join(','))
-    .join('\r\n');
+  return [PAYROLL_CSV_HEADER, ...rows].map((row) => row.map(escapeCsvCell).join(',')).join('\r\n');
 }

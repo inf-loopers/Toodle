@@ -1,5 +1,6 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within, act } from '@testing-library/react';
+import { render, screen, waitFor, within, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AllocationBoardPage from '../src/pages/AllocationBoardPage';
 import { AllocationProvider, useAllocationContext } from '../src/context/AllocationContext';
@@ -20,6 +21,12 @@ vi.mock('../src/api/allocations', () => ({
   },
 }));
 vi.mock('../src/hooks/useIsMobile', () => ({ useIsMobile: () => false }));
+// GenerateAllocationModal (rendered by the board) reads the current user to
+// decide draft-delete rights. A plain function keeps the stub intact across the
+// `vi.resetAllMocks()` in beforeEach.
+vi.mock('../src/hooks/useAuth', () => ({
+  useAuth: () => ({ isAdmin: true, dbUser: { id: 'admin-1' } }),
+}));
 
 const course = {
   id: 'c1',
@@ -58,7 +65,11 @@ beforeEach(() => {
 
 async function openAssignment() {
   const user = userEvent.setup();
-  render(<AllocationBoardPage />);
+  render(
+    <MemoryRouter initialEntries={['/allocations']}>
+      <AllocationBoardPage />
+    </MemoryRouter>
+  );
   await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
   await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
   await screen.findByText('Mark must be verified');
@@ -66,26 +77,59 @@ async function openAssignment() {
 }
 
 describe('Allocation board verification', () => {
-  it.each([21, 40])('submits %ih within the API range and blocks 41h', async (hours) => {
+  // Renders the whole board and types into the modal twice; ~2s locally but
+  // slower CI runners exceed Vitest's 5s default, so allow more time.
+  it.each([0.01, 0.25, 1.5, 21, 40])(
+    'submits %sh within the API range and blocks 41h',
+    { timeout: 15000 },
+    async (hours) => {
+      allocationsApi.validateAllocation.mockResolvedValue(valid);
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter initialEntries={['/allocations']}>
+          <AllocationBoardPage />
+        </MemoryRouter>
+      );
+      await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
+      await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
+      const field = screen.getByLabelText('Hours per week');
+      expect(field).toHaveAttribute('min', '0.01');
+      expect(field).toHaveAttribute('step', '0.01');
+      await user.clear(field);
+      await user.type(field, '41');
+      expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeDisabled();
+      await user.clear(field);
+      await user.type(field, String(hours));
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeEnabled()
+      );
+      await user.click(screen.getByRole('button', { name: 'Confirm assignment' }));
+      expect(allocationsApi.createAllocation).toHaveBeenCalledWith(
+        expect.objectContaining({ hoursPerWeek: hours })
+      );
+    }
+  );
+  it('blocks empty, negative, and tiny weekly hours before calling the allocation API', async () => {
     allocationsApi.validateAllocation.mockResolvedValue(valid);
     const user = userEvent.setup();
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
     await user.click(await screen.findByRole('button', { name: '+ Assign tutor' }));
     await user.selectOptions(screen.getByLabelText('Tutor'), 't1');
+    const submit = screen.getByRole('button', { name: 'Confirm assignment' });
+    await waitFor(() => expect(submit).toBeEnabled());
     const field = screen.getByLabelText('Hours per week');
-    await user.clear(field);
-    await user.type(field, '41');
-    expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeDisabled();
-    await user.clear(field);
-    await user.type(field, String(hours));
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirm assignment' })).toBeEnabled()
-    );
-    await user.click(screen.getByRole('button', { name: 'Confirm assignment' }));
-    expect(allocationsApi.createAllocation).toHaveBeenCalledWith(
-      expect.objectContaining({ hoursPerWeek: hours })
-    );
+    for (const value of ['', '0', '-1', '0.001', '5e-324']) {
+      fireEvent.change(field, { target: { value } });
+      expect(submit).toBeDisabled();
+      await user.click(submit);
+    }
+    expect(allocationsApi.createAllocation).not.toHaveBeenCalled();
   });
+
   it('reloads transferred allocations and recomputes tutor hours when returning to the board', async () => {
     let board;
     function Probe() {
@@ -185,7 +229,11 @@ describe('Allocation board verification', () => {
         { id: 'a1', userId: 't1', courseId: 'c1', status: 'PENDING', hoursPerWeek: 8, user: tutor },
       ],
     });
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('Needs tutor')).toBeInTheDocument();
     expect(screen.getByText('10h left')).toBeInTheDocument();
     expect(screen.getByText('PENDING')).toBeInTheDocument();
@@ -194,7 +242,11 @@ describe('Allocation board verification', () => {
 
   it('surfaces tutor-loading errors instead of an empty pool', async () => {
     tutorsApi.getTutors.mockRejectedValue(new Error('Tutor service unavailable'));
-    render(<AllocationBoardPage />);
+    render(
+      <MemoryRouter initialEntries={['/allocations']}>
+        <AllocationBoardPage />
+      </MemoryRouter>
+    );
     expect(await screen.findByText('Tutor service unavailable')).toBeInTheDocument();
   });
 

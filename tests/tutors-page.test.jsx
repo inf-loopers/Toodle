@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 /**
  * @file tutors-page.test.jsx
  * @description Failure and recovery behaviour of the tutor directory: a failed
@@ -55,7 +56,11 @@ describe('Tutor detail modal mark entry', () => {
   it('saves a mark and then clears the inputs', async () => {
     tutorsApi.addOrUpdateMark.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await user.selectOptions(within(dialog).getByLabelText('Add / update a mark'), 'c1');
@@ -74,7 +79,11 @@ describe('Tutor detail modal mark entry', () => {
       response: { data: { error: 'Mark must be between 0 and 100' } },
     });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await user.selectOptions(within(dialog).getByLabelText('Add / update a mark'), 'c1');
@@ -98,7 +107,11 @@ describe('Tutor detail modal mark entry', () => {
       response: { data: { error: 'Mark must be between 0 and 100' } },
     });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await user.selectOptions(within(dialog).getByLabelText('Add / update a mark'), 'c1');
@@ -125,10 +138,16 @@ describe('Tutor pay rate', () => {
     });
     ratesApi.createRate.mockResolvedValue({ data: { id: 'r2' } });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
-    expect(within(dialog).getByText(/Current rate: R150.00\/hr since 2026-01-01/)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/Current rate: R150.00\/hr since 2026-01-01/)
+    ).toBeInTheDocument();
     await waitFor(() => expect(ratesApi.getRateHistory).toHaveBeenCalledWith('t1'));
     expect(within(dialog).getByText(/2026-01-01 — R150.00\/hr/)).toBeInTheDocument();
 
@@ -152,7 +171,11 @@ describe('Tutor pay rate', () => {
     });
     ratesApi.correctRate.mockResolvedValue({ data: { id: 'r1', rate: 175 } });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     await waitFor(() => expect(ratesApi.getRateHistory).toHaveBeenCalled());
@@ -168,11 +191,31 @@ describe('Tutor pay rate', () => {
     );
   });
 
+  it('labels the pay rate in Rand, not dollars', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
+
+    const dialog = await openTutor(user);
+    // The currency glyph beside the rate is a Rand, matching the ZAR amounts.
+    expect(dialog.querySelector('svg.lucide-dollar-sign')).toBeNull();
+    expect(
+      within(dialog).getByText('R', { selector: 'span[aria-hidden="true"]' })
+    ).toBeInTheDocument();
+  });
+
   it('hides the pay rate section from a lecturer who does not manage the tutor', async () => {
     useAuth.mockReturnValue({ isAdmin: false, isLecturer: true });
     tutorsApi.getTutors.mockResolvedValue({ data: [{ ...tutor, allocations: [] }] });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     expect(within(dialog).queryByText('Pay rate')).not.toBeInTheDocument();
@@ -186,7 +229,11 @@ describe('Tutor pay rate', () => {
     });
     ratesApi.getRateHistory.mockResolvedValue({ data: [] });
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     const dialog = await openTutor(user);
     expect(within(dialog).getByText('Pay rate')).toBeInTheDocument();
@@ -199,7 +246,11 @@ describe('Tutor directory load failure', () => {
     // by refetch() is handled (models real recovery, avoids an unhandled rejection).
     tutorsApi.getTutors.mockRejectedValueOnce(new Error('Network Error'));
     const user = userEvent.setup();
-    render(<TutorsPage />);
+    render(
+      <MemoryRouter initialEntries={['/tutors']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
 
     expect(await screen.findByText("Couldn't load tutors")).toBeInTheDocument();
     expect(screen.getByText('Network Error')).toBeInTheDocument();
@@ -207,5 +258,21 @@ describe('Tutor directory load failure', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     await waitFor(() => expect(tutorsApi.getTutors).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('Tutor directory search seeding', () => {
+  it('seeds the filter from the ?q= param so a global-search person result deep-links in', async () => {
+    tutorsApi.getTutors.mockResolvedValue({ data: [tutor, secondTutor] });
+    render(
+      <MemoryRouter initialEntries={['/tutors?q=Tebogo']}>
+        <TutorsPage />
+      </MemoryRouter>
+    );
+
+    // The seeded query pre-filters the directory to the matching tutor only.
+    expect(await screen.findByRole('button', { name: /Tebogo Tutor/ })).toBeInTheDocument();
+    expect(screen.getByLabelText('Search tutors')).toHaveValue('Tebogo');
+    expect(screen.queryByRole('button', { name: /Lerato Lecturer/ })).not.toBeInTheDocument();
   });
 });

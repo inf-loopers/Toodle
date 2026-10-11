@@ -1,6 +1,12 @@
 import apiClient from './client';
 
 export const swapsApi = {
+  previewSwap: async (data) => (await apiClient.post('/swaps/preview', data)).data,
+  getCoverage: async () => (await apiClient.get('/swaps/coverage')).data,
+  getWorkload: async () => (await apiClient.get('/swaps/workload')).data,
+  getHistory: async (id) => (await apiClient.get(`/swaps/${id}/history`)).data,
+  reverseSwap: async (id, reason) =>
+    (await apiClient.post(`/swaps/${id}/reverse`, { reason })).data,
   acceptSwap: async (id) => (await apiClient.post(`/swaps/${id}/accept`)).data,
   declineSwap: async (id) => (await apiClient.post(`/swaps/${id}/decline`)).data,
   getOptions: async () => {

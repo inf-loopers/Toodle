@@ -1,3 +1,4 @@
+import FeatureHeading from '../components/layout/FeatureHeading';
 /**
  * @file ProfilePage.jsx
  * @description User profile and tutor work preferences.
@@ -19,7 +20,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Camera, Save } from 'lucide-react';
+import { AlertTriangle, Camera, FileUp, Save } from 'lucide-react';
 
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
@@ -40,6 +41,7 @@ import { Input, Select } from '../components/ui/Input';
 import { ErrorState } from '../components/ui/EmptyState';
 import UserAvatar from '../components/ui/UserAvatar';
 import AvailabilityEditor from '../components/availability/AvailabilityEditor';
+import TimetableImportModal from '../components/availability/TimetableImportModal';
 
 export function ProfilePage() {
   const { user, role, updateDbUser, logout } = useAuth();
@@ -47,6 +49,7 @@ export function ProfilePage() {
   const { data: currentUser, loading, error, refetch } = useApi(usersApi.getCurrentUser);
 
   const [maxHours, setMaxHours] = useState(10);
+  const [hoursError, setHoursError] = useState('');
   const [savingHours, setSavingHours] = useState(false);
   const [hoursSaved, setHoursSaved] = useState(false);
 
@@ -56,6 +59,8 @@ export function ProfilePage() {
 
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+
+  const [timetableOpen, setTimetableOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -152,6 +157,7 @@ export function ProfilePage() {
 
     setSavingHours(true);
     setHoursSaved(false);
+    setHoursError('');
 
     try {
       await usersApi.updateUser(profile.id, {
@@ -161,6 +167,8 @@ export function ProfilePage() {
       setHoursSaved(true);
 
       await refetch();
+    } catch (err) {
+      setHoursError(err?.response?.data?.error || 'Could not save weekly hours.');
     } finally {
       setSavingHours(false);
     }
@@ -211,9 +219,9 @@ export function ProfilePage() {
     <>
       {/* Page heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <FeatureHeading className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           My Profile
-        </h1>
+        </FeatureHeading>
 
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Your details and how you're set up on Toodle.
@@ -229,21 +237,21 @@ export function ProfilePage() {
           <div className="flex flex-col items-center">
             <UserAvatar user={profile || user} />
 
-            <label
-              htmlFor="profile-photo"
-              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              <Camera className="h-4 w-4" />
-              Change profile photo
-            </label>
-
             <input
               id="profile-photo"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={handlePhotoChange}
-              className="hidden"
+              className="peer sr-only"
             />
+            <label
+              htmlFor="profile-photo"
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              <Camera className="h-4 w-4" />
+              Change profile photo
+            </label>
+
             {profile?.avatarUrl && (
               <button
                 type="button"
@@ -368,9 +376,15 @@ export function ProfilePage() {
                 onChange={(event) => {
                   setMaxHours(event.target.value);
                   setHoursSaved(false);
+                  setHoursError('');
                 }}
                 className="max-w-36"
               />
+              {hoursError && (
+                <p role="alert" className="text-sm text-rose-600">
+                  {hoursError}
+                </p>
+              )}
 
               <Button onClick={handleSaveHours} loading={savingHours}>
                 <Save className="h-4 w-4" />
@@ -396,12 +410,26 @@ export function ProfilePage() {
                 endTime: slot.endTime,
               })) ?? []
             }
+            headerActions={
+              <Button variant="secondary" size="sm" onClick={() => setTimetableOpen(true)}>
+                <FileUp className="h-3.5 w-3.5" />
+                Import timetable
+              </Button>
+            }
             onSave={async (slots) => {
               if (profile?.id) {
                 await tutorsApi.setAvailability(profile.id, slots);
                 await refetch();
               }
             }}
+          />
+        )}
+        {canManageAvailability && profile?.id && (
+          <TimetableImportModal
+            open={timetableOpen}
+            onClose={() => setTimetableOpen(false)}
+            tutorId={profile.id}
+            onImported={refetch}
           />
         )}
       </div>

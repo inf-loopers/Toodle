@@ -31,7 +31,9 @@ apiClient.interceptors.request.use(async (config) => {
   if (tokenGetter) {
     try {
       const token = await tokenGetter();
-      config.headers.Authorization = `Bearer ${token}`;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     } catch (err) {
       // getAccessTokenSilently throws if the session has expired;
       // let the request go through unauthenticated and let the
