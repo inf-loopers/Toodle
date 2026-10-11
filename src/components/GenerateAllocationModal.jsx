@@ -726,7 +726,10 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
 
   // Save as draft (no live allocations) — prompt for name, save all proposed.
   const handleSaveDraft = useCallback(async () => {
-    const name = window.prompt('Enter a name for this draft:', draftName.trim() || `Allocation ${new Date().toLocaleDateString()}`);
+    const name = window.prompt(
+      'Enter a name for this draft:',
+      draftName.trim() || `Allocation ${new Date().toLocaleDateString()}`
+    );
     if (!name || !name.trim()) return;
     setPhase('saving');
     setError('');
@@ -975,8 +978,6 @@ export default function GenerateAllocationModal({ open, onClose, onCommitted }) 
 
       {/* Unmatched summary */}
       <UnmatchedPanel unmatched={unmatched} />
-
-
 
       {error && (
         <div
