@@ -29,7 +29,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usersApi } from '../api/users';
 import { tutorsApi } from '../api/tutors';
 
-import { ROLES, ROLE_LABELS } from '../utils/constants';
+import { ROLES, ROLE_LABELS, YEARS_OF_STUDY } from '../utils/constants';
 import AccountClosurePanel from '../components/AccountClosurePanel';
 
 import Card, { CardBody, CardHeader } from '../components/ui/Card';
@@ -298,9 +298,9 @@ export function ProfilePage() {
                   className="max-w-40"
                 >
                   <option value="">Not set</option>
-                  {Array.from({ length: 10 }, (_, index) => index + 1).map((year) => (
-                    <option key={year} value={year}>
-                      Year {year}
+                  {YEARS_OF_STUDY.map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
                 </Select>

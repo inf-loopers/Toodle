@@ -177,9 +177,9 @@ export function Modal({
               </h3>
             )}
             {description && (
-              <p id={descriptionId} className="mt-1 text-sm text-slate-500">
+              <div id={descriptionId} className="mt-1 text-sm text-slate-500">
                 {description}
-              </p>
+              </div>
             )}
           </div>
 
