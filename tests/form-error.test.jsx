@@ -74,4 +74,42 @@ describe('getApiErrorMessage', () => {
 
     expect(getApiErrorMessage(err)).toBe('Validation failed: Expected number, received string');
   });
+
+  it('swaps raw technical diagnostics for the readable fallback', () => {
+    const technical = [
+      'Invalid `prisma.timesheet.findUnique()` invocation: Foreign key constraint failed',
+      'Foreign key constraint failed on the constraint: `Allocation_courseId_fkey`',
+      'Route GET /api/v1/timesheets/123 not found',
+      '[object Object]',
+      'P2003: Foreign key constraint failed on the constraint: `Timesheet_tutorId_fkey`',
+    ];
+
+    technical.forEach((error) => {
+      expect(
+        getApiErrorMessage({ response: { data: { error } } }, 'Could not save the change.')
+      ).toBe('Could not save the change.');
+    });
+  });
+
+  it('leaves human-readable API messages untouched', () => {
+    expect(
+      getApiErrorMessage(
+        { response: { data: { error: 'This tutor has no pay rate configured yet' } } },
+        'Fallback'
+      )
+    ).toBe('This tutor has no pay rate configured yet');
+  });
+
+  it('does not append a technical validation detail to the generic message', () => {
+    const err = {
+      response: {
+        data: {
+          error: 'Validation failed',
+          details: [{ field: 'courseId', message: 'Invalid `prisma` invocation' }],
+        },
+      },
+    };
+
+    expect(getApiErrorMessage(err, 'Fallback')).toBe('Validation failed');
+  });
 });
