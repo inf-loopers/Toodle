@@ -32,7 +32,8 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  sm: 'px-3 py-1.5 text-xs gap-1.5',
+  // Touch screens get a 40px-tall hit area; mouse users keep the compact size.
+  sm: 'px-3 py-1.5 text-xs gap-1.5 pointer-coarse:min-h-10 pointer-coarse:px-3.5',
   md: 'px-4 py-2.5 text-sm gap-2',
   lg: 'px-5 py-3 text-sm gap-2',
   icon: 'p-2.5',

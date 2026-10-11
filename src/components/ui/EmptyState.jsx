@@ -5,7 +5,7 @@ export function EmptyState({ icon: Icon = Inbox, title, description, action, cla
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-6 py-14 text-center',
+        'flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-5 py-8 text-center sm:px-6 sm:py-14',
         className
       )}
     >
@@ -23,7 +23,7 @@ export function ErrorState({ title = 'Something went wrong', description, action
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-2xl border border-rose-100 bg-rose-50/50 px-6 py-14 text-center',
+        'flex flex-col items-center justify-center rounded-2xl border border-rose-100 bg-rose-50/50 px-5 py-8 text-center sm:px-6 sm:py-14',
         className
       )}
     >

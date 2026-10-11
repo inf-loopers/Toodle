@@ -258,8 +258,8 @@ export function SessionSwapPage() {
   if (error && !data) return <ErrorState title="Couldn't load swaps" description={error} />;
   return (
     <>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
           <FeatureHeading className="text-3xl font-bold">Session Swaps</FeatureHeading>
           <p className="mt-2 text-sm text-slate-500">
             Trade one session at a time, with tutor consent and organiser approval.

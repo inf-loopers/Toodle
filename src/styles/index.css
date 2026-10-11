@@ -604,4 +604,24 @@ html.dark .toodle-app .toodle-calendar-event--cancelled {
   .toodle-calendar .fc .fc-timegrid-slot-label-cushion {
     font-size: 0.72rem;
   }
+
+  /* Month cells are ~50px wide on a phone, so a title only ever shows its
+     first letter. Show the coloured dot and start time instead; tapping an
+     event still opens it, and List view carries the full titles. */
+  .toodle-calendar .fc .fc-daygrid-dot-event {
+    padding: 1px 0;
+  }
+
+  .toodle-calendar .fc .fc-daygrid-dot-event .fc-event-title {
+    display: none;
+  }
+
+  .toodle-calendar .fc .fc-daygrid-dot-event .fc-daygrid-event-dot {
+    margin: 0 2px 0 1px;
+  }
+
+  .toodle-calendar .fc .fc-daygrid-dot-event .fc-event-time {
+    margin-right: 0;
+    font-size: 0.7rem;
+  }
 }
