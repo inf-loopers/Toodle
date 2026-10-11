@@ -16,7 +16,7 @@ import FeatureHeading from '../components/layout/FeatureHeading';
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Users, Clock, Award, Plus, DollarSign } from 'lucide-react';
+import { Search, Users, Clock, Award, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { tutorsApi } from '../api/tutors';
@@ -225,7 +225,13 @@ function TutorDetailModal({ tutor, courses, open, onClose, onUpdated }) {
               Pay rate
             </p>
             <div className="mb-3 flex items-center gap-2 text-sm text-slate-600">
-              <DollarSign className="h-4 w-4 text-slate-400" />
+              {/* Rand glyph: the platform bills in ZAR, not USD. */}
+              <span
+                aria-hidden="true"
+                className="flex h-4 w-4 items-center justify-center text-sm font-bold leading-none text-slate-400"
+              >
+                R
+              </span>
               {tutor.currentRate ? (
                 <span>
                   Current rate: R{Number(tutor.currentRate.rate).toFixed(2)}/hr since{' '}
